@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import scala.concurrent.Future
 
+import javax.inject.{Inject, Singleton}
+
 @Singleton()
-class MicroserviceHelloWorldController @Inject()(cc: ControllerComponents)
-    extends BackendController(cc) {
+class MicroserviceHelloWorldController @Inject() (cc: ControllerComponents) extends BackendController(cc) {
 
   def hello(): Action[AnyContent] = Action.async { implicit request =>
     Future.successful(Ok("Hello world"))
