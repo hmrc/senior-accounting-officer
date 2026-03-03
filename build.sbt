@@ -9,7 +9,7 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
-    scalacOptions += "-Wconf:src=routes/.*:s",
+    scalacOptions += "-Wconf:src=routes/.*:s"
   )
   .settings(CodeCoverageSettings.settings: _*)
   .settings(scalafixSettings *)
@@ -21,7 +21,7 @@ lazy val it = project
   .settings(libraryDependencies ++= AppDependencies.it)
 
 val scalafixSettings: Seq[Setting[?]] = Seq(
-  semanticdbEnabled := true,
+  semanticdbEnabled := true
 )
 
 addCommandAlias("checkLint", "scalafmtSbtCheck;scalafmtCheckAll")
