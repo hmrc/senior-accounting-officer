@@ -1,7 +1,7 @@
 import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "2.13.12"
+ThisBuild / scalaVersion := "3.3.4"
 
 lazy val microservice = Project("senior-accounting-officer", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
@@ -12,9 +12,17 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s",
   )
   .settings(CodeCoverageSettings.settings: _*)
+  .settings(scalafixSettings *)
 
 lazy val it = project
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(libraryDependencies ++= AppDependencies.it)
+
+val scalafixSettings: Seq[Setting[?]] = Seq(
+  semanticdbEnabled := true,
+)
+
+addCommandAlias("checkLint", "scalafmtSbtCheck;scalafmtCheckAll")
+addCommandAlias("lint", "scalafixAll;scalafmtSbt;scalafmtAll")
