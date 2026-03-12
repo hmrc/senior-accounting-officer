@@ -22,6 +22,8 @@ import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
@@ -31,18 +33,18 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.StubConnector
 
 import scala.concurrent.Future
 
-class ObligationControllerSpec extends AnyWordSpec with Matchers {
+class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
+
+  val mockStubConnector: StubConnector = mock[StubConnector]
+
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .overrides(bind[StubConnector].to(mockStubConnector))
+    .build()
 
   "ObligationController" should {
     "return what the connector returns" in {
       val expectedStatus = 203
       val expectedBody   = "testBody"
-
-      val mockStubConnector = mock[StubConnector]
-
-      val app = new GuiceApplicationBuilder()
-        .overrides(bind[StubConnector].to(mockStubConnector))
-        .build()
 
       when(mockStubConnector.getObligation(any())(using any())) thenReturn Future.successful(
         HttpResponse(expectedStatus, expectedBody)
