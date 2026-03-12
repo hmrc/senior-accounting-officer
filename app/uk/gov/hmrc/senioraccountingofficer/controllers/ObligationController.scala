@@ -35,9 +35,10 @@ class ObligationController @Inject() (
   // TODO: what error response should be returned?
 
   def getObligation(saoSubscriptionId: String): Action[AnyContent] = Action.async { implicit request =>
-    stubConnector.getObligation(saoSubscriptionId).map {
-      case HttpResponse(OK, body, _) => Ok(body)
-      case HttpResponse(_, body, _)  => NotFound(body)
-    }
+    stubConnector
+      .getObligation(saoSubscriptionId)
+      .map { case HttpResponse(status, body, _) =>
+        Status(status)(body)
+      }
   }
 }
