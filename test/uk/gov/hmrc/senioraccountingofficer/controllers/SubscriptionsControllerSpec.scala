@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
+import org.apache.pekko.stream.Materializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import org.apache.pekko.stream.Materializer
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status
-import play.api.test.Helpers.{contentAsString, defaultAwaitTimeout, status, stubControllerComponents}
 import play.api.test.FakeRequest
+import play.api.test.Helpers.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SubscriptionsConnector
 
@@ -70,7 +70,9 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
       val controller     = new SubscriptionsController(
         stubControllerComponents(),
-        new StubSubscriptionsConnector(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
+        new StubSubscriptionsConnector(
+          Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody))
+        )
       )
 
       val result = controller.putSubscription(

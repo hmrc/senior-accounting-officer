@@ -23,6 +23,6 @@ import javax.inject.Inject
 
 class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
 
-  val appName: String = config.get[String]("appName")
+  val appName: String      = config.get[String]("appName")
   val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
 }
