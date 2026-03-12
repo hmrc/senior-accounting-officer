@@ -36,7 +36,7 @@ class ObligationController @Inject() (appConfig: AppConfig, httpClient: HttpClie
     val url = appConfig.stubsUrl + "/obligation/123"
     httpClient
       .get(url"${url}")
-      .setHeader(("Authorization", "Basic Q2xpZW50SWQ6Q2xpZW50U2VjcmV0"))
+      .setHeader(("Authorization", "Basic " + appConfig.stubsAuth))
       .execute[HttpResponse]
       .map {
         case HttpResponse(OK, body, _) => Ok(body)
