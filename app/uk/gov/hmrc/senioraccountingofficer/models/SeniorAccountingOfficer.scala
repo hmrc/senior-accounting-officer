@@ -21,11 +21,11 @@ import play.api.libs.json.{Json, OFormat}
 import java.time.LocalDate
 
 final case class SeniorAccountingOfficer(
-                                          name: String,
-                                          email: String,
-                                          startDate: LocalDate,
-                                          endDate: LocalDate
-                                        )
+    name: String,
+    email: String,
+    startDate: LocalDate,
+    endDate: LocalDate
+)
 
 object SeniorAccountingOfficer {
   implicit val format: OFormat[SeniorAccountingOfficer] = Json.format[SeniorAccountingOfficer]

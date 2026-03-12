@@ -22,15 +22,16 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
-import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class NotificationController @Inject() (
-                                         cc: ControllerComponents,
-                                         notificationService: NotificationService
-                                       )(implicit ec: ExecutionContext)
-  extends BackendController(cc) {
+    cc: ControllerComponents,
+    notificationService: NotificationService
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc) {
 
   def postNotification(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
     request.body.validate[NotificationRequest] match {

@@ -17,22 +17,23 @@
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.http.HttpReads.Implicits.*
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
-import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 
-import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+
 import java.net.URL
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class NotificationConnector @Inject() (
-                                        httpClientV2: HttpClientV2,
-                                        appConfig: AppConfig
-                                      )(implicit ec: ExecutionContext) {
+    httpClientV2: HttpClientV2,
+    appConfig: AppConfig
+)(implicit ec: ExecutionContext) {
 
   def postNotification(id: String, request: NotificationRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     val url: URL = url"http://${appConfig.notificationBaseUrl}/notification/$id"

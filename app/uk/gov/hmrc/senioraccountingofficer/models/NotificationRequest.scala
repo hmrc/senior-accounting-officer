@@ -19,9 +19,9 @@ package uk.gov.hmrc.senioraccountingofficer.models
 import play.api.libs.json.{Json, OFormat}
 
 final case class NotificationRequest(
-                                      companies: Seq[Company],
-                                      additionalInformation: Option[String]
-                                    )
+    companies: Seq[Company],
+    additionalInformation: Option[String]
+)
 
 object NotificationRequest {
   implicit val format: OFormat[NotificationRequest] = Json.format[NotificationRequest]

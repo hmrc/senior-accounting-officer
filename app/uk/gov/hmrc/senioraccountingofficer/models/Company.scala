@@ -21,13 +21,13 @@ import play.api.libs.json.{Json, OFormat}
 import java.time.LocalDate
 
 final case class Company(
-                          companyName: String,
-                          uniqueTaxReference: String,
-                          companyReferenceNumber: String,
-                          companyType: String,
-                          financialYearEndDate: LocalDate,
-                          seniorAccountingOfficers: Seq[SeniorAccountingOfficer]
-                        )
+    companyName: String,
+    uniqueTaxReference: String,
+    companyReferenceNumber: String,
+    companyType: String,
+    financialYearEndDate: LocalDate,
+    seniorAccountingOfficers: Seq[SeniorAccountingOfficer]
+)
 
 object Company {
   implicit val format: OFormat[Company] = Json.format[Company]
