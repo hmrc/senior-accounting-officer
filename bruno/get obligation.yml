@@ -5,11 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://localhost:????/obligation/123
-  params:
-    - name: ???/obligation/123
-      value: ""
-      type: query
+  url: http://localhost:10060/senior-accounting-officer/obligation/123
   auth: inherit
 
 settings:
