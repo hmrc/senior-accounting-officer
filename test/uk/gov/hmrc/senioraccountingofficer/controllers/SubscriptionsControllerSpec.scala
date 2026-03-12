@@ -16,23 +16,30 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import org.apache.pekko.stream.Materializer
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.Application
 import play.api.http.Status
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SubscriptionsConnector
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
-  given ExecutionContext = ExecutionContext.global
-  given Materializer     = app.materializer
+  private val stubConnector = new StubSubscriptionsConnector
+
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder()
+      .overrides(
+        bind[SubscriptionsConnector].toInstance(stubConnector)
+      )
+      .build()
 
   private val validPayload =
     """{
@@ -50,47 +57,38 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       |  ]
       |}""".stripMargin
 
-  "SubscriptionsController" should {
-    "return the downstream status when the stub responds without a body" in {
-      val controller = new SubscriptionsController(
-        stubControllerComponents(),
-        new StubSubscriptionsConnector(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
-      )
+  "PUT /subscriptions" should {
+    "return 204 when the downstream connector succeeds without a body" in {
+      stubConnector.nextResponse = HttpResponse(status = Status.NO_CONTENT)
 
-      val result = controller.putSubscription(
-        FakeRequest("PUT", "/subscriptions")
-          .withHeaders(CONTENT_TYPE -> "application/json")
-          .withTextBody(validPayload)
-      )
+      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
+        .withHeaders(CONTENT_TYPE -> "application/json")
+        .withTextBody(validPayload)
+
+      val result = route(app, request).get
 
       status(result) shouldBe Status.NO_CONTENT
     }
 
     "return the downstream JSON body for validation errors" in {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
-      val controller     = new SubscriptionsController(
-        stubControllerComponents(),
-        new StubSubscriptionsConnector(
-          Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody))
-        )
-      )
+      stubConnector.nextResponse = HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)
 
-      val result = controller.putSubscription(
-        FakeRequest("PUT", "/subscriptions")
-          .withHeaders(CONTENT_TYPE -> "application/json")
-          .withTextBody(validPayload)
-      )
+      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
+        .withHeaders(CONTENT_TYPE -> "application/json")
+        .withTextBody(validPayload)
+
+      val result = route(app, request).get
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
     }
-
   }
 
-  private class StubSubscriptionsConnector(
-      result: Future[HttpResponse]
-  ) extends SubscriptionsConnector {
+  private class StubSubscriptionsConnector extends SubscriptionsConnector {
+    @volatile var nextResponse: HttpResponse = HttpResponse(status = Status.NO_CONTENT)
+
     override def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
-      result
+      Future.successful(nextResponse)
   }
 }
