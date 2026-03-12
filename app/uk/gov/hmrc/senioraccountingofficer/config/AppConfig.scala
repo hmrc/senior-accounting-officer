@@ -44,8 +44,8 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   val appName: String = config.get[String]("appName")
 
   // TODO: name subject to change, probably
-  val stubsUrl = config.get[String]("stubs.host")
+  val stubsUrl: String = config.get[String]("stubs.host")
 
   // TODO: name subject to change
-  val stubsAuth = config.get[String]("stubs.auth")
+  val stubsAuth: String = config.get[String]("stubs.auth")
 }
