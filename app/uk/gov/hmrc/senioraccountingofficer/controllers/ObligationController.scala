@@ -19,6 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.senioraccountingofficer.connectors.StubConnector
 
 import scala.concurrent.ExecutionContext
 
