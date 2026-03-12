@@ -17,11 +17,13 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import com.google.inject.AbstractModule
+import uk.gov.hmrc.senioraccountingofficer.connectors.{DefaultSubscriptionsConnector, SubscriptionsConnector}
 
 class Module extends AbstractModule {
 
   override def configure(): Unit = {
 
     bind(classOf[AppConfig]).asEagerSingleton()
+    bind(classOf[SubscriptionsConnector]).to(classOf[DefaultSubscriptionsConnector])
   }
 }

@@ -17,11 +17,12 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
+class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
 
   val appName: String = config.get[String]("appName")
+  val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
 }
