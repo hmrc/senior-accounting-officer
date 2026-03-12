@@ -38,3 +38,6 @@ target
 test-result
 tmp
 .vscode/
+
+bruno/.env*
+bruno/node_modules
