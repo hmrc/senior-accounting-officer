@@ -1,3 +1,5 @@
 # microservice specific routes
 
 GET        /hello-world             uk.gov.hmrc.senioraccountingofficer.controllers.MicroserviceHelloWorldController.hello()
+
+POST       /notification/:id            uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification(id: String)

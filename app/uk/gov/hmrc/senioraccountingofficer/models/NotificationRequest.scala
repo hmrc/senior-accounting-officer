@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.models
 
-import play.api.Configuration
+import play.api.libs.json.{Json, OFormat}
 
-import javax.inject.{Inject, Singleton}
+final case class NotificationRequest(
+                                      companies: Seq[Company],
+                                      additionalInformation: Option[String]
+                                    )
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
-
-  val appName: String = config.get[String]("appName")
-
-  val notificationBaseUrl: String =
-    config.get[Configuration]("microservice.services.notification").get[String]("host") + ":" + config
-      .get[Configuration]("microservice.services.notification")
-      .get[Int]("port")
+object NotificationRequest {
+  implicit val format: OFormat[NotificationRequest] = Json.format[NotificationRequest]
 }

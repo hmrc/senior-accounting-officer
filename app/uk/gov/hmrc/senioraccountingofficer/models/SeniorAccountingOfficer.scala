@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.models
 
-import play.api.Configuration
+import play.api.libs.json.{Json, OFormat}
 
-import javax.inject.{Inject, Singleton}
+import java.time.LocalDate
 
-@Singleton
-class AppConfig @Inject() (config: Configuration) {
+final case class SeniorAccountingOfficer(
+                                          name: String,
+                                          email: String,
+                                          startDate: LocalDate,
+                                          endDate: LocalDate
+                                        )
 
-  val appName: String = config.get[String]("appName")
-
-  val notificationBaseUrl: String =
-    config.get[Configuration]("microservice.services.notification").get[String]("host") + ":" + config
-      .get[Configuration]("microservice.services.notification")
-      .get[Int]("port")
+object SeniorAccountingOfficer {
+  implicit val format: OFormat[SeniorAccountingOfficer] = Json.format[SeniorAccountingOfficer]
 }
