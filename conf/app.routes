@@ -1,4 +1,3 @@
 # microservice specific routes
 
-GET        /hello-world             uk.gov.hmrc.senioraccountingofficer.controllers.MicroserviceHelloWorldController.hello()
 PUT        /subscriptions           uk.gov.hmrc.senioraccountingofficer.controllers.SubscriptionsController.putSubscription
