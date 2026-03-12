@@ -23,6 +23,8 @@ import javax.inject.Inject
 
 class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
 
-  val appName: String      = config.get[String]("appName")
-  val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
+  val appName: String                 = config.get[String]("appName")
+  val stubsBaseUrl: String            = servicesConfig.baseUrl("senior-accounting-officer-stubs")
+  val stubsAuthorizationToken: String =
+    config.get[String]("microservice.services.senior-accounting-officer-stubs.authorizationToken")
 }

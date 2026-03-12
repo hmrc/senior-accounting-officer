@@ -65,7 +65,13 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody(validPayload)
 
-      val result = route(app, request).get
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
 
       status(result) shouldBe Status.NO_CONTENT
     }
@@ -78,7 +84,13 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody(validPayload)
 
-      val result = route(app, request).get
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody

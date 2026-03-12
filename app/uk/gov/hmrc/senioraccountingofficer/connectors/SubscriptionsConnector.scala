@@ -38,6 +38,7 @@ class DefaultSubscriptionsConnector @Inject() (httpClient: HttpClientV2, appConf
   override def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
     httpClient
       .put(url"${appConfig.stubsBaseUrl}/subscriptions")
+      .setHeader("Authorization" -> appConfig.stubsAuthorizationToken)
       .setHeader("Content-Type" -> MimeTypes.JSON)
       .withBody(body)
       .execute[HttpResponse]
