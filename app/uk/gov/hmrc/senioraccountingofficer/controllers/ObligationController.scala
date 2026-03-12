@@ -22,12 +22,20 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 
-class ObligationController @Inject() (httpClient: HttpClientV2, cc: ControllerComponents)(using ExecutionContext)
-    extends BackendController(cc) {
+class ObligationController @Inject() (appConfig: AppConfig, httpClient: HttpClientV2, cc: ControllerComponents)(using
+    ExecutionContext
+) extends BackendController(cc) {
+
+  // TODO: where should auth header be?
+  // TODO: how to deal with failed future gracefully?
+  // TODO: move to connector class
+
   def getObligation(saoSubscriptionId: String): Action[AnyContent] = Action.async { implicit request =>
+    val url = appConfig.stubsUrl + "/obligation/123"
     httpClient
-      .get(url"http://localhost:10061/obligation/123")
+      .get(url"${url}")
       .setHeader(("Authorization", "Basic Q2xpZW50SWQ6Q2xpZW50U2VjcmV0"))
       .execute[HttpResponse]
       .map {
