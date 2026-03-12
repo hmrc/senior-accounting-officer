@@ -19,28 +19,28 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.HttpResponse
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
+import java.net.URL
 
 class ObligationController @Inject() (appConfig: AppConfig, httpClient: HttpClientV2, cc: ControllerComponents)(using
     ExecutionContext
 ) extends BackendController(cc) {
 
-  // TODO: where should auth header be?
   // TODO: how to deal with failed future gracefully?
   // TODO: move to connector class
+  // TODO: what error response should be returned?
 
   def getObligation(saoSubscriptionId: String): Action[AnyContent] = Action.async { implicit request =>
-    val url = appConfig.stubsUrl + "/obligation/123"
     httpClient
-      .get(url"${url}")
+      .get(URL(appConfig.stubsUrl + "/obligation/123"))
       .setHeader(("Authorization", "Basic " + appConfig.stubsAuth))
       .execute[HttpResponse]
       .map {
         case HttpResponse(OK, body, _) => Ok(body)
-        case HttpResponse(_, body, _)  => Ok(body)
+        case HttpResponse(_, body, _)  => NotFound(body) // TODO: what should the response type be?
       }
   }
 }
