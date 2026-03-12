@@ -19,11 +19,11 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -40,7 +40,7 @@ class NotificationController @Inject() (
           Status(response.status)(response.body)
         }
       case JsError(errors) =>
-        Future.successful(BadRequest(errors.toString))
+        Future.successful(BadRequest(JsonErrorHandling.toJson(errors)))
     }
   }
 }
