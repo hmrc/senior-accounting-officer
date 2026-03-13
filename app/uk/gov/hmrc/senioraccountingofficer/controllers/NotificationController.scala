@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext
 
 import javax.inject.{Inject, Singleton}
 
-@Singleton
+
 class NotificationController @Inject() (
     cc: ControllerComponents,
     notificationService: NotificationService

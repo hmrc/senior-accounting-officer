@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.net.URL
 import javax.inject.{Inject, Singleton}
 
-@Singleton
+
 class NotificationConnector @Inject() (
     httpClientV2: HttpClientV2,
     appConfig: AppConfig
