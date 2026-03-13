@@ -28,7 +28,7 @@ import javax.inject.Inject
 class ObligationConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ExecutionContext) {
   def getObligation(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] =
     httpClient
-      .get(URL(appConfig.stubsUrl + "/obligation/123"))
-      .setHeader(("Authorization", "Basic " + appConfig.stubsAuth))
+      .get(URL(appConfig.stubsBaseUrl + "/obligation/123"))
+      .setHeader(("Authorization", appConfig.stubsAuthorizationToken))
       .execute[HttpResponse]
 }

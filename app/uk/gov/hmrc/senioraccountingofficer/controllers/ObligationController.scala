@@ -24,6 +24,8 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.ObligationConnector
 import scala.concurrent.ExecutionContext
 
 import javax.inject.Inject
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 class ObligationController @Inject() (
     cc: ControllerComponents,
@@ -36,6 +38,7 @@ class ObligationController @Inject() (
   // TODO: what error response should be returned?
 
   def getObligation(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) { implicit request =>
+    given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     stubConnector
       .getObligation(saoSubscriptionId)
       .map { case HttpResponse(status, body, _) =>

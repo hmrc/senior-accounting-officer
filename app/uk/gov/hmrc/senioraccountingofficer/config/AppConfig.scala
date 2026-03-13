@@ -39,13 +39,4 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   val stubsBaseUrl: String            = servicesConfig.baseUrl("senior-accounting-officer-stubs")
   val stubsAuthorizationToken: String =
     config.get[String]("microservice.services.senior-accounting-officer-stubs.authorizationToken")
-  val appName: String      = config.get[String]("appName")
-  val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
-  val appName: String = config.get[String]("appName")
-
-  // TODO: name subject to change, probably
-  val stubsUrl: String = config.get[String]("stubs.host")
-
-  // TODO: name subject to change
-  val stubsAuth: String = config.get[String]("stubs.auth")
 }
