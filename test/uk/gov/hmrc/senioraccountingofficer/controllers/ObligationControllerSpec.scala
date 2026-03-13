@@ -56,7 +56,13 @@ class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAp
 
       val request = FakeRequest(GET, url)
 
-      val result = route(app, request).get // TODO: no get?
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
 
       status(result) mustBe expectedStatus
       contentAsString(result) mustBe expectedBody
