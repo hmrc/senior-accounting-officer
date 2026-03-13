@@ -16,36 +16,21 @@
 
 package uk.gov.hmrc.senioraccountingofficer
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, when}
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar.mock
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.api.Application
-import play.api.inject.bind
-import play.api.inject.guice.GuiceApplicationBuilder
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import play.api.http.HeaderNames
 import play.api.libs.json.Json
-import play.api.libs.ws.WSClient
 import play.api.libs.ws.readableAsString
 import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.senioraccountingofficer.connectors.SubscriptionsConnector
+import support.ISpecBase
 
-import scala.concurrent.Future
+class SubscriptionsIntegrationSpec extends ISpecBase {
 
-class SubscriptionsIntegrationSpec
-    extends AnyWordSpec
-    with Matchers
-    with ScalaFutures
-    with IntegrationPatience
-    with GuiceOneServerPerSuite {
+  override def additionalConfigs: Map[String, Any] = Map(
+    "microservice.services.senior-accounting-officer-stubs.host" -> wireMockHost,
+    "microservice.services.senior-accounting-officer-stubs.port" -> wireMockPort
+  )
 
-  private val mockSubscriptionsConnector = mock[SubscriptionsConnector]
-  private val wsClient                   = app.injector.instanceOf[WSClient]
-  private val baseUrl                    = s"http://localhost:$port"
-  private val validPayload               = Json.obj(
+  private val validPayload = Json.obj(
     "safeId"  -> "XE000123456789",
     "company" -> Json.obj(
       "companyName"               -> "Acme Manufacturing Ltd",
@@ -57,18 +42,15 @@ class SubscriptionsIntegrationSpec
     )
   )
 
-  override def fakeApplication(): Application =
-    GuiceApplicationBuilder()
-      .overrides(
-        bind[SubscriptionsConnector].toInstance(mockSubscriptionsConnector)
+  "PUT /subscriptions" must {
+    "pass through a successful downstream response" in {
+      stubFor(
+        put(urlEqualTo("/subscriptions"))
+          .willReturn(
+            aResponse()
+              .withStatus(204)
+          )
       )
-      .build()
-
-  "PUT /subscriptions" should {
-    "return 204 when the downstream connector succeeds without a body" in {
-      reset(mockSubscriptionsConnector)
-      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = 204)))
 
       val response =
         wsClient
@@ -76,15 +58,29 @@ class SubscriptionsIntegrationSpec
           .put(validPayload)
           .futureValue
 
-      response.status shouldBe 204
-      response.body shouldBe ""
+      response.status mustBe 204
+      response.body mustBe ""
+
+      verify(
+        1,
+        putRequestedFor(urlEqualTo("/subscriptions"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo("Basic Q2xpZW50SWQ6Q2xpZW50U2VjcmV0"))
+          .withHeader(HeaderNames.CONTENT_TYPE, containing("application/json"))
+          .withRequestBody(equalToJson(validPayload.toString))
+      )
     }
 
-    "return the downstream JSON error body for a validation failure" in {
+    "pass through a downstream validation error body" in {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
-      reset(mockSubscriptionsConnector)
-      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = 400, body = downstreamBody)))
+
+      stubFor(
+        put(urlEqualTo("/subscriptions"))
+          .willReturn(
+            aResponse()
+              .withStatus(400)
+              .withBody(downstreamBody)
+          )
+      )
 
       val response =
         wsClient
@@ -92,8 +88,15 @@ class SubscriptionsIntegrationSpec
           .put(validPayload)
           .futureValue
 
-      response.status shouldBe 400
-      response.body shouldBe downstreamBody
+      response.status mustBe 400
+      response.body mustBe downstreamBody
+
+      verify(
+        1,
+        putRequestedFor(urlEqualTo("/subscriptions"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo("Basic Q2xpZW50SWQ6Q2xpZW50U2VjcmV0"))
+          .withRequestBody(equalToJson(validPayload.toString))
+      )
     }
   }
 }
