@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.services
 
-import play.api.Configuration
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
+class NotificationService @Inject() (
+    notificationConnector: NotificationConnector
+)(implicit ec: ExecutionContext) {
 
-  val appName: String = config.get[String]("appName")
-
-  val notificationBaseUrl: String = servicesConfig.baseUrl("notification")
+  def postNotification(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    notificationConnector.postNotification(id, body)
+  }
 }
