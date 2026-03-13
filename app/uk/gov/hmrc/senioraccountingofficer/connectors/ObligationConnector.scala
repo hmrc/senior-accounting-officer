@@ -16,19 +16,19 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import java.net.URL
 import javax.inject.Inject
 
 class ObligationConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ExecutionContext) {
   def getObligation(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] =
+    given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .get(URL(appConfig.stubsBaseUrl + "/obligation/123"))
+      .get(url"${appConfig.stubsBaseUrl}/obligation/$saoSubscriptionId")
       .setHeader(("Authorization", appConfig.hipAuthorisationCredentials))
       .execute[HttpResponse]
 }
