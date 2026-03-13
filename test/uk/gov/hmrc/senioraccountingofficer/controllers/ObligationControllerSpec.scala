@@ -42,7 +42,7 @@ class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAp
     .build()
 
   "ObligationController" should {
-    "return what the connector returns" in {
+    "return the status and body from the connector" in {
       val saoSubscriptionId = "123"
 
       val expectedStatus = 203
