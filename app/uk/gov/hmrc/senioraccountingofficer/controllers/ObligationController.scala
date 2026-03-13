@@ -17,15 +17,14 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.ObligationConnector
 
 import scala.concurrent.ExecutionContext
 
 import javax.inject.Inject
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 class ObligationController @Inject() (
     cc: ControllerComponents,
