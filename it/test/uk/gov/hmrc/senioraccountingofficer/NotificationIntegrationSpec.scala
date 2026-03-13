@@ -28,6 +28,8 @@ class NotificationIntegrationSpec extends ISpecBase {
   private val appConfig = app.injector.instanceOf[AppConfig]
   private val connector = app.injector.instanceOf[NotificationConnector]
 
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
   override def additionalConfigs: Map[String, Any] = Map(
     "microservice.services.senior-accounting-officer-stubs.host" -> wireMockHost,
     "microservice.services.senior-accounting-officer-stubs.port" -> wireMockPort
@@ -65,7 +67,6 @@ class NotificationIntegrationSpec extends ISpecBase {
           )
       )
 
-      implicit val hc: HeaderCarrier = HeaderCarrier()
       val result = connector.postNotification("123", validPayload).futureValue
 
       result.status mustBe 200
@@ -91,7 +92,7 @@ class NotificationIntegrationSpec extends ISpecBase {
           )
       )
 
-      implicit val hc: HeaderCarrier = HeaderCarrier()
+
       val result = connector.postNotification("123", validPayload).futureValue
 
       result.status mustBe 400
