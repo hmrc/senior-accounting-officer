@@ -26,10 +26,6 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
 
   val appName: String = config.get[String]("appName")
 
-  val notificationBaseUrl: String = servicesConfig.baseUrl("notification")
-  val notificationAuthorizationToken: String =
-    config.get[String]("microservice.services.notification.authorizationToken")
-
   val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
 
   private val hipClientId: String     = config.get[String]("hip.clientId")

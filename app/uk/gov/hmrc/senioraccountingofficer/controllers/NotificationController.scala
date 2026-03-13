@@ -22,8 +22,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.ExecutionContext
 
-import javax.inject.{Inject, Singleton}
-
+import javax.inject.Inject
 
 class NotificationController @Inject() (
     cc: ControllerComponents,

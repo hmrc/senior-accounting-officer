@@ -47,7 +47,47 @@ class NotificationConnectorSpec
   "postNotification" should {
 
     "return an HttpResponse with status 200 when downstream returns 200" in {
-      val anyBody = """{"any":"body"}"""
+      val anyBody = """{
+                      |  "companies": [
+                      |    {
+                      |      "companyName": "Example Ltd",
+                      |      "uniqueTaxReference": "1234567890",
+                      |      "companyReferenceNumber": "AB123456",
+                      |      "companyType": "LTD",
+                      |      "financialYearEndDate": "2024-12-31",
+                      |      "seniorAccountingOfficers": [
+                      |        {
+                      |          "name": "Firstname Lastname",
+                      |          "email": "Firstname.Lastname@example.com",
+                      |          "startDate": "2024-04-01",
+                      |          "endDate": "2025-03-31"
+                      |        },
+                      |        {
+                      |          "name": "Secondpersonname Theirlastname",
+                      |          "email": "nonemptyemail@companyname.com",
+                      |          "startDate": "2024-12-01",
+                      |          "endDate": "2025-12-31"
+                      |        }
+                      |      ]
+                      |    },
+                      |    {
+                      |      "companyName": "Example PLC",
+                      |      "uniqueTaxReference": "0987654321",
+                      |      "companyReferenceNumber": "CD654321",
+                      |      "companyType": "PLC",
+                      |      "financialYearEndDate": "2024-06-30",
+                      |      "seniorAccountingOfficers": [
+                      |        {
+                      |          "name": "Firstname Lastname",
+                      |          "email": "Firstname.Lastname@example.com",
+                      |          "startDate": "2024-04-01",
+                      |          "endDate": "2025-03-31"
+                      |        }
+                      |      ]
+                      |    }
+                      |  ],
+                      |  "additionalInformation": "non-empty string"
+                      |}""".stripMargin
 
       wireMockServer.stubFor(
         post(urlEqualTo("/notification/123"))
@@ -55,7 +95,6 @@ class NotificationConnectorSpec
           .willReturn(
             aResponse()
               .withStatus(200)
-              .withBody("Success")
           )
       )
 
@@ -63,7 +102,6 @@ class NotificationConnectorSpec
       val result  = connector.postNotification("123", anyBody).futureValue
 
       result.status shouldBe 200
-      result.body shouldBe "Success"
     }
   }
 }
