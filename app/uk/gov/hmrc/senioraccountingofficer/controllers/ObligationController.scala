@@ -33,10 +33,6 @@ class ObligationController @Inject() (
 )(using
     ExecutionContext
 ) extends BackendController(cc) {
-
-  // TODO: how to deal with failed future gracefully?
-  // TODO: what error response should be returned?
-
   def getObligation(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) { implicit request =>
     given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     stubConnector
