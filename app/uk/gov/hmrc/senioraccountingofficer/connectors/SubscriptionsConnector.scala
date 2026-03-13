@@ -34,7 +34,7 @@ class SubscriptionsConnector @Inject() (httpClient: HttpClientV2, appConfig: App
   def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
     httpClient
       .put(url"${appConfig.stubsBaseUrl}/subscriptions")
-      .setHeader("Authorization" -> appConfig.stubsAuthorizationToken)
+      .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .setHeader("Content-Type" -> MimeTypes.JSON)
       .withBody(body)
       .execute[HttpResponse]

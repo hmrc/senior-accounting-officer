@@ -22,8 +22,11 @@ import play.api.libs.json.Json
 import play.api.libs.ws.readableAsString
 import play.api.libs.ws.writeableOf_JsValue
 import support.ISpecBase
+import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 
 class SubscriptionsIntegrationSpec extends ISpecBase {
+
+  private val appConfig = app.injector.instanceOf[AppConfig]
 
   override def additionalConfigs: Map[String, Any] = Map(
     "microservice.services.senior-accounting-officer-stubs.host" -> wireMockHost,
@@ -64,7 +67,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
       verify(
         1,
         putRequestedFor(urlEqualTo("/subscriptions"))
-          .withHeader(HeaderNames.AUTHORIZATION, equalTo("Basic Q2xpZW50SWQ6Q2xpZW50U2VjcmV0"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, containing("application/json"))
           .withRequestBody(equalToJson(validPayload.toString))
       )
@@ -94,7 +97,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
       verify(
         1,
         putRequestedFor(urlEqualTo("/subscriptions"))
-          .withHeader(HeaderNames.AUTHORIZATION, equalTo("Basic Q2xpZW50SWQ6Q2xpZW50U2VjcmV0"))
+          .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withRequestBody(equalToJson(validPayload.toString))
       )
     }

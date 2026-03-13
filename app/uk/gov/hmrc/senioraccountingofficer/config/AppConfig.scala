@@ -19,12 +19,19 @@ package uk.gov.hmrc.senioraccountingofficer.config
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
+import java.util.Base64
 import javax.inject.Inject
 
 class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
 
-  val appName: String                 = config.get[String]("appName")
-  val stubsBaseUrl: String            = servicesConfig.baseUrl("senior-accounting-officer-stubs")
-  val stubsAuthorizationToken: String =
-    config.get[String]("microservice.services.senior-accounting-officer-stubs.authorizationToken")
+  val appName: String      = config.get[String]("appName")
+  val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
+
+  private val hipClientId: String     = config.get[String]("hip.clientId")
+  private val hipClientSecret: String = config.get[String]("hip.clientSecret")
+
+  val hipAuthorisationCredentials: String = {
+    val encoded = Base64.getEncoder.encodeToString(s"$hipClientId:$hipClientSecret".getBytes("UTF-8"))
+    s"Basic $encoded"
+  }
 }
