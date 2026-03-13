@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.senioraccountingofficer
 
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.bind
@@ -27,7 +30,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.readableAsString
 import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.SubscriptionsConnector
 
 import scala.concurrent.Future
@@ -39,10 +42,10 @@ class SubscriptionsIntegrationSpec
     with IntegrationPatience
     with GuiceOneServerPerSuite {
 
-  private val stubConnector = new StubSubscriptionsConnector
-  private val wsClient      = app.injector.instanceOf[WSClient]
-  private val baseUrl       = s"http://localhost:$port"
-  private val validPayload  = Json.obj(
+  private val mockSubscriptionsConnector = mock[SubscriptionsConnector]
+  private val wsClient                   = app.injector.instanceOf[WSClient]
+  private val baseUrl                    = s"http://localhost:$port"
+  private val validPayload               = Json.obj(
     "safeId"  -> "XE000123456789",
     "company" -> Json.obj(
       "companyName"               -> "Acme Manufacturing Ltd",
@@ -57,13 +60,15 @@ class SubscriptionsIntegrationSpec
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .overrides(
-        bind[SubscriptionsConnector].toInstance(stubConnector)
+        bind[SubscriptionsConnector].toInstance(mockSubscriptionsConnector)
       )
       .build()
 
   "PUT /subscriptions" should {
     "return 204 when the downstream connector succeeds without a body" in {
-      stubConnector.nextResponse = HttpResponse(status = 204)
+      reset(mockSubscriptionsConnector)
+      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
+        .thenReturn(Future.successful(HttpResponse(status = 204)))
 
       val response =
         wsClient
@@ -77,7 +82,9 @@ class SubscriptionsIntegrationSpec
 
     "return the downstream JSON error body for a validation failure" in {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
-      stubConnector.nextResponse = HttpResponse(status = 400, body = downstreamBody)
+      reset(mockSubscriptionsConnector)
+      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
+        .thenReturn(Future.successful(HttpResponse(status = 400, body = downstreamBody)))
 
       val response =
         wsClient
@@ -88,12 +95,5 @@ class SubscriptionsIntegrationSpec
       response.status shouldBe 400
       response.body shouldBe downstreamBody
     }
-  }
-
-  private class StubSubscriptionsConnector extends SubscriptionsConnector {
-    @volatile var nextResponse: HttpResponse = HttpResponse(status = 204)
-
-    override def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
-      Future.successful(nextResponse)
   }
 }

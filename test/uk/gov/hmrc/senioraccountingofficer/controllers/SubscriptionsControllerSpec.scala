@@ -16,8 +16,11 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{reset, when}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.http.Status
@@ -25,19 +28,19 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.SubscriptionsConnector
 
 import scala.concurrent.Future
 
 class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
-  private val stubConnector = new StubSubscriptionsConnector
+  private val mockSubscriptionsConnector = mock[SubscriptionsConnector]
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .overrides(
-        bind[SubscriptionsConnector].toInstance(stubConnector)
+        bind[SubscriptionsConnector].toInstance(mockSubscriptionsConnector)
       )
       .build()
 
@@ -59,7 +62,9 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
 
   "PUT /subscriptions" should {
     "return 204 when the downstream connector succeeds without a body" in {
-      stubConnector.nextResponse = HttpResponse(status = Status.NO_CONTENT)
+      reset(mockSubscriptionsConnector)
+      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
+        .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
         .withHeaders(CONTENT_TYPE -> "application/json")
@@ -78,7 +83,9 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
 
     "return the downstream JSON body for validation errors" in {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
-      stubConnector.nextResponse = HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)
+      reset(mockSubscriptionsConnector)
+      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
+        .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
         .withHeaders(CONTENT_TYPE -> "application/json")
@@ -95,12 +102,5 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
     }
-  }
-
-  private class StubSubscriptionsConnector extends SubscriptionsConnector {
-    @volatile var nextResponse: HttpResponse = HttpResponse(status = Status.NO_CONTENT)
-
-    override def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
-      Future.successful(nextResponse)
   }
 }

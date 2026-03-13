@@ -27,15 +27,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
-trait SubscriptionsConnector {
-  def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse]
-}
-
-class DefaultSubscriptionsConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(using
+class SubscriptionsConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(using
     ExecutionContext
-) extends SubscriptionsConnector {
+) {
 
-  override def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
+  def putSubscription(body: String)(using HeaderCarrier): Future[HttpResponse] =
     httpClient
       .put(url"${appConfig.stubsBaseUrl}/subscriptions")
       .setHeader("Authorization" -> appConfig.stubsAuthorizationToken)
