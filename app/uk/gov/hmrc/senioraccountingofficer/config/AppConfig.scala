@@ -17,18 +17,15 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class AppConfig @Inject() (config: Configuration) {
+class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration) {
 
   val appName: String = config.get[String]("appName")
 
-  val notificationBaseUrl: String =
-    config
-      .get[Configuration]("microservice.services.notification")
-      .get[String]("host") + ":" + config
-      .get[Configuration]("microservice.services.notification")
-      .get[Int]("port")
+  val notificationBaseUrl: String = servicesConfig.baseUrl("notification")
+
 }
