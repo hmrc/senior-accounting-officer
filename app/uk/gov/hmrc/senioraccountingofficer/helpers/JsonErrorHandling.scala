@@ -27,6 +27,8 @@ object JsonErrorHandling {
   def parseJson(body: String): Either[JsValue, JsValue] =
     Try(Json.parse(body)).toEither.left.map(_ => Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST")))
 
+  def serverError: JsValue = Json.arr(Json.obj("reason" -> "INTERNAL_SERVER_ERROR"))
+
   def toJson(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]): JsValue = {
     JsArray(
       errors.flatMap { case (path, errors) =>

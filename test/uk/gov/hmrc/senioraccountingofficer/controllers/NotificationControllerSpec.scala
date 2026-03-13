@@ -106,7 +106,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       )
     }
 
-    "return BadGateway Status and body when the downstream service returns it" in {
+    "return BadGateway Status and standardised json when the downstream service returns it" in {
       val validJsonStr = """{"companies":[], "additionalInformation":"info"}"""
       val mockResponse = HttpResponse(Status.BAD_GATEWAY, "Bad Gateway error from upstream service")
 
@@ -117,8 +117,25 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       val result = controller.postNotification("123")(request)
 
       status(result) shouldBe BAD_GATEWAY
-      contentAsString(result) shouldBe "Bad Gateway error from upstream service"
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("reason" -> "INTERNAL_SERVER_ERROR")
+      )
+    }
 
+    "return BadGateway Status and standardised json when the downstream service is not reachable" in {
+      val validJsonStr = """{"companies":[], "additionalInformation":"info"}"""
+
+      when(mockNotificationService.postNotification(any(), any())(any()))
+        .thenReturn(Future.failed(new Exception("Connection failed")))
+
+      val request =
+        FakeRequest("POST", "/notification").withBody(validJsonStr).withHeaders("Content-Type" -> "text/plain")
+      val result = controller.postNotification("123")(request)
+
+      status(result) shouldBe BAD_GATEWAY
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("reason" -> "INTERNAL_SERVER_ERROR")
+      )
     }
   }
 }

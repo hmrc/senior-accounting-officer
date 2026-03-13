@@ -39,9 +39,18 @@ class NotificationController @Inject() (
       case Right(json) =>
         json.validate[NotificationRequest] match {
           case JsSuccess(notificationRequest, _) =>
-            notificationService.postNotification(id, notificationRequest).map { response =>
-              Status(response.status)(response.body)
-            }
+            notificationService
+              .postNotification(id, notificationRequest)
+              .map { response =>
+                if response.status >= 500 then {
+                  Status(response.status)(JsonErrorHandling.serverError)
+                } else {
+                  Status(response.status)(response.body)
+                }
+              }
+              .recover { case _ =>
+                BadGateway(JsonErrorHandling.serverError)
+              }
           case JsError(errors) =>
             Future.successful(BadRequest(JsonErrorHandling.toJson(errors)))
         }
