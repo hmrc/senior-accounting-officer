@@ -25,8 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.net.URL
 import javax.inject.Inject
 
-// TODO: change name
-class StubConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ExecutionContext) {
+class ObligationConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ExecutionContext) {
   def getObligation(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] =
     httpClient
       .get(URL(appConfig.stubsUrl + "/obligation/123"))

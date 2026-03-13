@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.senioraccountingofficer.connectors.StubConnector
+import uk.gov.hmrc.senioraccountingofficer.connectors.ObligationConnector
 
 import scala.concurrent.ExecutionContext
 
@@ -27,7 +27,7 @@ import javax.inject.Inject
 
 class ObligationController @Inject() (
     cc: ControllerComponents,
-    stubConnector: StubConnector
+    stubConnector: ObligationConnector
 )(using
     ExecutionContext
 ) extends BackendController(cc) {
@@ -35,7 +35,7 @@ class ObligationController @Inject() (
   // TODO: how to deal with failed future gracefully?
   // TODO: what error response should be returned?
 
-  def getObligation(saoSubscriptionId: String): Action[AnyContent] = Action.async { implicit request =>
+  def getObligation(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) { implicit request =>
     stubConnector
       .getObligation(saoSubscriptionId)
       .map { case HttpResponse(status, body, _) =>

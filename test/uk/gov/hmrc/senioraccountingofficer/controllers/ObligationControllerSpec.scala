@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
 import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.matchers.should.Matchers
@@ -29,37 +29,37 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.senioraccountingofficer.connectors.StubConnector
+import uk.gov.hmrc.senioraccountingofficer.connectors.ObligationConnector
 
 import scala.concurrent.Future
 
 class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
-  val mockStubConnector: StubConnector = mock[StubConnector]
+  val mockStubConnector: ObligationConnector = mock[ObligationConnector]
 
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
-    .overrides(bind[StubConnector].to(mockStubConnector))
+    .overrides(bind[ObligationConnector].to(mockStubConnector))
     .build()
 
   "ObligationController" should {
     "return what the connector returns" in {
+      val saoSubscriptionId = "123"
+
       val expectedStatus = 203
       val expectedBody   = "testBody"
 
-      when(mockStubConnector.getObligation(any())(using any())) thenReturn Future.successful(
+      when(mockStubConnector.getObligation(meq(saoSubscriptionId))(using any())) thenReturn Future.successful(
         HttpResponse(expectedStatus, expectedBody)
       )
 
-      val url = routes.ObligationController.getObligation("123").url
+      val url = routes.ObligationController.getObligation(saoSubscriptionId).url
 
-      running(app) {
-        val request = FakeRequest(GET, url)
+      val request = FakeRequest(GET, url)
 
-        val result = route(app, request).get // TODO: no get?
+      val result = route(app, request).get // TODO: no get?
 
-        status(result) mustBe expectedStatus
-        contentAsString(result) mustBe expectedBody
-      }
+      status(result) mustBe expectedStatus
+      contentAsString(result) mustBe expectedBody
     }
   }
 }
