@@ -26,7 +26,9 @@ class AppConfig @Inject() (config: Configuration) {
   val appName: String = config.get[String]("appName")
 
   val notificationBaseUrl: String =
-    config.get[Configuration]("microservice.services.notification").get[String]("host") + ":" + config
+    config
+      .get[Configuration]("microservice.services.notification")
+      .get[String]("host") + ":" + config
       .get[Configuration]("microservice.services.notification")
       .get[Int]("port")
 }

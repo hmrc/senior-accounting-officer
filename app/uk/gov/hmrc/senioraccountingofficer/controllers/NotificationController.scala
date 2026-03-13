@@ -24,6 +24,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.{ExecutionContext, Future}
+
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -33,14 +34,18 @@ class NotificationController @Inject() (
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def postNotification(id: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    request.body.validate[NotificationRequest] match {
-      case JsSuccess(notificationRequest, _) =>
-        notificationService.postNotification(id, notificationRequest).map { response =>
-          Status(response.status)(response.body)
+  def postNotification(id: String): Action[String] = Action.async(parse.tolerantText) { implicit request =>
+    JsonErrorHandling.parseJson(request.body) match {
+      case Right(json) =>
+        json.validate[NotificationRequest] match {
+          case JsSuccess(notificationRequest, _) =>
+            notificationService.postNotification(id, notificationRequest).map { response =>
+              Status(response.status)(response.body)
+            }
+          case JsError(errors) =>
+            Future.successful(BadRequest(JsonErrorHandling.toJson(errors)))
         }
-      case JsError(errors) =>
-        Future.successful(BadRequest(JsonErrorHandling.toJson(errors)))
+      case Left(error) => Future.successful(BadRequest(error))
     }
   }
 }

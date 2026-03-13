@@ -17,19 +17,31 @@
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
 import play.api.libs.json.*
+
+import scala.util.Try
+
 object JsonErrorHandling {
+
+  final case class ApiError(path: Option[String], reason: String)
+
+  def parseJson(body: String): Either[JsValue, JsValue] =
+    Try(Json.parse(body)).toEither.left.map(_ => Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST")))
 
   def toJson(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]): JsValue = {
     JsArray(
-      errors.map {
-        case (path, errors) => {
+      errors.flatMap { case (path, errors) =>
+        errors.map { error =>
           Json.obj(
-            "path" -> normalizePath(path),
+            "path"   -> normalizePath(path),
             "reason" -> errors.headOption.map(_.message).getOrElse("INVALID_DATA")
           )
         }
-      }
+      }.toSeq
     )
   }
-  private def normalizePath(path: JsPath): String = path.toString()
+  private def normalizePath(path: JsPath): String =
+    path
+      .toString()
+      .stripPrefix("obj.")
+      .stripPrefix("/")
 }

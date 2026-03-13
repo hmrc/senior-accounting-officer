@@ -26,16 +26,17 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.{Company, NotificationRequest, SeniorAccountingOfficer}
 
-import java.time.LocalDate
 import scala.concurrent.{ExecutionContext, Future}
+
+import java.time.LocalDate
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  implicit val hc: HeaderCarrier    = HeaderCarrier()
 
   val mockConnector: NotificationConnector = mock[NotificationConnector]
-  val service = new NotificationService(mockConnector)
+  val service                              = new NotificationService(mockConnector)
 
   "postNotification" should {
 

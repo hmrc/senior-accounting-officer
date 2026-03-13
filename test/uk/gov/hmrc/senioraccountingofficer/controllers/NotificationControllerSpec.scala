@@ -36,16 +36,16 @@ import scala.concurrent.{ExecutionContext, Future}
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
 
   implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
-  implicit val mat: Materializer = app.injector.instanceOf[Materializer]
-  val cc: ControllerComponents = app.injector.instanceOf[ControllerComponents]
+  implicit val mat: Materializer    = app.injector.instanceOf[Materializer]
+  val cc: ControllerComponents      = app.injector.instanceOf[ControllerComponents]
 
   val mockNotificationService: NotificationService = mock[NotificationService]
-  val controller = new NotificationController(cc, mockNotificationService)
+  val controller                                   = new NotificationController(cc, mockNotificationService)
 
   "POST /notification" should {
 
     "return the status and body from the downstream service when valid JSON is provided" in {
-      val validJson: JsValue = Json.parse(
+      val validJsonStr: String =
         """
           |{
           |  "companies": [
@@ -68,25 +68,57 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
           |  "additionalInformation": "non-empty string"
           |}
           |""".stripMargin
-      )
 
       val mockResponse = HttpResponse(Status.ACCEPTED, "Accepted Payload")
       when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
 
-      val request = FakeRequest("POST", "/notification").withBody(validJson).withHeaders("Content-Type" -> "application/json")
+      val request =
+        FakeRequest("POST", "/notification").withBody(validJsonStr).withHeaders("Content-Type" -> "text/plain")
       val result = controller.postNotification("123")(request)
 
       status(result) shouldBe Status.ACCEPTED
       contentAsString(result) shouldBe "Accepted Payload"
     }
 
-    "return BAD_REQUEST when invalid JSON is provided" in {
-      val invalidJson: JsValue = Json.parse("""{"invalid": "data"}""")
+    "return BAD_REQUEST with validation errors when invalid JSON is provided" in {
+      val invalidJson: String = """{"invalid": "data"}"""
 
-      val request = FakeRequest("POST", "/notification").withBody(invalidJson).withHeaders("Content-Type" -> "application/json")
+      val request =
+        FakeRequest("POST", "/notification").withBody(invalidJson).withHeaders("Content-Type" -> "text/plain")
       val result = controller.postNotification("123")(request)
 
       status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "companies", "reason" -> "error.path.missing")
+      )
+    }
+
+    "return BAD_REQUEST with MALFORMED_REQUEST when malformed JSON is provided" in {
+      val invalidJson: String = """{"invalid": "data"""
+
+      val request =
+        FakeRequest("POST", "/notification").withBody(invalidJson).withHeaders("Content-Type" -> "text/plain")
+      val result = controller.postNotification("123")(request)
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("reason" -> "MALFORMED_REQUEST")
+      )
+    }
+
+    "return BadGateway Status and body when the downstream service returns it" in {
+      val validJsonStr = """{"companies":[], "additionalInformation":"info"}"""
+      val mockResponse = HttpResponse(Status.BAD_GATEWAY, "Bad Gateway error from upstream service")
+
+      when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
+
+      val request =
+        FakeRequest("POST", "/notification").withBody(validJsonStr).withHeaders("Content-Type" -> "text/plain")
+      val result = controller.postNotification("123")(request)
+
+      status(result) shouldBe BAD_GATEWAY
+      contentAsString(result) shouldBe "Bad Gateway error from upstream service"
+
     }
   }
 }
