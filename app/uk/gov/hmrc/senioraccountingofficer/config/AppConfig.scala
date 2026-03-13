@@ -27,4 +27,6 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
   val appName: String = config.get[String]("appName")
 
   val notificationBaseUrl: String = servicesConfig.baseUrl("notification")
+  val notificationAuthorizationToken: String =
+    config.get[String]("microservice.services.notification.authorizationToken")
 }

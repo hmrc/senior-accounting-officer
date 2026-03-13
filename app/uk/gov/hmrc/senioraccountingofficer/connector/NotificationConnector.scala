@@ -39,6 +39,7 @@ class NotificationConnector @Inject() (
     httpClientV2
       .post(url)
       .withBody(body)
+      .setHeader("Authorization" -> appConfig.notificationAuthorizationToken)
       .execute[HttpResponse]
   }
 }
