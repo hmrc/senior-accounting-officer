@@ -10,7 +10,8 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
-    PlayKeys.playDefaultPort := 10060
+    PlayKeys.playDefaultPort := 10060,
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "src/main/resources"
   )
   .settings(CodeCoverageSettings.settings: _*)
   .settings(scalafixSettings *)
