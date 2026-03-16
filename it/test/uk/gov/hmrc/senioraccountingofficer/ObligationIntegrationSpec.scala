@@ -67,8 +67,10 @@ class ObligationIntegrationSpec extends ISpecBase {
   "GET obligation endpoint" must {
 
     "pass through a successful downstream response" in {
+      val validSaoSubscriptionId = "123"
+
       stubFor(
-        get(urlEqualTo("/obligation/123"))
+        get(urlEqualTo("/obligation/" + validSaoSubscriptionId))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -76,22 +78,23 @@ class ObligationIntegrationSpec extends ISpecBase {
           )
       )
 
-      val result = connector.getObligation("123").futureValue
+      val result = connector.getObligation(validSaoSubscriptionId).futureValue
 
       result.status mustBe 200
 
       verify(
         1,
-        getRequestedFor(urlEqualTo("/obligation/123"))
+        getRequestedFor(urlEqualTo("/obligation/" + validSaoSubscriptionId))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
       )
     }
 
     "pass through a downstream not found response." in {
-      val notFoundResponseBody = """{"error": "Entity not found."}"""
+      val invalidSaoSubscriptionId = "456"
+      val notFoundResponseBody     = """{"error": "Entity not found."}"""
 
       stubFor(
-        get(urlEqualTo("/obligation/456"))
+        get(urlEqualTo("/obligation/" + invalidSaoSubscriptionId))
           .willReturn(
             aResponse()
               .withStatus(404)
@@ -99,14 +102,14 @@ class ObligationIntegrationSpec extends ISpecBase {
           )
       )
 
-      val result = connector.getObligation("456").futureValue
+      val result = connector.getObligation(invalidSaoSubscriptionId).futureValue
 
       result.status mustBe 404
       result.body mustBe notFoundResponseBody
 
       verify(
         1,
-        getRequestedFor(urlEqualTo("/obligation/456"))
+        getRequestedFor(urlEqualTo("/obligation/" + invalidSaoSubscriptionId))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
       )
     }
