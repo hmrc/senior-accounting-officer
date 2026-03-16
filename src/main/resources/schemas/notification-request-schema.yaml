@@ -1,0 +1,64 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+required:
+  - companies
+properties:
+  companies:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - companyName
+        - uniqueTaxReference
+        - companyReferenceNumber
+        - companyType
+        - financialYearEndDate
+        - seniorAccountingOfficers
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        uniqueTaxReference:
+          type: string
+          pattern: "^[0-9]{10}$"
+        companyReferenceNumber:
+          type: string
+          pattern: "^([0-9]{8}|[A-Z]{2}[0-9]{6})$"
+        companyType:
+          type: string
+          enum:
+            - PLC
+            - LTD
+        financialYearEndDate:
+          type: string
+          format: date
+        seniorAccountingOfficers:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - name
+              - startDate
+              - endDate
+            properties:
+              name:
+                type: string
+                minLength: 1
+              startDate:
+                type: string
+                format: date
+              endDate:
+                type: string
+                format: date
+              email:
+                type: string
+                format: email
+                minLength: 1
+                maxLength: 254
+  additionalInformation:
+    type: string
+    minLength: 1
+    maxLength: 5000
