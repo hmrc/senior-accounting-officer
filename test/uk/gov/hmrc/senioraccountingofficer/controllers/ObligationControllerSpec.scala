@@ -42,17 +42,43 @@ class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAp
     .build()
 
   "ObligationController" should {
-    "return the status and body from the connector" in {
+    "return a 200 response with the body from the connector" in {
       val saoSubscriptionId = "123"
 
-      val expectedStatus = 203
-      val expectedBody   = "testBody"
+      val expectedStatus = 200
+      val expectedBody   = "{}"
 
       when(mockStubConnector.getObligation(meq(saoSubscriptionId))(using any())) thenReturn Future.successful(
         HttpResponse(expectedStatus, expectedBody)
       )
 
       val url = routes.ObligationController.getObligation(saoSubscriptionId).url
+
+      val request = FakeRequest(GET, url)
+
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
+
+      status(result) mustBe expectedStatus
+      contentAsString(result) mustBe expectedBody
+    }
+
+    "return a 404 response with the body from the connector" in {
+      val invalidSaoSubscriptionId = "456"
+
+      val expectedStatus = 404
+      val expectedBody   = "Entity not found"
+
+      when(mockStubConnector.getObligation(meq(invalidSaoSubscriptionId))(using any())) thenReturn Future.successful(
+        HttpResponse(expectedStatus, expectedBody)
+      )
+
+      val url = routes.ObligationController.getObligation(invalidSaoSubscriptionId).url
 
       val request = FakeRequest(GET, url)
 
