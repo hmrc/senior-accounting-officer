@@ -1,0 +1,97 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.senioraccountingofficer.controllers
+
+import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.Mockito.*
+import org.scalatest.matchers.must.Matchers.mustBe
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.mockito.MockitoSugar.mock
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers.*
+import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.http.HttpResponse
+import uk.gov.hmrc.senioraccountingofficer.connectors.ObligationConnector
+
+import scala.concurrent.Future
+
+class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
+
+  val mockStubConnector: ObligationConnector = mock[ObligationConnector]
+
+  override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .overrides(bind[ObligationConnector].to(mockStubConnector))
+    .build()
+
+  "ObligationController" should {
+    "return a 200 response with the body from the connector" in {
+      val saoSubscriptionId = "123"
+
+      val expectedStatus = 200
+      val expectedBody   = "{}"
+
+      when(mockStubConnector.getObligation(meq(saoSubscriptionId))(using any())) thenReturn Future.successful(
+        HttpResponse(expectedStatus, expectedBody)
+      )
+
+      val url = routes.ObligationController.getObligation(saoSubscriptionId).url
+
+      val request = FakeRequest(GET, url)
+
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
+
+      status(result) mustBe expectedStatus
+      contentAsString(result) mustBe expectedBody
+    }
+
+    "return a 404 response with the body from the connector" in {
+      val invalidSaoSubscriptionId = "456"
+
+      val expectedStatus = 404
+      val expectedBody   = "Entity not found"
+
+      when(mockStubConnector.getObligation(meq(invalidSaoSubscriptionId))(using any())) thenReturn Future.successful(
+        HttpResponse(expectedStatus, expectedBody)
+      )
+
+      val url = routes.ObligationController.getObligation(invalidSaoSubscriptionId).url
+
+      val request = FakeRequest(GET, url)
+
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
+
+      status(result) mustBe expectedStatus
+      contentAsString(result) mustBe expectedBody
+    }
+  }
+}
