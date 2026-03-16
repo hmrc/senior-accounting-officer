@@ -36,25 +36,33 @@ class ObligationIntegrationSpec extends ISpecBase {
   )
 
   private val validResponse = """{
-                               |  "companies": [
-                               |    {
-                               |      "companyName": "Example Ltd",
-                               |      "uniqueTaxReference": "1234567890",
-                               |      "companyReferenceNumber": "AB123456",
-                               |      "companyType": "LTD",
-                               |      "financialYearEndDate": "2024-12-31",
-                               |      "seniorAccountingOfficers": [
-                               |        {
-                               |          "name": "Firstname Lastname",
-                               |          "email": "Firstname.Lastname@example.com",
-                               |          "startDate": "2024-04-01",
-                               |          "endDate": "2025-03-31"
-                               |        }
-                               |      ]
-                               |    }
-                               |  ],
-                               |  "additionalInformation": "non-empty string"
-                               |}""".stripMargin
+                                |  "saoSubscriptionId": "123",
+                                |  "subscription": {
+                                |    "subscriptionTimestamp": "2021-01-01T00:00:00Z",
+                                |    "companyRegistrationNumber": "0000368205",
+                                |    "uniqueTaxReference": "4000099453",
+                                |    "companyName": "Testdata Company Ltd",
+                                |    "contacts": [
+                                |      {
+                                |        "name": "Firstname Middlename Lastname",
+                                |        "email": "example@example.com"
+                                |      }
+                                |    ]
+                                |  },
+                                |  "submissions": [
+                                |    {
+                                |      "financialYearEnd": 2025,
+                                |      "notification": {
+                                |        "id": "notificationId",
+                                |        "notificationTimestamp": "2021-01-01T00:00:00Z"
+                                |      },
+                                |      "certificate": {
+                                |        "id": "certificateId",
+                                |        "certificateTimestamp": "2021-01-01T00:00:00Z"
+                                |      }
+                                |    }
+                                |  ]
+                                |}""".stripMargin
 
   "GET obligation endpoint" must {
 
