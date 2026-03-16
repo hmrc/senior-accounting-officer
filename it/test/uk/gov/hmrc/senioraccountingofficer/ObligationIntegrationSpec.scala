@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import play.api.http.{HeaderNames, MimeTypes}
+import play.api.http.HeaderNames
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
