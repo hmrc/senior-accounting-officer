@@ -19,9 +19,10 @@ package uk.gov.hmrc.senioraccountingofficer.helpers
 import org.scalactic.Prettifier.default
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{EitherValues, OptionValues}
 import play.api.libs.json.JsNull
 
-class JsonErrorHandlingSpec extends AnyWordSpec with Matchers {
+class JsonErrorHandlingSpec extends AnyWordSpec with Matchers with OptionValues with EitherValues {
 
   "parseJson" when {
 
@@ -36,7 +37,7 @@ class JsonErrorHandlingSpec extends AnyWordSpec with Matchers {
       }
 
       "return Right for JSON null" in {
-        JsonErrorHandling.parseJson("null").toOption.get shouldBe JsNull
+        JsonErrorHandling.parseJson("null").value shouldBe JsNull
       }
 
       "return Right for an empty object" in {
@@ -49,19 +50,19 @@ class JsonErrorHandlingSpec extends AnyWordSpec with Matchers {
       "return Left(400) for completely invalid input" in {
         val result = JsonErrorHandling.parseJson("not json")
         result shouldBe a[Left[_, _]]
-        result.left.toOption.get.header.status shouldBe 400
+        result.left.value.header.status shouldBe 400
       }
 
       "return Left(400) for an empty string" in {
         val result = JsonErrorHandling.parseJson("")
         result shouldBe a[Left[_, _]]
-        result.left.toOption.get.header.status shouldBe 400
+        result.left.value.header.status shouldBe 400
       }
 
       "return Left(400) for truncated JSON" in {
         val result = JsonErrorHandling.parseJson("""{"key":""")
         result shouldBe a[Left[_, _]]
-        result.left.toOption.get.header.status shouldBe 400
+        result.left.value.header.status shouldBe 400
       }
     }
   }

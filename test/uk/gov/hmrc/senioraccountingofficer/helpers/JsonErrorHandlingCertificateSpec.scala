@@ -17,11 +17,12 @@
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
 import org.scalactic.Prettifier.default
+import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, __}
 
-class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers {
+class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def certificateErrors(json: String): Seq[JsonErrorHandling.ApiError] =
     JsonErrorHandling.Validators.validateCertificate(Json.parse(json))
@@ -79,7 +80,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers {
     "given a certificate is missing declaration" should {
       "return MISSING_REQUIRED_FIELD pointing at declaration" in {
         val remover        = (__ \ "declaration").json.prune
-        val updatedJsonStr = Json.parse(validCertificate).transform(remover).get.toString
+        val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("declaration")
@@ -89,7 +90,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers {
     "given a certificate is missing companies" should {
       "return MISSING_REQUIRED_FIELD pointing at companies" in {
         val remover        = (__ \ "companies").json.prune
-        val updatedJsonStr = Json.parse(validCertificate).transform(remover).get.toString
+        val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies")

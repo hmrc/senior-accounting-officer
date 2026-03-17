@@ -48,6 +48,7 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         val errors = contactDetailsErrors("""[{"email":"alice@example.com"}]""")
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("[0].name")
+        errors.size shouldBe 1
       }
     }
 
@@ -56,6 +57,7 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         val errors = contactDetailsErrors("""[{"name":"Alice"}]""")
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("[0].email")
+        errors.size shouldBe 1
       }
     }
 
@@ -64,6 +66,7 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         val errors = contactDetailsErrors("""[{"name":123,"email":"alice@example.com"}]""")
         errors.map(_.reason) should contain("INVALID_DATA_TYPE")
         errors.flatMap(_.path) should contain("[0].name")
+        errors.size shouldBe 1
       }
     }
 
@@ -74,6 +77,7 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         )
         errors.map(_.reason) should contain("INVALID_DATA_TYPE")
         errors.flatMap(_.path) should contain("[0].unexpected")
+        errors.size shouldBe 1
       }
     }
 
@@ -82,6 +86,7 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         val errors = contactDetailsErrors("""[{"name":"Alice","email":"not-an-email"}]""")
         errors.map(_.reason) should contain("INVALID_FORMAT")
         errors.flatMap(_.path) should contain("[0].email")
+        errors.size shouldBe 1
       }
     }
 
@@ -90,14 +95,16 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         val errors = contactDetailsErrors("""[{"name":"","email":"alice@example.com"}]""")
         errors.map(_.reason) should contain("CANNOT_BE_EMPTY")
         errors.flatMap(_.path) should contain("[0].name")
+        errors.size shouldBe 1
       }
     }
 
     "given a contact with an empty email string" should {
       "return CANNOT_BE_EMPTY for email" in {
         val errors = contactDetailsErrors("""[{"name":"Alice","email":""}]""")
-        errors.map(_.reason) should contain("CANNOT_BE_EMPTY")
+        errors.map(_.reason) should (contain("CANNOT_BE_EMPTY") and contain("INVALID_FORMAT"))
         errors.flatMap(_.path) should contain("[0].email")
+        errors.size shouldBe 2
       }
     }
 
@@ -108,16 +115,18 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
         )
         errors.map(_.reason) should contain("LENGTH_OUT_OF_BOUNDS")
         errors.flatMap(_.path) should contain("[0].name")
+        errors.size shouldBe 1
       }
     }
 
     "given an email exceeding 254 characters" should {
       "return LENGTH_OUT_OF_BOUNDS for email" in {
         val errors = contactDetailsErrors(
-          s"""[{"name":"Alice","email":"${"a" * 250}@x.com"}]"""
+          s"""[{"name":"Alice","email":"${"a" * 250}@example.com"}]"""
         )
-        errors.map(_.reason) should contain("LENGTH_OUT_OF_BOUNDS")
+        errors.map(_.reason) should (contain("LENGTH_OUT_OF_BOUNDS") and contain("INVALID_FORMAT"))
         errors.flatMap(_.path) should contain("[0].email")
+        errors.size shouldBe 2
       }
     }
 
@@ -135,6 +144,7 @@ class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
             {"name":"C","email":"c@c.com"}
           ]""")
         errors.map(_.reason) should contain("LENGTH_OUT_OF_BOUNDS")
+        errors.size shouldBe 1
       }
     }
   }

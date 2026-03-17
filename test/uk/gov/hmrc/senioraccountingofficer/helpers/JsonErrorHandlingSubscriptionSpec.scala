@@ -17,11 +17,12 @@
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
 import org.scalactic.Prettifier.default
+import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, __}
 
-class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers {
+class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def subscriptionErrors(json: String): Seq[JsonErrorHandling.ApiError] =
     JsonErrorHandling.Validators.validateSubscription(Json.parse(json))
@@ -61,7 +62,7 @@ class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers {
     "given a payload missing company entirely" should {
       "return MISSING_REQUIRED_FIELD pointing at companies" in {
         val remover        = (__ \ "company").json.prune
-        val updatedJsonStr = Json.parse(validSubscription).transform(remover).get.toString
+        val updatedJsonStr = Json.parse(validSubscription).transform(remover).asOpt.value.toString
         val errors         = subscriptionErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("company")
@@ -71,7 +72,7 @@ class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers {
     "given a payload missing safeId" should {
       "return MISSING_REQUIRED_FIELD pointing at safeId" in {
         val remover        = (__ \ "safeId").json.prune
-        val updatedJsonStr = Json.parse(validSubscription).transform(remover).get.toString
+        val updatedJsonStr = Json.parse(validSubscription).transform(remover).asOpt.value.toString
         val errors         = subscriptionErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("safeId")

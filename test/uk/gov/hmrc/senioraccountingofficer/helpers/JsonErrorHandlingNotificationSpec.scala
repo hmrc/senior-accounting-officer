@@ -17,11 +17,12 @@
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
 import org.scalactic.Prettifier.default
+import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, __}
 
-class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers {
+class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def notificationErrors(json: String): Seq[JsonErrorHandling.ApiError] =
     JsonErrorHandling.Validators.validateNotification(Json.parse(json))
@@ -59,7 +60,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers {
     "given a payload missing companies" should {
       "return MISSING_REQUIRED_FIELD pointing at companies" in {
         val remover        = (__ \ "companies").json.prune
-        val updatedJsonStr = Json.parse(validNotification).transform(remover).get.toString
+        val updatedJsonStr = Json.parse(validNotification).transform(remover).asOpt.value.toString
         val errors         = notificationErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies")
