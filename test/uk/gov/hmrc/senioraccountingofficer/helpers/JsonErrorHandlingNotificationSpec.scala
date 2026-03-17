@@ -85,5 +85,16 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         errors.size shouldBe 1
       }
     }
+
+    "given a invalid financialYearEndDate format" should {
+      "return INVALID_FORMAT pointing at financialYearEndDate" in {
+        val errors = notificationErrors(
+          validNotification.replace(""""financialYearEndDate": "2024-12-31"""", """"financialYearEndDate": "-"""")
+        )
+        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.flatMap(_.path) should contain("companies[0].financialYearEndDate")
+        errors.size shouldBe 1
+      }
+    }
   }
 }

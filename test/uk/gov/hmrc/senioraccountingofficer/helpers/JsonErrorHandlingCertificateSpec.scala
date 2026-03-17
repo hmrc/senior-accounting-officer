@@ -98,5 +98,35 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         errors.size shouldBe 1
       }
     }
+
+    "given a invalid financialYearEndDate format" should {
+      "return INVALID_FORMAT pointing at financialYearEndDate" in {
+        val errors = certificateErrors(
+          validCertificate.replace(""""financialYearEndDate": "2024-12-31"""", """"financialYearEndDate": "-"""")
+        )
+        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.flatMap(_.path) should contain("companies[0].financialYearEndDate")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a invalid SAO start date format" should {
+      "return INVALID_FORMAT pointing at SAO start date" in {
+        val errors =
+          certificateErrors(validCertificate.replace(""""startDate": "2024-04-01"""", """"startDate": "-""""))
+        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].startDate")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a invalid SAO end date format" should {
+      "return INVALID_FORMAT pointing at SAO end date" in {
+        val errors = certificateErrors(validCertificate.replace(""""endDate": "2025-03-31"""", """"endDate": "-""""))
+        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].endDate")
+        errors.size shouldBe 1
+      }
+    }
   }
 }
