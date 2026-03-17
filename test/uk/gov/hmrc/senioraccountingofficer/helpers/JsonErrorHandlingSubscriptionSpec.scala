@@ -66,6 +66,7 @@ class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers with O
         val errors         = subscriptionErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("company")
+        errors.size shouldBe 1
       }
     }
 
@@ -76,6 +77,7 @@ class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers with O
         val errors         = subscriptionErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("safeId")
+        errors.size shouldBe 1
       }
     }
   }

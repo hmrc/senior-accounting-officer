@@ -84,6 +84,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("declaration")
+        errors.size shouldBe 1
       }
     }
 
@@ -94,6 +95,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies")
+        errors.size shouldBe 1
       }
     }
   }

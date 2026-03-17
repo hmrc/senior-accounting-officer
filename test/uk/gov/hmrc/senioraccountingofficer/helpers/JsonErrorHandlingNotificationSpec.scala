@@ -64,6 +64,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val errors         = notificationErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies")
+        errors.size shouldBe 1
       }
     }
 
@@ -72,6 +73,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val errors = notificationErrors(validNotification.replace(""""uniqueTaxReference": "1234567890",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies[0].uniqueTaxReference")
+        errors.size shouldBe 1
       }
     }
 
@@ -80,6 +82,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val errors = notificationErrors(validNotification.replace(""""startDate": "2024-04-01",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].startDate")
+        errors.size shouldBe 1
       }
     }
   }
