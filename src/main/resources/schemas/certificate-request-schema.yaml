@@ -10,7 +10,6 @@ properties:
     additionalProperties: false
     required:
       - seniorAccountingOfficer
-      - proxy
     properties:
       seniorAccountingOfficer:
         type: object

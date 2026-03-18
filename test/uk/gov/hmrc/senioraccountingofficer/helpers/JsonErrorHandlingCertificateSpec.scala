@@ -66,6 +66,14 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
     }
 
+    "given a valid payload without proxy" should {
+      "return no errors" in {
+        val remover        = (__ \ "declaration" \ "proxy").json.prune
+        val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
+        certificateErrors(updatedJsonStr) shouldBe empty
+      }
+    }
+
     "given a valid letter-prefix companyRegistrationNumber" should {
       "return no errors" in {
         certificateErrors(
