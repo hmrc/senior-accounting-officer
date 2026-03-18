@@ -66,6 +66,14 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
     }
 
+    "given a valid payload without proxy" should {
+      "return no errors" in {
+        val remover        = (__ \ "declaration" \ "proxy").json.prune
+        val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
+        certificateErrors(updatedJsonStr) shouldBe empty
+      }
+    }
+
     "given a valid letter-prefix companyRegistrationNumber" should {
       "return no errors" in {
         certificateErrors(
@@ -125,6 +133,16 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val errors = certificateErrors(validCertificate.replace(""""endDate": "2025-03-31"""", """"endDate": "-""""))
         errors.map(_.reason) should contain("INVALID_FORMAT")
         errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].endDate")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a invalid email format for the declaration" should {
+      "return INVALID_FORMAT pointing at email" in {
+        val updatedJsonStr = validCertificate.replace("john.doe@example.com", "not-an-email")
+        val errors         = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.flatMap(_.path) should contain("declaration.seniorAccountingOfficer.email")
         errors.size shouldBe 1
       }
     }
