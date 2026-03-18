@@ -7,13 +7,18 @@ required:
 properties:
   declaration:
     type: object
-    items:
-      type: object
-      required:
-        - seniorAccountingOfficer
-        - proxy
-      properties:
-        seniorAccountingOfficer:
+    additionalProperties: false
+    required:
+      - seniorAccountingOfficer
+      - proxy
+    properties:
+      seniorAccountingOfficer:
+        type: object
+        additionalProperties: false
+        required:
+          - name
+          - email
+        properties:
           name:
             type: string
             minLength: 1
@@ -22,7 +27,12 @@ properties:
             format: email
             minLength: 1
             maxLength: 254
-        proxy:
+      proxy:
+        type: object
+        additionalProperties: false
+        required:
+          - name
+        properties:
           name:
             type: string
             minLength: 1

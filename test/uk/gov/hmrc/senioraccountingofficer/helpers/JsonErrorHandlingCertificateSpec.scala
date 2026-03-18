@@ -128,5 +128,15 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         errors.size shouldBe 1
       }
     }
+
+    "given a invalid email format for the declaration" should {
+      "return INVALID_FORMAT pointing at email" in {
+        val updatedJsonStr = validCertificate.replace("john.doe@example.com", "not-an-email")
+        val errors         = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.flatMap(_.path) should contain("declaration.seniorAccountingOfficer.email")
+        errors.size shouldBe 1
+      }
+    }
   }
 }
