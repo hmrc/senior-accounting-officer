@@ -1,11 +1,11 @@
 info:
-  name: get obligation
+  name: get obligation (200)
   type: http
   seq: 1
 
 http:
   method: GET
-  url: http://localhost:10060/senior-accounting-officer/obligation/123
+  url: "{{baseUrl}}/obligation/123"
   auth: inherit
 
 settings:
