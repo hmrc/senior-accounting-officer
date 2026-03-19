@@ -16,27 +16,34 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import scala.concurrent.ExecutionContext
-import javax.inject.Inject
 import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.ContactDetailsConnector
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-class ContactDetailsController @Inject() (cc: ControllerComponents, stubConnector: ContactDetailsConnector)(using
-    ExecutionContext
+import scala.concurrent.ExecutionContext
+
+import javax.inject.Inject
+
+class ContactDetailsController @Inject() (cc: ControllerComponents, contactDetailsConnector: ContactDetailsConnector)(
+    using ExecutionContext
 ) extends BackendController(cc) {
   def getContactDetails(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) {
     implicit request =>
       given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-      stubConnector.getContactDetails(saoSubscriptionId).map { case HttpResponse(status, body, _) =>
+      contactDetailsConnector.getContactDetails(saoSubscriptionId).map { case HttpResponse(status, body, _) =>
         Status(status)(body)
       }
   }
 
-  def putContactDetails(saoSubscriptionId: String): Action[String] = {
-    ???
+  def putContactDetails(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) {
+    implicit request =>
+      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      contactDetailsConnector.putContactDetails(saoSubscriptionId, request.body).map {
+        case HttpResponse(status, body, _) =>
+          Status(status)(body)
+      }
   }
 }
