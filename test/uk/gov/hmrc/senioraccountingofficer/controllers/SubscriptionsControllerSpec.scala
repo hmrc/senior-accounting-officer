@@ -61,11 +61,30 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
     )
   )
 
-  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
+  private val subscriptionsUrl = "/senior-accounting-officer/subscriptions"
+
+  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] = {
     route(app, request) match {
       case Some(result) => result
       case None         => fail("Expected route to be defined")
     }
+  }
+
+  private def subscriptionRequest(payload: JsObject): FakeRequest[AnyContentAsText] = {
+    FakeRequest("PUT", subscriptionsUrl)
+      .withHeaders(CONTENT_TYPE -> "application/json")
+      .withTextBody(payload.toString())
+  }
+
+  private def assertValidationError(payload: JsObject, expectedError: play.api.libs.json.JsValue): Unit = {
+    reset(mockSubscriptionsConnector)
+
+    val result = routeResult(subscriptionRequest(payload))
+
+    status(result) shouldBe Status.BAD_REQUEST
+    contentAsJson(result) shouldBe Json.arr(expectedError)
+    verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
+  }
 
   "PUT /subscriptions" should {
     "return 204 when the downstream connector succeeds without a body" in {
@@ -73,11 +92,7 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       when(mockSubscriptionsConnector.putSubscription(any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload.toString())
-
-      val result = routeResult(request)
+      val result = routeResult(subscriptionRequest(validPayload))
 
       status(result) shouldBe Status.NO_CONTENT
     }
@@ -88,20 +103,16 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       when(mockSubscriptionsConnector.putSubscription(any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload.toString())
-
-      val result = routeResult(request)
+      val result = routeResult(subscriptionRequest(validPayload))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
     }
 
-    "return 400 for malformed JSON without calling the connector" in {
+    "return 400 with MALFORMED_REQUEST for malformed JSON without calling the connector" in {
       reset(mockSubscriptionsConnector)
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
+      val request = FakeRequest("PUT", subscriptionsUrl)
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody("""{"safeId":""")
 
@@ -112,20 +123,80 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
     }
 
-    "return 400 for schema-invalid JSON without calling the connector" in {
-      reset(mockSubscriptionsConnector)
+    "return 400 with MISSING_REQUIRED_FIELD for schema-invalid JSON without calling the connector" in {
+      assertValidationError(
+        validPayload - "safeId",
+        Json.obj("path" -> "safeId", "reason" -> "MISSING_REQUIRED_FIELD")
+      )
+    }
 
-      val invalidPayload = validPayload - "safeId"
+    "return 400 with CANNOT_BE_EMPTY for an empty contact name without calling the connector" in {
+      val invalidPayload = validPayload ++ Json.obj(
+        "contacts" -> Json.arr(
+          Json.obj(
+            "name"  -> "",
+            "email" -> "jane.doe@example.com"
+          )
+        )
+      )
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(invalidPayload.toString())
+      assertValidationError(
+        invalidPayload,
+        Json.obj("path" -> "contacts[0].name", "reason" -> "CANNOT_BE_EMPTY")
+      )
+    }
 
-      val result = routeResult(request)
+    "return 400 with INVALID_DATA_TYPE for a non-string contact name without calling the connector" in {
+      val invalidPayload = validPayload ++ Json.obj(
+        "contacts" -> Json.arr(
+          Json.obj(
+            "name"  -> 123,
+            "email" -> "jane.doe@example.com"
+          )
+        )
+      )
 
-      status(result) shouldBe Status.BAD_REQUEST
-      contentAsJson(result) shouldBe Json.arr(Json.obj("path" -> "safeId", "reason" -> "MISSING_REQUIRED_FIELD"))
-      verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
+      assertValidationError(
+        invalidPayload,
+        Json.obj("path" -> "contacts[0].name", "reason" -> "INVALID_DATA_TYPE")
+      )
+    }
+
+    "return 400 with ARRAY_MIN_ITEMS_NOT_MET for empty contacts without calling the connector" in {
+      assertValidationError(
+        validPayload ++ Json.obj("contacts" -> Json.arr()),
+        Json.obj("path" -> "contacts", "reason" -> "ARRAY_MIN_ITEMS_NOT_MET")
+      )
+    }
+
+    "return 400 with LENGTH_OUT_OF_BOUNDS for too many contacts without calling the connector" in {
+      val invalidPayload = validPayload ++ Json.obj(
+        "contacts" -> Json.arr(
+          Json.obj("name" -> "Jane Doe", "email" -> "jane.doe@example.com"),
+          Json.obj("name" -> "John Doe", "email" -> "john.doe@example.com"),
+          Json.obj("name" -> "Jack Doe", "email" -> "jack.doe@example.com")
+        )
+      )
+
+      assertValidationError(
+        invalidPayload,
+        Json.obj("path" -> "contacts", "reason" -> "LENGTH_OUT_OF_BOUNDS")
+      )
+    }
+
+    "return 400 with LENGTH_OUT_OF_BOUNDS for a companyName over 160 chars without calling the connector" in {
+      val invalidPayload = validPayload ++ Json.obj(
+        "company" -> Json.obj(
+          "companyName"               -> ("A" * 161),
+          "uniqueTaxReference"        -> "1234567890",
+          "companyRegistrationNumber" -> "OC123456"
+        )
+      )
+
+      assertValidationError(
+        invalidPayload,
+        Json.obj("path" -> "company.companyName", "reason" -> "LENGTH_OUT_OF_BOUNDS")
+      )
     }
   }
 }
