@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: Core components
+  version: 1.0.0
+
+components:
+  parameters:
+    saoSubscriptionId:
+      name: saoSubscriptionId
+      in: path
+      required: true
+      description: Unique identifier, mastered by ETMP for SAO subscription
+      schema:
+        type: string
+  schemas:
+    additionalInformation:
+      type: string
+      minLength: 1
+      maxLength: 5000
+    email:
+      type: string
+      format: email
+      pattern: ""
+      minLength: 1
+      maxLength: 254
+      description: Email Address (e.g. Firstname.Lastname@example.com)
+    companyName:
+      type: string
+      maxLength: 160
+      minLength: 1
+      description: Name of company as registered in Companies House
+    uniqueTaxReference:
+      type: string
+      pattern: "^[0-9]{10}$"
+      description: Corporate tax reference number (e.g. 1234567890)
+    companyRegistrationNumber:
+      type: string
+      pattern: "^[0-9]{8}|[A-Z]{2}[0-9]{6}$"
+      description: |
+        Companies House Registration Number. 8 characters:
+        - Either 8 digits (e.g. 01234567), or
+        - 2 letters followed by 6 digits (e.g. OC123456, SC123456)
+    companyType:
+      type: string
+      description: Type of company (PLC, LTD)
+      enum: [PLC, LTD]
+    financialYearEndDate:
+      type: string
+      format: date
+      description: YYYY-MM-DD
+    seniorAccountingOfficer:
+      type: object
+      required: [name, startDate, endDate]
+      properties:
+        name:
+          type: string
+          description: Full name of Senior Accounting Officer
+          minLength: 1
+        startDate:
+          type: string
+          format: date
+          description: YYYY-MM-DD
+        endDate:
+          type: string
+          format: date
+          description: YYYY-MM-DD
+        email:
+          $ref: "#/components/schemas/email"
+    contactDetails:
+      type: object
+      required: [ name, email ]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: "Jane Doe"
+        email:
+          $ref: "#/components/schemas/email"
+    badRequest:
+      oneOf:
+        - $ref: "#/components/schemas/malformedRequest"
+        - $ref: "#/components/schemas/constraintViolation"
+    malformedRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [MALFORMED_REQUEST]
+    constraintViolation:
+      type: object
+      required: [path, reason]
+      properties:
+        path:
+          type: string
+          description: Json path of the error in the request body.
+        reason:
+          type: string
+          enum:
+            - INVALID_FORMAT
+            - CANNOT_BE_EMPTY
+            - INVALID_DATA_TYPE
+            - ARRAY_MIN_ITEMS_NOT_MET
+            - LENGTH_OUT_OF_BOUNDS
+            - INVALID_ENUM_VALUE
+            - MISSING_REQUIRED_FIELD
+    semanticErrorResponse:
+      type: object
+      properties:
+        path:
+          type: string
+        reason:
+          type: string
+          enum:
+            - DATE_OUT_OF_BOUNDS
+      required: [path, reason]
+  examples:
+    saoSubscriptionIdMissing:
+      summary: SAO Subscription ID is missing
+      value:
+        - path: "saoSubscriptionId"
+          reason: "MISSING_REQUIRED_FIELD"
+    invalidSaoSubscriptionId:
+      summary: SAO Subscription ID is invalid
+      value:
+        - path: "saoSubscriptionId"
+          reason: "INVALID_FORMAT"
+    missingRequiredField:
+      summary: A required field is missing
+      value:
+        - path: "companies"
+          reason: "MISSING_REQUIRED_FIELD"
+    emptyField:
+      summary: A field that cannot be empty has no value
+      value:
+        - path: "seniorAccountingOfficers.name"
+          reason: "CANNOT_BE_EMPTY"
+    invalidFormat:
+      summary: Date field provided in wrong format
+      value:
+        - path: "financialYearEndDate"
+          reason: "INVALID_FORMAT"
+    patternMismatch:
+      summary: uniqueTaxReference does not match required numeric pattern
+      value:
+        - path: "uniqueTaxReference"
+          reason: "INVALID_FORMAT"
+    invalidEnum:
+      summary: Invalid company type provided
+      value:
+        - path: "companyType"
+          reason: "INVALID_ENUM_VALUE"
+    emailFormatInvalid:
+      summary: Invalid email format for SAO
+      value:
+        - path: "seniorAccountingOfficers.email"
+          reason: "INVALID_FORMAT"
+    lengthOutOfBounds:
+      summary: Additional info text exceeds max length
+      value:
+        - path: "additionalInformation"
+          reason: "LENGTH_OUT_OF_BOUNDS"
+    arrayTooSmall:
+      summary: At least one seniorAccountingOfficer required
+      value:
+        - path: "seniorAccountingOfficers"
+          reason: "ARRAY_MIN_ITEMS_NOT_MET"
+    arrayIsInvalidType:
+      summary: Field has unexpected JSON type
+      value:
+        - path: "companies"
+          reason: "INVALID_DATA_TYPE"
+    multipleValidationErrors:
+      summary: Multiple validation failures in one request
+      value:
+        - path: "companies[0].financialYearEndDate"
+          reason: "INVALID_FORMAT"
+        - path: "companies[1].name"
+          reason: "CANNOT_BE_EMPTY"
+        - path: "additionalInformation"
+          reason: "LENGTH_OUT_OF_BOUNDS"
+    unreadablePayload:
+      summary: Payload could not be parsed
+      value:
+        - reason: "MALFORMED_REQUEST"

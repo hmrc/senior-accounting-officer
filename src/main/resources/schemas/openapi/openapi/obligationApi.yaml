@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: Obligation API
+  version: "1.0.0"
+  description: |
+    Returns obligation-related information about a subscription for the frontend to navigate a user and show content.
+
+paths:
+  /obligation/{saoSubscriptionId}:
+    get:
+      summary: Get obligation for an account
+      tags: [Obligation]
+      parameters:
+        - $ref: "#/components/parameters/saoSubscriptionId"
+      responses:
+        "200":
+          description: Obligation retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/obligation"
+              examples:
+                example:
+                  value:
+                    subscription:
+                      subscriptionTimestamp: "2021-01-01T00:00:00Z"
+                      companyRegistrationNumber: "01234567"
+                      uniqueTaxReference: "1234567890"
+                      companyName: "Example Holdings Ltd"
+                      contacts:
+                        - name: "Primary Contact Name"
+                          email: "example@exmp.ll"
+                        - name: "Second contact name"
+                          email: "secondary.cont@ct.name"
+                    submissions:
+                      - financialYearEnd: 2025
+                        notification:
+                          id: "NOTIF-1"
+                          notificationTimestamp: "2025-03-01T10:00:00Z"
+                        certificate:
+                          id: "CERT-1"
+                          certificationTimestamp: "2025-03-15T09:30:00Z"
+                      - financialYearEnd: 2026
+                        notification:
+                          id: "NOTIF-2"
+                          notificationTimestamp: "2026-03-01T12:00:14Z"
+        "404":
+          description: Subscription not found
+        "500":
+          description: Internal server error
+
+components:
+  parameters:
+    saoSubscriptionId:
+      name: saoSubscriptionId
+      in: path
+      required: true
+      description: Unique identifier, mastered by ETMP for SAO subscription
+      schema:
+        type: string
+
+  schemas:
+    certificate:
+      type: object
+      required: [id, certificateTimestamp]
+      properties:
+        id:
+          type: string
+        certificateTimestamp:
+          type: string
+          format: date-time
+    obligation:
+      type: object
+      required: [subscription, submissions]
+      properties:
+        subscription:
+          $ref: "#/components/schemas/subscription"
+        submissions:
+          description: |
+            Array of submissions for the subscription.
+          type: array
+          items:
+            $ref: "#/components/schemas/submission"
+    submission:
+      type: object
+      required: [financialYearEnd, notification]
+      properties:
+        financialYearEnd:
+          type: number
+          minimum: 2024
+        notification:
+          $ref: "#/components/schemas/notification"
+        certificate:
+          $ref: "#/components/schemas/certificate"
+      description: |
+        A single submission, delineated by financial year end (e.g., 2024, 2030, etc).
+        If an entry exists, it must have a notification.
+        If a notification exists, a certificate may also exist.
+    notification:
+      type: object
+      required: [id, notificationTimestamp]
+      properties:
+        id:
+          type: string
+        notificationTimestamp:
+          type: string
+          format: date-time
+    contact:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+        email:
+          $ref: "./core.yaml#/components/schemas/email"
+    subscription:
+      type: object
+      required: [subscriptionTimestamp, companyRegistrationNumber, uniqueTaxReference, companyName, contacts]
+      properties:
+        subscriptionTimestamp:
+          type: string
+          format: date-time
+          description: Date the subscription was created
+        companyRegistrationNumber:
+          $ref: "./core.yaml#/components/schemas/companyRegistrationNumber"
+        uniqueTaxReference:
+          $ref: "./core.yaml#/components/schemas/uniqueTaxReference"
+        companyName:
+          $ref: "./core.yaml#/components/schemas/companyName"
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/contact"

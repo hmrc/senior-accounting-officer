@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: SAO Sign-up / Subscription API
+  version: "1.0.0"
+  description: |
+    API to create an initial SAO organisation registration (subscription).
+
+servers:
+  - url: https://test-api.service.hmrc.gov.uk
+    description: Sandbox
+  - url: https://api.service.hmrc.gov.uk
+    description: Production
+
+paths:
+  /subscriptions/{saoSubscriptionId}:
+    put:
+      parameters:
+        - name: saoSubscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      summary: Create or update SAO organisation subscription
+      tags: [Subscription]
+      description: |
+        Creates or updates the SAO organisation registration for the entity identified by `safeId`.
+        The `safeId` must be supplied in the request body.
+        This operation is idempotent on `safeId`.
+      requestBody:
+        required: true
+        description: Sign-up payload including `safeId`.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/signUpRequest"
+            example:
+              safeId: "XE0001234567890"
+              company:
+                companyName: "Acme Manufacturing Ltd"
+                uniqueTaxReference: "1234567890"
+                companyRegistrationNumber: "OC123456"
+              contacts:
+                - name: "Jane Doe"
+                  email: "jane.doe@acme.example"
+                - name: "Finance Team"
+                  email: "finance.team@acme.example"
+      responses:
+        "200":
+          description: Subscription created or updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/subscriptionAck"
+              example:
+                saoSubscriptionId: "SAOSUB-123456789"
+                subscriptionTimestamp: "2025-10-24T14:35:22Z"
+        "400":
+          description: Syntactically incorrect input
+          content:
+            application/json:
+              schema:
+                $ref: "./core.yaml#/components/schemas/badRequest"
+              examples:
+                invalidUniqueTaxReference:
+                  summary: Unique Tax Reference failed validation
+                  value:
+                    - path: "body.company.uniqueTaxReference"
+                      reason: "INVALID_PATTERN"
+                contactsTooMany:
+                  summary: Too many contacts provided
+                  value:
+                    - path: "body.contacts"
+                      reason: "LENGTH_OUT_OF_BOUNDS"
+                schemaViolation:
+                  summary: Payload contains an unknown field or wrong type
+                  value:
+                    - reason: "MALFORMED_REQUEST"
+        "404":
+          description: Subscription not found
+        "422":
+          description: Semantically incorrect input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/semanticErrorResponse"
+              examples:
+                duplicateContacts:
+                  summary: Duplicate contacts not allowed
+                  value:
+                    path: "body.contacts"
+                    reason: "DUPLICATE_CONTACTS"
+        "500":
+          description: Internal server error
+
+
+components:
+  schemas:
+    signUpRequest:
+      type: object
+      additionalProperties: false
+      required: [safeId, company, contacts]
+      properties:
+        safeId:
+          type: string
+          description: >
+            The ETMP Entity reference ID (**SAFEID**) returned by GRS for this organisation.
+            Must be 1-15 alphanumeric characters.
+          pattern: "^[0-9A-Za-z]{1,15}$"
+          example: "SAFEID123456789"
+        company:
+          $ref: "#/components/schemas/companyDetails"
+        contacts:
+          type: array
+          description: |
+            Contact details associated with this subscription. 
+            Each entry represents a person or team responsible for the organisation's SAO subscription.
+          minItems: 1
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/contactDetails"
+
+    companyDetails:
+      type: object
+      description: Registered company (must have a Companies House Company Registration Number).
+      additionalProperties: false
+      required: [ companyName, uniqueTaxReference, companyRegistrationNumber ]
+      properties:
+        companyName:
+          $ref: "./core.yaml#/components/schemas/companyName"
+        uniqueTaxReference:
+          $ref: "./core.yaml#/components/schemas/uniqueTaxReference"
+        companyRegistrationNumber:
+          $ref: "./core.yaml#/components/schemas/companyRegistrationNumber"
+
+    contactDetails:
+      type: object
+      description: Contact for this submission (may be an individual or a team mailbox).
+      additionalProperties: false
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          description: |
+            Name or identifier of the contact (person or team).
+            For example, "Jane Doe" or "Finance Team".
+          minLength: 1
+          maxLength: 120
+          example: "Finance Team"
+        email:
+          $ref: "./core.yaml#/components/schemas/email"
+
+    subscriptionAck:
+      type: object
+      description: Response confirming SAO subscription creation or update.
+      additionalProperties: false
+      required: [saoSubscriptionId, subscriptionTimestamp]
+      properties:
+        saoSubscriptionId:
+          type: string
+          description: SAO Subscription ID assigned by ETMP (opaque string).
+          example: "SAOSUB-123456789"
+        subscriptionTimestamp:
+          type: string
+          format: date-time
+          description: |
+            UTC timestamp indicating when the subscription was created or updated.
+          example: "2025-10-24T14:35:22Z"
+
+    semanticErrorResponse:
+      type: object
+      required: [path, reason]
+      properties:
+        path:
+          type: string
+        reason:
+          type: string
+          enum:
+            - DATE_OUT_OF_BOUNDS
+            - DUPLICATE_CONTACTS
