@@ -35,6 +35,7 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.ContactDetailsConnector
 
 import scala.concurrent.Future
 import play.api.libs.json.JsValue
+import uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsControllerSpec.createUpdateContactDetailsRequest
 
 class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
@@ -58,6 +59,16 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     )
   )
 
+  private def setupMocks(expectedId: String, expectedStatus: Int, expectedBody: String): Unit = {
+    reset(mockContactDetailsConnector)
+    when(mockContactDetailsConnector.getContactDetails(meq(expectedId))(using any())) thenReturn Future
+      .successful(
+        HttpResponse(expectedStatus, expectedBody)
+      )
+    when(mockContactDetailsConnector.putContactDetails(meq(expectedId), any())(using any()))
+      .thenReturn(Future.successful(HttpResponse(expectedStatus, expectedBody)))
+  }
+
   private def routeJsonRequest(request: FakeRequest[AnyContentAsJson]): Future[Result] =
     route(app, request) match {
       case Some(result) => result
@@ -76,23 +87,15 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       case None         => fail("Expected route to be defined")
     }
 
-  private def createUpdateContactDetailsRequest(payload: JsValue): FakeRequest[AnyContentAsJson] = {
-    FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
-      .withHeaders(CONTENT_TYPE -> "application/json")
-      .withJsonBody(payload)
-  }
+  val saoSubscriptionId        = "123"
+  val invalidSaoSubscriptionId = "456"
 
   "GET /contact-details" should {
     "return a 200 response with the body from the connector" in {
-      val saoSubscriptionId = "123"
-
       val expectedStatus = 200
       val expectedBody   = "{}"
 
-      when(mockContactDetailsConnector.getContactDetails(meq(saoSubscriptionId))(using any())) thenReturn Future
-        .successful(
-          HttpResponse(expectedStatus, expectedBody)
-        )
+      setupMocks(saoSubscriptionId, expectedStatus, expectedBody)
 
       val url = routes.ContactDetailsController.getContactDetails(saoSubscriptionId).url
 
@@ -103,15 +106,10 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return a 404 response with the body from the connector" in {
-      val invalidSaoSubscriptionId = "456"
-
       val expectedStatus = 404
       val expectedBody   = "Entity not found"
 
-      when(mockContactDetailsConnector.getContactDetails(meq(invalidSaoSubscriptionId))(using any())) thenReturn Future
-        .successful(
-          HttpResponse(expectedStatus, expectedBody)
-        )
+      setupMocks(invalidSaoSubscriptionId, expectedStatus, expectedBody)
 
       val url = routes.ContactDetailsController.getContactDetails(invalidSaoSubscriptionId).url
 
@@ -124,11 +122,9 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
   "PUT /contactDetails" should {
     "return 204 when the downstream connector succeeds without a body" in {
-      reset(mockContactDetailsConnector)
-      when(mockContactDetailsConnector.putContactDetails(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
+      setupMocks(saoSubscriptionId, Status.NO_CONTENT, "")
 
-      val request = createUpdateContactDetailsRequest(validPayload)
+      val request = createUpdateContactDetailsRequest(saoSubscriptionId, validPayload)
 
       val result = routeJsonRequest(request)
 
@@ -137,11 +133,9 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
     "return the downstream JSON body for validation errors" in {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
-      reset(mockContactDetailsConnector)
-      when(mockContactDetailsConnector.putContactDetails(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
+      setupMocks(saoSubscriptionId, Status.BAD_REQUEST, downstreamBody)
 
-      val result = routeJsonRequest(createUpdateContactDetailsRequest(validPayload))
+      val result = routeJsonRequest(createUpdateContactDetailsRequest(saoSubscriptionId, validPayload))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
@@ -150,7 +144,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     "return 400 for malformed JSON without calling the connector" in {
       reset(mockContactDetailsConnector)
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
+      val request = FakeRequest("PUT", s"/senior-accounting-officer/contact-details/$saoSubscriptionId")
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody("""{"safeId":""")
 
@@ -171,7 +165,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         )
       )
 
-      val result = routeJsonRequest(createUpdateContactDetailsRequest(invalidPayload))
+      val result = routeJsonRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(
@@ -180,5 +174,13 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       )
       verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
     }
+  }
+}
+
+object ContactDetailsControllerSpec {
+  def createUpdateContactDetailsRequest(id: String, payload: JsValue): FakeRequest[AnyContentAsJson] = {
+    FakeRequest("PUT", s"/senior-accounting-officer/contact-details/$id")
+      .withHeaders(CONTENT_TYPE -> "application/json")
+      .withJsonBody(payload)
   }
 }
