@@ -1,11 +1,11 @@
 info:
-  name: put contact details (200) copy
+  name: put contact details (200)
   type: http
   seq: 4
 
 http:
   method: PUT
-  url: "{{baseUrl}}/contact-details/123"
+  url: "{{baseUrl}}/contact-details/12"
   body:
     type: json
     data: |-

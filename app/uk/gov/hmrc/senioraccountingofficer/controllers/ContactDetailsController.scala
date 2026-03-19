@@ -16,14 +16,17 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
+import play.api.http.MimeTypes
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.ContactDetailsConnector
+import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import javax.inject.Inject
 
@@ -41,9 +44,18 @@ class ContactDetailsController @Inject() (cc: ControllerComponents, contactDetai
   def putContactDetails(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) {
     implicit request =>
       given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-      contactDetailsConnector.putContactDetails(saoSubscriptionId, request.body).map {
-        case HttpResponse(status, body, _) =>
-          Status(status)(body)
+
+      JsonErrorHandling.parseJson(request.body) match {
+        case Right(json) =>
+          val errors = JsonErrorHandling.Validators.validateContactDetails(json)
+          if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
+          else
+            contactDetailsConnector.putContactDetails(saoSubscriptionId: String, request.body).map { response =>
+              if response.body.isBlank then Status(response.status)
+              else Status(response.status)(response.body).as(MimeTypes.JSON)
+            }
+        case Left(errorResult) =>
+          Future.successful(errorResult)
       }
   }
 }
