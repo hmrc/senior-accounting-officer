@@ -27,9 +27,10 @@ import play.api.Application
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
-import play.api.mvc.AnyContentAsText
+import play.api.mvc.AnyContentAsJson
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
@@ -49,21 +50,16 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       )
       .build()
 
-  private val validPayload =
-    """{
-      |  "safeId": "XE000123456789",
-      |  "company": {
-      |    "companyName": "Acme Manufacturing Ltd",
-      |    "uniqueTaxReference": "1234567890",
-      |    "companyRegistrationNumber": "OC123456"
-      |  },
-      |  "contacts": [
-      |    {
-      |      "name": "Jane Doe",
-      |      "email": "jane.doe@example.com"
-      |    }
-      |  ]
-      |}""".stripMargin
+  private val validPayload: JsArray = Json.arr(
+    Json.obj(
+      "name"  -> "Jane Doe",
+      "email" -> "jane.doe@acme.com"
+    ),
+    Json.obj(
+      "name"  -> "John Smith",
+      "email" -> "john.smith@acme.com"
+    )
+  )
 
   "PUT /contact-details" should {
     "return 204 when the downstream connector succeeds without a body" in {
@@ -73,7 +69,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload)
+        .withJsonBody(validPayload)
 
       val maybeResult = route(app, request)
 
@@ -94,7 +90,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload)
+        .withJsonBody(validPayload)
 
       val maybeResult = route(app, request)
 
@@ -165,7 +161,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
   }
 
-  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
+  private def routeResult(request: FakeRequest[AnyContentAsJson]): Future[Result] =
     route(app, request) match {
       case Some(result) => result
       case None         => fail("Expected route to be defined")
@@ -179,7 +175,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload.toString())
+        .withJsonBody(validPayload)
 
       val result = routeResult(request)
 
@@ -194,7 +190,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload.toString())
+        .withJsonBody(validPayload)
 
       val result = routeResult(request)
 
@@ -209,7 +205,11 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody("""{"safeId":""")
 
-      val result = routeResult(request)
+      val result =
+        route(app, request) match {
+          case Some(result) => result
+          case None         => fail("Expected route to be defined")
+        }
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST"))
@@ -219,16 +219,24 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     "return 400 for schema-invalid JSON without calling the connector" in {
       reset(mockContactDetailsConnector)
 
-      val invalidPayload = Json.parse(validPayload).as[JsObject] - "safeId"
+      val invalidPayload = validPayload ++ Json.arr(
+        Json.obj(
+          "name"  -> "",
+          "email" -> "jane.doe@example.com"
+        )
+      )
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(invalidPayload.toString())
+        .withJsonBody(invalidPayload)
 
       val result = routeResult(request)
 
       status(result) shouldBe Status.BAD_REQUEST
-      contentAsJson(result) shouldBe Json.arr(Json.obj("path" -> "safeId", "reason" -> "MISSING_REQUIRED_FIELD"))
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "[2].name", "reason" -> "CANNOT_BE_EMPTY"),
+        Json.obj("path" -> "body", "reason"     -> "LENGTH_OUT_OF_BOUNDS")
+      )
       verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
     }
   }
