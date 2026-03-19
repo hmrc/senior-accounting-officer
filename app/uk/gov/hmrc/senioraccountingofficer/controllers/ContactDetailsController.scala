@@ -17,16 +17,14 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.http.MimeTypes
-import play.api.mvc.Action
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.ContactDetailsConnector
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 

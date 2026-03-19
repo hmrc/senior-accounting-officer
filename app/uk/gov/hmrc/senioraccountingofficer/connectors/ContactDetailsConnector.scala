@@ -20,7 +20,6 @@ import play.api.http.MimeTypes
 import play.api.libs.ws.writeableOf_String
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 
 import scala.concurrent.{ExecutionContext, Future}

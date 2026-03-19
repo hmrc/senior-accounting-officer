@@ -17,8 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.mockito.ArgumentMatchers.{any, eq as meq}
-import org.mockito.Mockito.*
-import org.mockito.Mockito.{reset, when}
+import org.mockito.Mockito.{reset, when, *}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -27,11 +26,8 @@ import play.api.Application
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsObject
-import play.api.libs.json.Json
-import play.api.mvc.AnyContentAsJson
-import play.api.mvc.Result
+import play.api.libs.json.{JsArray, JsObject, Json}
+import play.api.mvc.*
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HttpResponse
@@ -105,6 +101,24 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
   }
 
+  private def routeJsonRequest(request: FakeRequest[AnyContentAsJson]): Future[Result] =
+    route(app, request) match {
+      case Some(result) => result
+      case None         => fail("Expected route to be defined")
+    }
+
+  private def routeTextRequest(request: FakeRequest[AnyContentAsText]): Future[Result] =
+    route(app, request) match {
+      case Some(result) => result
+      case None         => fail("Expected route to be defined")
+    }
+
+  private def routeEmptyRequest(request: FakeRequest[AnyContentAsEmpty.type]): Future[Result] =
+    route(app, request) match {
+      case Some(result) => result
+      case None         => fail("Expected route to be defined")
+    }
+
   "GET /contact-details" should {
     "return a 200 response with the body from the connector" in {
       val saoSubscriptionId = "123"
@@ -121,13 +135,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val request = FakeRequest(GET, url)
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeEmptyRequest(request)
 
       status(result) shouldBe expectedStatus
       contentAsString(result) shouldBe expectedBody
@@ -148,24 +156,12 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val request = FakeRequest(GET, url)
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeEmptyRequest(request)
 
       status(result) shouldBe expectedStatus
       contentAsString(result) shouldBe expectedBody
     }
   }
-
-  private def routeResult(request: FakeRequest[AnyContentAsJson]): Future[Result] =
-    route(app, request) match {
-      case Some(result) => result
-      case None         => fail("Expected route to be defined")
-    }
 
   "PUT /contactDetails" should {
     "return 204 when the downstream connector succeeds without a body" in {
@@ -177,7 +173,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withJsonBody(validPayload)
 
-      val result = routeResult(request)
+      val result = routeJsonRequest(request)
 
       status(result) shouldBe Status.NO_CONTENT
     }
@@ -192,7 +188,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withJsonBody(validPayload)
 
-      val result = routeResult(request)
+      val result = routeJsonRequest(request)
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
@@ -205,11 +201,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody("""{"safeId":""")
 
-      val result =
-        route(app, request) match {
-          case Some(result) => result
-          case None         => fail("Expected route to be defined")
-        }
+      val result = routeTextRequest(request)
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST"))
@@ -230,7 +222,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withJsonBody(invalidPayload)
 
-      val result = routeResult(request)
+      val result = routeJsonRequest(request)
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(
