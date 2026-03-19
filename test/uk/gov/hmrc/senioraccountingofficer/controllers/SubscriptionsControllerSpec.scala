@@ -26,7 +26,8 @@ import play.api.Application
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HttpResponse
@@ -45,21 +46,26 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
       )
       .build()
 
-  private val validPayload =
-    """{
-      |  "safeId": "XE000123456789",
-      |  "company": {
-      |    "companyName": "Acme Manufacturing Ltd",
-      |    "uniqueTaxReference": "1234567890",
-      |    "companyRegistrationNumber": "OC123456"
-      |  },
-      |  "contacts": [
-      |    {
-      |      "name": "Jane Doe",
-      |      "email": "jane.doe@example.com"
-      |    }
-      |  ]
-      |}""".stripMargin
+  private val validPayload: JsObject = Json.obj(
+    "safeId"  -> "XE000123456789",
+    "company" -> Json.obj(
+      "companyName"               -> "Acme Manufacturing Ltd",
+      "uniqueTaxReference"        -> "1234567890",
+      "companyRegistrationNumber" -> "OC123456"
+    ),
+    "contacts" -> Json.arr(
+      Json.obj(
+        "name"  -> "Jane Doe",
+        "email" -> "jane.doe@example.com"
+      )
+    )
+  )
+
+  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
+    route(app, request) match {
+      case Some(result) => result
+      case None         => fail("Expected route to be defined")
+    }
 
   "PUT /subscriptions" should {
     "return 204 when the downstream connector succeeds without a body" in {
@@ -69,15 +75,9 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload)
+        .withTextBody(validPayload.toString())
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeResult(request)
 
       status(result) shouldBe Status.NO_CONTENT
     }
@@ -90,15 +90,9 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(validPayload)
+        .withTextBody(validPayload.toString())
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeResult(request)
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
@@ -111,13 +105,7 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody("""{"safeId":""")
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeResult(request)
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST"))
@@ -127,32 +115,13 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
     "return 400 for schema-invalid JSON without calling the connector" in {
       reset(mockSubscriptionsConnector)
 
-      val invalidPayload =
-        """{
-          |  "company": {
-          |    "companyName": "Acme Manufacturing Ltd",
-          |    "uniqueTaxReference": "1234567890",
-          |    "companyRegistrationNumber": "OC123456"
-          |  },
-          |  "contacts": [
-          |    {
-          |      "name": "Jane Doe",
-          |      "email": "jane.doe@example.com"
-          |    }
-          |  ]
-          |}""".stripMargin
+      val invalidPayload = validPayload - "safeId"
 
       val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
         .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody(invalidPayload)
+        .withTextBody(invalidPayload.toString())
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeResult(request)
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(Json.obj("path" -> "safeId", "reason" -> "MISSING_REQUIRED_FIELD"))
