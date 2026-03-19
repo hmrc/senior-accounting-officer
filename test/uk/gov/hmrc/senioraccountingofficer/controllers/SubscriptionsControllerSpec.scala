@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{reset, when}
+import org.mockito.Mockito.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -26,6 +26,7 @@ import play.api.Application
 import play.api.http.Status
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HttpResponse
@@ -101,6 +102,61 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
+    }
+
+    "return 400 for malformed JSON without calling the connector" in {
+      reset(mockSubscriptionsConnector)
+
+      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
+        .withHeaders(CONTENT_TYPE -> "application/json")
+        .withTextBody("""{"safeId":""")
+
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST"))
+      verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
+    }
+
+    "return 400 for schema-invalid JSON without calling the connector" in {
+      reset(mockSubscriptionsConnector)
+
+      val invalidPayload =
+        """{
+          |  "company": {
+          |    "companyName": "Acme Manufacturing Ltd",
+          |    "uniqueTaxReference": "1234567890",
+          |    "companyRegistrationNumber": "OC123456"
+          |  },
+          |  "contacts": [
+          |    {
+          |      "name": "Jane Doe",
+          |      "email": "jane.doe@example.com"
+          |    }
+          |  ]
+          |}""".stripMargin
+
+      val request = FakeRequest("PUT", "/senior-accounting-officer/subscriptions")
+        .withHeaders(CONTENT_TYPE -> "application/json")
+        .withTextBody(invalidPayload)
+
+      val maybeResult = route(app, request)
+
+      maybeResult shouldBe defined
+      val result = maybeResult match {
+        case Some(value) => value
+        case None        => fail("Expected route to be defined")
+      }
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(Json.obj("path" -> "safeId", "reason" -> "MISSING_REQUIRED_FIELD"))
+      verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
     }
   }
 }

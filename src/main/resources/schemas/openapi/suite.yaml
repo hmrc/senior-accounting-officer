@@ -1,0 +1,17 @@
+openapi: 3.0.3
+info:
+  title: SAO API Suite
+  version: 1.0.0
+
+paths:
+  /notification/{saoSubscriptionId}:
+    $ref: './notificationApi.yaml#/paths/~1notification~1{saoSubscriptionId}'
+  /contact-details/{saoSubscriptionId}:
+    $ref: './contactDetailsApi.yaml#/paths/~1contact-details~1{saoSubscriptionId}'
+  /certificate/{saoSubscriptionId}:
+    $ref: './certificateApi.yaml#/paths/~1certificate~1{saoSubscriptionId}'
+  /obligation/{saoSubscriptionId}:
+    $ref: './obligationApi.yaml#/paths/~1obligation~1{saoSubscriptionId}'
+  /subscriptions:
+    $ref: './subscriptionApi.yaml#/paths/~1subscriptions'
+  

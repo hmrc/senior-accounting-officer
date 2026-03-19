@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Get Contact Details API
+  version: "1.0.0"
+  description: |
+    Retrieves contact details against an SAO subscription ID.
+    This enables the user to view the organisation's current contact details.
+
+paths:
+  /contact-details/{saoSubscriptionId}:
+    get:
+      summary: Get contact details for a subscription
+      tags: [ContactDetails]
+      parameters:
+        - $ref: "./core.yaml#/components/parameters/saoSubscriptionId"
+      responses:
+        "200":
+          description: Contact details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./core.yaml#/components/schemas/contactDetails"
+              example:
+                - name: "Jane Doe"
+                  email: "jane.doe@acme.example"
+                - name: "Finance Team"
+                  email: "finance.team@acme.example"
+        "404":
+          description: Subscription not found
+        "500":
+          description: Internal server error
+
+    put:
+      summary: Upsert contact details
+      tags: [ContactDetails]
+      parameters:
+        - $ref: "./core.yaml#/components/parameters/saoSubscriptionId"
+      requestBody:
+        required: true
+        description: |
+          Update or create contact details associated with this subscription. 
+          Each entry represents a person or team responsible for the organisation's SAO subscription.
+        content:
+          application/json:
+            schema:
+              type: array
+              minItems: 1
+              maxItems: 2
+              items:
+                $ref: "./core.yaml#/components/schemas/contactDetails"
+            example:
+              - name: "Jane Doe"
+                email: "jane.doe@acme.example"
+              - name: "Finance Team"
+                email: "finance.team@acme.example"
+      responses:
+        "204":
+          description: Contact details created or updated successfully
+        "400":
+          description: Syntactically incorrect input
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "./core.yaml#/components/schemas/badRequest"
+              examples:
+                missingRequiredField:
+                  summary: A required field is missing
+                  value:
+                    - path: "[0].name"
+                      reason: "MISSING_REQUIRED_FIELD"
+        "404":
+          description: Subscription not found
+
+        "500":
+          description: Internal server error

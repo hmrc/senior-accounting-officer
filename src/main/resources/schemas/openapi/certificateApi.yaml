@@ -1,0 +1,254 @@
+openapi: 3.0.3
+info:
+  title: Certify API
+  version: "1.0.0"
+  description: |
+    Saves certificate information with an SAO subscription ID for a given financial year.
+    This fulfils the SAO's certification.
+paths:
+  /certificate/{saoSubscriptionId}:
+    post:
+      summary: Create a certificate for a subscription
+      tags: [Certificate]
+      parameters:
+        - $ref: "./core.yaml#/components/parameters/saoSubscriptionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/certificate"
+            example:
+              declaration:
+                seniorAccountingOfficer:
+                  name: "Firstname Lastname"
+                  email: "Firstname.Lastname@example.com"
+                proxy:
+                  name: "Firstname Lastname"
+              companies:
+                - companyName: "Example Ltd"
+                  uniqueTaxReference: "1234567890"
+                  companyReferenceNumber: "AB123456"
+                  companyType: "LTD"
+                  financialYearEndDate: "2024-12-31"
+                  qualifiedRegimes:
+                    - CORPORATION
+                    - VALUE_ADDED
+                  qualificationStatement: "All relevant corporation and VAT obligations have been delayed due to grievance."
+                  seniorAccountingOfficers:
+                    - name: "Firstname Lastname"
+                      email: "Firstname.Lastname@example.com"
+                      startDate: "2024-04-01"
+                      endDate: "2025-03-31"
+                    - name: "Secondpersonname Theirlastname"
+                      email: "non.empty.email@companyname.com"
+                      startDate: "2024-12-01"
+                      endDate: "2025-12-31"
+                - companyName: "Example PLC"
+                  uniqueTaxReference: "0987654321"
+                  companyReferenceNumber: "CD654321"
+                  companyType: "PLC"
+                  financialYearEndDate: "2024-06-30"
+                  isDormant: true
+                  isInAdministration: false
+                  qualifiedRegimes:
+                    - PAY_AS_YOU_EARN
+                    - PETROLEUM_REVENUE
+                  seniorAccountingOfficers:
+                    - name: "Another Officer"
+                      startDate: "2024-05-01"
+                      endDate: "2025-04-30"
+              additionalInformation: "non-empty string"
+      responses:
+        "200":
+          description: Certificate submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/success"
+              example:
+                id: "CER0123456789"
+                timestamp: "2026-03-01T12:00:14Z"
+        "400":
+          description: Syntactically incorrect input
+          content:
+            application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: "./core.yaml#/components/schemas/badRequest"
+                examples:
+                  saoSubscriptionIdMissing:
+                    $ref: "./core.yaml#/components/examples/saoSubscriptionIdMissing"
+                  invalidSaoSubscriptionId:
+                    $ref: "./core.yaml#/components/examples/invalidSaoSubscriptionId"
+                  missingRequiredField:
+                    $ref: "./core.yaml#/components/examples/missingRequiredField"
+                  emptyField:
+                    $ref: "./core.yaml#/components/examples/emptyField"
+                  invalidFormat:
+                    $ref: "./core.yaml#/components/examples/invalidFormat"
+                  patternMismatch:
+                    $ref: "./core.yaml#/components/examples/patternMismatch"
+                  invalidEnum:
+                    $ref: "./core.yaml#/components/examples/invalidEnum"
+                  emailFormatInvalid:
+                    $ref: "./core.yaml#/components/examples/emailFormatInvalid"
+                  lengthOutOfBounds:
+                    $ref: "./core.yaml#/components/examples/lengthOutOfBounds"
+                  arrayTooSmall:
+                    $ref: "./core.yaml#/components/examples/arrayTooSmall"
+                  arrayIsInvalidType:
+                    $ref: "./core.yaml#/components/examples/arrayIsInvalidType"
+                  arrayUniquenessViolation:
+                    summary: Array contains duplicate items
+                    value:
+                      - path: "companies[0].QualifiedRegimes"
+                        reason: "ARRAY_UNIQUENESS_VIOLATION"
+                  multipleValidationErrors:
+                    $ref: "./core.yaml#/components/examples/multipleValidationErrors"
+                  unrecognisedField:
+                    summary: Payload contains unrecognised field
+                    value:
+                      - path: "yourBadFieldName"
+                        reason: "INVALID_DATA_TYPE"
+                      - path: "company[0].yourBadFieldName"
+                        reason: "INVALID_DATA_TYPE"
+                  unreadablePayload:
+                    $ref: "./core.yaml#/components/examples/unreadablePayload"
+        "404":
+          description: Subscription not found
+        "422":
+          description: Semantically incorrect input
+          content:
+            application/json:
+              schema:
+                $ref: "./core.yaml#/components/schemas/semanticErrorResponse"
+              examples:
+                invalidSaoStartDate:
+                  value:
+                    path: "companies[0].seniorAccountingOfficers[0].startDate"
+                    reason: "DATE_OUT_OF_BOUNDS"
+                invalidSaoEndDate:
+                  value:
+                    path: "companies[0].seniorAccountingOfficers[0].endDate"
+                    reason: "DATE_OUT_OF_BOUNDS"
+                invalidFinancialYearEndDate:
+                  value:
+                    path: "companies[0].financialYearEndDate"
+                    reason: "DATE_OUT_OF_BOUNDS"
+                qualifiedRegimeWithoutStatement:
+                  value:
+                    path: "companies[0].qualificationStatement"
+                    reason: "QUALIFIED_REGIME_WITHOUT_STATEMENT"
+        "500":
+          description: Internal server error
+
+components:
+  schemas:
+    certificate:
+      type: object
+      additionalProperties: false
+      required: [declaration, companies]
+      properties:
+        declaration:
+          $ref: "#/components/schemas/declaration"
+        companies:
+          type: array
+          description: |
+            One or more companies must be included in this certificate.
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/company"
+        additionalInformation:
+          $ref: "./core.yaml#/components/schemas/additionalInformation"
+    declaration:
+      type: object
+      additionalProperties: false
+      required: [ seniorAccountingOfficer ]
+      properties:
+        seniorAccountingOfficer:
+          type: object
+          required: [ name, email ]
+          properties:
+            name:
+              type: string
+              example: "Firstname Lastname"
+              minLength: 1
+            email:
+              $ref: "./core.yaml#/components/schemas/email"
+        proxy:
+          type: object
+          required: [ name ]
+          properties:
+            name:
+              type: string
+              example: "Firstname Lastname"
+              minLength: 1
+    company:
+      type: object
+      additionalProperties: false
+      required:
+        - companyName
+        - uniqueTaxReference
+        - companyReferenceNumber
+        - companyType
+        - financialYearEndDate
+        - qualifiedRegimes
+        - seniorAccountingOfficers
+      properties:
+        companyName:
+          $ref: "./core.yaml#/components/schemas/companyName"
+        uniqueTaxReference:
+          $ref: "./core.yaml#/components/schemas/uniqueTaxReference"
+        companyReferenceNumber:
+          $ref: "./core.yaml#/components/schemas/companyRegistrationNumber"
+        companyType:
+          $ref: "./core.yaml#/components/schemas/companyType"
+        financialYearEndDate:
+          $ref: "./core.yaml#/components/schemas/financialYearEndDate"
+        isDormant:
+          type: boolean
+          description: Indicates if the company is dormant during the chosen financial year.
+        isInAdministration:
+          type: boolean
+          description: Indicates if the company is in administration during the chosen financial year.
+        qualifiedRegimes:
+          type: array
+          description: List of qualified regimes for this company.
+          minItems: 0
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/qualifiedRegime"
+        qualificationStatement:
+          $ref: "./core.yaml#/components/schemas/additionalInformation"
+        seniorAccountingOfficers:
+          type: array
+          minItems: 1
+          items:
+            $ref: "./core.yaml#/components/schemas/seniorAccountingOfficer"
+    success:
+      type: object
+      required: [id, timestamp]
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    qualifiedRegime:
+      type: string
+      description: |
+        Qualifiable Tax Regimes
+      enum:
+        - CORPORATION_TAX
+        - VALUE_ADDED_TAX
+        - PAY_AS_YOU_EARN
+        - INSURANCE_PREMIUM_TAX
+        - STAMP_DUTY_LAND_TAX
+        - STAMP_DUTY_RESERVE_TAX
+        - PETROLEUM_REVENUE_TAX
+        - CUSTOMS_DUTIES
+        - EXCISE_DUTIES
+        - BANK_LEVY
+      example: "CORPORATION_TAX"

@@ -1,0 +1,166 @@
+openapi: 3.0.3
+info:
+  title: Notification API
+  version: "1.0.0"
+  description: |
+    Saves Notification information with their SAO subscription ID for a given financial year.
+    This fulfils the company's SAO notification.
+
+paths:
+  /notification/{saoSubscriptionId}:
+    post:
+      summary: Create a Notification for a subscription
+      tags: [Notification]
+      parameters:
+        - $ref: "./core.yaml#/components/parameters/saoSubscriptionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/notification"
+            example:
+              companies:
+                - name: "Example Ltd"
+                  uniqueTaxReference: "1234567890"
+                  companyReferenceNumber: "AB123456"
+                  companyType: "LTD"
+                  financialYearEndDate: "2024-12-31"
+                  seniorAccountingOfficers:
+                    - name: "Firstname Lastname"
+                      email: "Firstname.Lastname@example.com"
+                      startDate: "2024-04-01"
+                      endDate: "2025-03-31"
+                    - name: "Secondpersonname Theirlastname"
+                      email: "non.empty.email@companyname.com"
+                      startDate: "2024-12-01"
+                      endDate: "2025-12-31"
+                - name: "Example PLC"
+                  uniqueTaxReference: "0987654321"
+                  companyReferenceNumber: "CD654321"
+                  companyType: "PLC"
+                  financialYearEndDate: "2024-06-30"
+                  seniorAccountingOfficers:
+                    - name: "Another Officer"
+                      startDate: "2024-05-01"
+                      endDate: "2025-04-30"
+              additionalInformation: "non-empty string"
+      responses:
+        "200":
+          description: Notification submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/success"
+              example:
+                id: "NOT0123456789"
+                timestamp: "2026-03-01T12:00:14Z"
+
+        "400":
+          description: Syntactically incorrect input
+          content:
+            application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: "./core.yaml#/components/schemas/badRequest"
+                examples:
+                  saoSubscriptionIdMissing:
+                    $ref: "./core.yaml#/components/examples/saoSubscriptionIdMissing"
+                  invalidSaoSubscriptionId:
+                    $ref: "./core.yaml#/components/examples/invalidSaoSubscriptionId"
+                  missingRequiredField:
+                    $ref: "./core.yaml#/components/examples/missingRequiredField"
+                  emptyField:
+                    $ref: "./core.yaml#/components/examples/emptyField"
+                  invalidFormat:
+                    $ref: "./core.yaml#/components/examples/invalidFormat"
+                  patternMismatch:
+                    $ref: "./core.yaml#/components/examples/patternMismatch"
+                  invalidEnum:
+                    $ref: "./core.yaml#/components/examples/invalidEnum"
+                  emailFormatInvalid:
+                    $ref: "./core.yaml#/components/examples/emailFormatInvalid"
+                  lengthOutOfBounds:
+                    $ref: "./core.yaml#/components/examples/lengthOutOfBounds"
+                  arrayTooSmall:
+                    $ref: "./core.yaml#/components/examples/arrayTooSmall"
+                  arrayIsInvalidType:
+                    $ref: "./core.yaml#/components/examples/arrayIsInvalidType"
+                  multipleValidationErrors:
+                    $ref: "./core.yaml#/components/examples/multipleValidationErrors"
+                  unreadablePayload:
+                    $ref: "./core.yaml#/components/examples/unreadablePayload"
+        "404":
+          description: Subscription not found
+        "422":
+          description: Semantically incorrect input
+          content:
+            application/json:
+              schema:
+                $ref: "./core.yaml#/components/schemas/semanticErrorResponse"
+              examples:
+                invalidSaoStartDate:
+                  value:
+                    path: "companies[0].seniorAccountingOfficers[0].startDate"
+                    reason: "DATE_OUT_OF_BOUNDS"
+                invalidSaoEndDate:
+                  value:
+                    path: "companies[0].seniorAccountingOfficers[0].endDate"
+                    reason: "DATE_OUT_OF_BOUNDS"
+                invalidFinancialYearEndDate:
+                  value:
+                    path: "companies[0].financialYearEndDate"
+                    reason: "DATE_OUT_OF_BOUNDS"
+        "500":
+          description: Internal server error
+
+components:
+  schemas:
+    notification:
+      type: object
+      required: [companies]
+      properties:
+        companies:
+          type: array
+          description: |
+            One or more companies included in this notification. A minimum of 1 is required.
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/company"
+        additionalInformation:
+          $ref: "./core.yaml#/components/schemas/additionalInformation"
+    company:
+      type: object
+      required:
+          - companyName
+          - uniqueTaxReference
+          - companyReferenceNumber
+          - companyType
+          - financialYearEndDate
+          - seniorAccountingOfficers
+      properties:
+        companyName:
+          $ref: "./core.yaml#/components/schemas/companyName"
+        uniqueTaxReference:
+          $ref: "./core.yaml#/components/schemas/uniqueTaxReference"
+        companyReferenceNumber:
+          $ref: "./core.yaml#/components/schemas/companyRegistrationNumber"
+        companyType:
+          $ref: "./core.yaml#/components/schemas/companyType"
+        financialYearEndDate:
+          $ref: "./core.yaml#/components/schemas/financialYearEndDate"
+        seniorAccountingOfficers:
+          type: array
+          minItems: 1
+          items:
+            $ref: "./core.yaml#/components/schemas/seniorAccountingOfficer"
+    success:
+      type: object
+      required: [id, timestamp]
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
