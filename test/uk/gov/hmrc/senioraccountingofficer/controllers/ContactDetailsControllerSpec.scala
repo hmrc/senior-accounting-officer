@@ -34,6 +34,7 @@ import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.ContactDetailsConnector
 
 import scala.concurrent.Future
+import play.api.libs.json.JsValue
 
 class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
@@ -75,6 +76,12 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       case None         => fail("Expected route to be defined")
     }
 
+  private def createUpdateContactDetailsRequest(payload: JsValue): FakeRequest[AnyContentAsJson] = {
+    FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
+      .withHeaders(CONTENT_TYPE -> "application/json")
+      .withJsonBody(payload)
+  }
+
   "GET /contact-details" should {
     "return a 200 response with the body from the connector" in {
       val saoSubscriptionId = "123"
@@ -89,9 +96,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val url = routes.ContactDetailsController.getContactDetails(saoSubscriptionId).url
 
-      val request = FakeRequest(GET, url)
-
-      val result = routeEmptyRequest(request)
+      val result = routeEmptyRequest(FakeRequest(GET, url))
 
       status(result) shouldBe expectedStatus
       contentAsString(result) shouldBe expectedBody
@@ -110,9 +115,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       val url = routes.ContactDetailsController.getContactDetails(invalidSaoSubscriptionId).url
 
-      val request = FakeRequest(GET, url)
-
-      val result = routeEmptyRequest(request)
+      val result = routeEmptyRequest(FakeRequest(GET, url))
 
       status(result) shouldBe expectedStatus
       contentAsString(result) shouldBe expectedBody
@@ -125,9 +128,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       when(mockContactDetailsConnector.putContactDetails(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withJsonBody(validPayload)
+      val request = createUpdateContactDetailsRequest(validPayload)
 
       val result = routeJsonRequest(request)
 
@@ -140,11 +141,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       when(mockContactDetailsConnector.putContactDetails(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withJsonBody(validPayload)
-
-      val result = routeJsonRequest(request)
+      val result = routeJsonRequest(createUpdateContactDetailsRequest(validPayload))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
@@ -174,11 +171,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         )
       )
 
-      val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withJsonBody(invalidPayload)
-
-      val result = routeJsonRequest(request)
+      val result = routeJsonRequest(createUpdateContactDetailsRequest(invalidPayload))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(
