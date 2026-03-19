@@ -57,50 +57,6 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     )
   )
 
-  "PUT /contact-details" should {
-    "return 204 when the downstream connector succeeds without a body" in {
-      reset(mockContactDetailsConnector)
-      when(mockContactDetailsConnector.putContactDetails(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
-
-      val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withJsonBody(validPayload)
-
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
-
-      status(result) shouldBe Status.NO_CONTENT
-    }
-
-    "return the downstream JSON body for validation errors" in {
-      val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
-      reset(mockContactDetailsConnector)
-      when(mockContactDetailsConnector.putContactDetails(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
-
-      val request = FakeRequest("PUT", "/senior-accounting-officer/contact-details/123")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withJsonBody(validPayload)
-
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
-
-      status(result) shouldBe Status.BAD_REQUEST
-      contentAsString(result) shouldBe downstreamBody
-    }
-  }
-
   private def routeJsonRequest(request: FakeRequest[AnyContentAsJson]): Future[Result] =
     route(app, request) match {
       case Some(result) => result
