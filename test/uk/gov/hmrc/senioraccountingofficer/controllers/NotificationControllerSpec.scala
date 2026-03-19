@@ -16,56 +16,73 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.http.Status
-import play.api.mvc.ControllerComponents
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with MockitoSugar {
-
-  implicit val ec: ExecutionContext = app.injector.instanceOf[ExecutionContext]
-  implicit val mat: Materializer    = app.injector.instanceOf[Materializer]
-  val cc: ControllerComponents      = app.injector.instanceOf[ControllerComponents]
+class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockNotificationService: NotificationService = mock[NotificationService]
-  val controller                                   = new NotificationController(cc, mockNotificationService)
+
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder()
+      .overrides(
+        bind[NotificationService].toInstance(mockNotificationService)
+      )
+      .build()
+
+  private val validPayload: JsObject = Json.obj(
+    "any" -> "body"
+  )
+
+  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
+    route(app, request) match {
+      case Some(value) => value
+      case None        => fail("Expected route to be defined")
+    }
 
   "POST /notification" should {
 
     "return the status and body from the downstream service" in {
-      val anyBody = """{"any":"body"}"""
-
       val mockResponse = HttpResponse(Status.ACCEPTED, "Accepted Payload")
       when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
 
+      val url     = routes.NotificationController.postNotification("123").url
       val request =
-        FakeRequest("POST", "/notification").withBody(anyBody).withHeaders("Content-Type" -> "text/plain")
-      val result = controller.postNotification("123")(request)
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders("Content-Type" -> "text/plain")
+      val result = routeResult(request)
 
       status(result) shouldBe Status.ACCEPTED
       contentAsString(result) shouldBe "Accepted Payload"
     }
 
     "return the status and body from the downstream service for 5xx" in {
-      val anyBody = """{"any":"body"}"""
-
       val mockResponse = HttpResponse(Status.INTERNAL_SERVER_ERROR, "some raw error body")
       when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
 
+      val url     = routes.NotificationController.postNotification("123").url
       val request =
-        FakeRequest("POST", "/notification").withBody(anyBody).withHeaders("Content-Type" -> "text/plain")
-      val result = controller.postNotification("123")(request)
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders("Content-Type" -> "text/plain")
+      val result = routeResult(request)
 
       status(result) shouldBe Status.INTERNAL_SERVER_ERROR
       contentAsString(result) shouldBe "some raw error body"

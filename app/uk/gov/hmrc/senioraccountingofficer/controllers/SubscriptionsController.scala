@@ -22,8 +22,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.SubscriptionsConnector
+import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
@@ -36,9 +37,17 @@ class SubscriptionsController @Inject() (
   def putSubscription: Action[String] = Action.async(parse.tolerantText) { implicit request =>
     given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    subscriptionsConnector.putSubscription(request.body).map { response =>
-      if response.body.isBlank then Status(response.status)
-      else Status(response.status)(response.body).as(MimeTypes.JSON)
+    JsonErrorHandling.parseJson(request.body) match {
+      case Right(json) =>
+        val errors = JsonErrorHandling.Validators.validateSubscription(json)
+        if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
+        else
+          subscriptionsConnector.putSubscription(request.body).map { response =>
+            if response.body.isBlank then Status(response.status)
+            else Status(response.status)(response.body).as(MimeTypes.JSON)
+          }
+      case Left(errorResult) =>
+        Future.successful(errorResult)
     }
   }
 }

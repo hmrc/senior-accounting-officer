@@ -19,14 +19,13 @@ package uk.gov.hmrc.senioraccountingofficer.services
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 
-@Singleton
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector
-)(implicit ec: ExecutionContext) {
+) {
 
   def postNotification(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     notificationConnector.postNotification(id, body)

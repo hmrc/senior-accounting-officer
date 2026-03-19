@@ -26,8 +26,9 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.ObligationConnector
 
@@ -40,6 +41,12 @@ class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAp
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .overrides(bind[ObligationConnector].to(mockStubConnector))
     .build()
+
+  private def routeResult(request: FakeRequest[AnyContentAsEmpty.type]): Future[Result] =
+    route(app, request) match {
+      case Some(value) => value
+      case None        => fail("Expected route to be defined")
+    }
 
   "ObligationController" should {
     "return a 200 response with the body from the connector" in {
@@ -56,13 +63,7 @@ class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAp
 
       val request = FakeRequest(GET, url)
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeResult(request)
 
       status(result) mustBe expectedStatus
       contentAsString(result) mustBe expectedBody
@@ -82,13 +83,7 @@ class ObligationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAp
 
       val request = FakeRequest(GET, url)
 
-      val maybeResult = route(app, request)
-
-      maybeResult shouldBe defined
-      val result = maybeResult match {
-        case Some(value) => value
-        case None        => fail("Expected route to be defined")
-      }
+      val result = routeResult(request)
 
       status(result) mustBe expectedStatus
       contentAsString(result) mustBe expectedBody
