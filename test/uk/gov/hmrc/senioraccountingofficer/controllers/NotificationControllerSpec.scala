@@ -46,28 +46,26 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       )
       .build()
 
-  private val validPayload: JsObject = Json
-    .parse("""{
-    "companies": [
-      {
-        "companyName": "Example Ltd",
-        "uniqueTaxReference": "1234567890",
-        "companyReferenceNumber": "AB123456",
-        "companyType": "LTD",
-        "financialYearEndDate": "2024-12-31",
-        "seniorAccountingOfficers": [
-          {
-            "name": "Firstname Lastname",
-            "email": "Firstname.Lastname@example.com",
-            "startDate": "2024-04-01",
-            "endDate": "2025-03-31"
-          }
-        ]
-      }
-    ],
-    "additionalInformation": "non-empty string"
-  }""")
-    .as[JsObject]
+  private val validPayload: JsObject = Json.obj(
+    "companies" -> Json.arr(
+      Json.obj(
+        "companyName"              -> "Example Ltd",
+        "uniqueTaxReference"       -> "1234567890",
+        "companyReferenceNumber"   -> "AB123456",
+        "companyType"              -> "LTD",
+        "financialYearEndDate"     -> "2024-12-31",
+        "seniorAccountingOfficers" -> Json.arr(
+          Json.obj(
+            "name"      -> "Firstname Lastname",
+            "email"     -> "Firstname.Lastname@example.com",
+            "startDate" -> "2024-04-01",
+            "endDate"   -> "2025-03-31"
+          )
+        )
+      )
+    ),
+    "additionalInformation" -> "non-empty string"
+  )
 
   private val invalidPayload: JsObject = Json.obj(
     "any" -> "body"
