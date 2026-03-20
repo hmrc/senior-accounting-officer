@@ -27,18 +27,18 @@ import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 
 class ContactDetailsConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ExecutionContext) {
-  def getContactDetails(id: String)(using HeaderCarrier): Future[HttpResponse] = {
+  def getContactDetails(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] = {
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .get(url"${appConfig.stubsBaseUrl}/contact-details/$id")
+      .get(url"${appConfig.stubsBaseUrl}/contact-details/$saoSubscriptionId")
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .execute[HttpResponse]
   }
 
-  def putContactDetails(id: String, body: String)(using HeaderCarrier): Future[HttpResponse] = {
+  def putContactDetails(saoSubscriptionId: String, body: String)(using HeaderCarrier): Future[HttpResponse] = {
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .put(url"${appConfig.stubsBaseUrl}/contact-details/$id")
+      .put(url"${appConfig.stubsBaseUrl}/contact-details/$saoSubscriptionId")
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .setHeader("Content-Type" -> MimeTypes.JSON)
       .withBody(body)
