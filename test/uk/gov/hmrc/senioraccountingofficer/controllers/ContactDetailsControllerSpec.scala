@@ -37,6 +37,9 @@ import scala.concurrent.Future
 
 class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
+  val saoSubscriptionId        = "123"
+  val invalidSaoSubscriptionId = "456"
+
   private val mockContactDetailsConnector = mock[ContactDetailsConnector]
 
   override def fakeApplication(): Application =
@@ -73,7 +76,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       case None         => fail("Expected route to be defined")
     }
 
-  def testBadRequest(payload: String, expectedBody: JsValue): Unit = {
+  def assertValidationError(payload: String, expectedBody: JsValue): Unit = {
     reset(mockContactDetailsConnector)
 
     val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, payload.toString))
@@ -89,9 +92,6 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       .withHeaders(CONTENT_TYPE -> "application/json")
       .withTextBody(payload.toString())
   }
-
-  val saoSubscriptionId        = "123"
-  val invalidSaoSubscriptionId = "456"
 
   "GET /contact-details" should {
     "return a 200 response with the body from the connector" in {
@@ -145,11 +145,11 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return 400 with MALFORMED_REQUEST for malformed JSON without calling the connector" in {
-      testBadRequest("""{"safeId":""", Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST")))
+      assertValidationError("""{"safeId":""", Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST")))
     }
 
     "return 400 with MISSING_REQUIRED_FIELD for json without a required field without calling the connector" in {
-      testBadRequest(
+      assertValidationError(
         Json
           .arr(
             Json.obj(
@@ -164,7 +164,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return 400 with CANNOT_BE_EMPTY for empty contact name without calling the connector" in {
-      testBadRequest(
+      assertValidationError(
         Json
           .arr(
             Json.obj(
@@ -180,7 +180,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return 400 with INVALID_DATA_TYPE for a non-string contact name without calling the connector" in {
-      testBadRequest(
+      assertValidationError(
         Json
           .arr(
             Json.obj(
@@ -196,7 +196,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return 400 with ARRAY_MIN_ITEMS_NOT_MET for empty contacts without calling the connector" in {
-      testBadRequest(
+      assertValidationError(
         Json.arr().toString,
         Json.arr(
           Json.obj("path" -> "body", "reason" -> "ARRAY_MIN_ITEMS_NOT_MET")
@@ -205,7 +205,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return 400 with LENGTH_OUT_OF_BOUNDS for too many contacts without calling the connector" in {
-      testBadRequest(
+      assertValidationError(
         Json
           .arr(
             Json.obj(
@@ -229,7 +229,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     }
 
     "return 400 with LENGTH_OUT_OF_BOUNDS for a name over 160 chars without calling the connector" in {
-      testBadRequest(
+      assertValidationError(
         Json
           .arr(
             Json.obj(
