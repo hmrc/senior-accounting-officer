@@ -113,7 +113,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     "return 204 when the downstream connector succeeds without a body" in {
       setupMocks(saoSubscriptionId, Status.NO_CONTENT, "")
 
-      val request = createUpdateContactDetailsRequest(saoSubscriptionId, validPayload)
+      val request = createUpdateContactDetailsRequest(saoSubscriptionId, validPayload.toString)
 
       val result = routeRequest(request)
 
@@ -124,7 +124,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
       setupMocks(saoSubscriptionId, Status.BAD_REQUEST, downstreamBody)
 
-      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, validPayload))
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, validPayload.toString))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
@@ -133,9 +133,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
     "return 400 for malformed JSON without calling the connector" in {
       reset(mockContactDetailsConnector)
 
-      val request = FakeRequest("PUT", s"/senior-accounting-officer/contact-details/$saoSubscriptionId")
-        .withHeaders(CONTENT_TYPE -> "application/json")
-        .withTextBody("""{"safeId":""")
+      val request = createUpdateContactDetailsRequest(saoSubscriptionId, """{"safeId":""")
 
       val result = routeRequest(request)
 
@@ -154,7 +152,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
         )
       )
 
-      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload))
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload.toString))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(
@@ -167,9 +165,9 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 }
 
 object ContactDetailsControllerSpec {
-  def createUpdateContactDetailsRequest(id: String, payload: JsValue): FakeRequest[AnyContentAsJson] = {
+  def createUpdateContactDetailsRequest(id: String, payload: String): FakeRequest[AnyContentAsText] = {
     FakeRequest("PUT", s"/senior-accounting-officer/contact-details/$id")
       .withHeaders(CONTENT_TYPE -> "application/json")
-      .withJsonBody(payload)
+      .withTextBody(payload.toString())
   }
 }
