@@ -1,0 +1,34 @@
+info:
+  name: put contact details (400) multiple constraint violations
+  type: http
+  seq: 8
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/contact-details/123"
+  headers:
+    - name: Authorization
+      value: Basic {{base64Password}}
+  body:
+    type: json
+    data: |-
+      [
+        {
+          "name": "Jane Doe",
+          "email": "jane.doe@acme.com",
+          "dob": "12Jan1980"
+        },
+        {
+          "Name": "John Smith",
+          "email": "john.smith=acme.com"
+        },
+        {
+        }
+      ]
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
