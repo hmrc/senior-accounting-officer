@@ -47,6 +47,27 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       .build()
 
   private val validPayload: JsObject = Json.obj(
+    "companies" -> Json.arr(
+      Json.obj(
+        "companyName"              -> "Example Ltd",
+        "uniqueTaxReference"       -> "1234567890",
+        "companyReferenceNumber"   -> "AB123456",
+        "companyType"              -> "LTD",
+        "financialYearEndDate"     -> "2024-12-31",
+        "seniorAccountingOfficers" -> Json.arr(
+          Json.obj(
+            "name"      -> "Firstname Lastname",
+            "email"     -> "Firstname.Lastname@example.com",
+            "startDate" -> "2024-04-01",
+            "endDate"   -> "2025-03-31"
+          )
+        )
+      )
+    ),
+    "additionalInformation" -> "non-empty string"
+  )
+
+  private val invalidPayload: JsObject = Json.obj(
     "any" -> "body"
   )
 
@@ -86,6 +107,30 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
       status(result) shouldBe Status.INTERNAL_SERVER_ERROR
       contentAsString(result) shouldBe "some raw error body"
+    }
+
+    "return BAD_REQUEST when the payload does not match the schema" in {
+      val url     = routes.NotificationController.postNotification("123").url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(invalidPayload.toString())
+          .withHeaders("Content-Type" -> "text/plain")
+      val result = routeResult(request)
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsString(result) should include("MISSING_REQUIRED_FIELD")
+    }
+
+    "return BAD_REQUEST when the payload is not valid JSON" in {
+      val url     = routes.NotificationController.postNotification("123").url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody("this is not json")
+          .withHeaders("Content-Type" -> "text/plain")
+      val result = routeResult(request)
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsString(result) should include("MALFORMED_REQUEST")
     }
 
   }

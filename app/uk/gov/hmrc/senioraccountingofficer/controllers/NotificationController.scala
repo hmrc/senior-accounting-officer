@@ -17,10 +17,13 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.mvc.{Action, ControllerComponents}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
@@ -31,10 +34,20 @@ class NotificationController @Inject() (
     extends BackendController(cc) {
 
   def postNotification(id: String): Action[String] = Action.async(parse.tolerantText) { implicit request =>
-    notificationService
-      .postNotification(id, request.body)
-      .map { response =>
-        Status(response.status)(response.body)
-      }
+    given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+
+    JsonErrorHandling.parseJson(request.body) match {
+      case Right(json) =>
+        val errors = JsonErrorHandling.Validators.validateNotification(json)
+        if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
+        else
+          notificationService
+            .postNotification(id, request.body)
+            .map { response =>
+              Status(response.status)(response.body)
+            }
+      case Left(errorResult) =>
+        Future.successful(errorResult)
+    }
   }
 }
