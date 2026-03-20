@@ -130,7 +130,7 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       contentAsString(result) shouldBe downstreamBody
     }
 
-    "return 400 for malformed JSON without calling the connector" in {
+    "return 400 with MALFORMED_REQUEST for malformed JSON without calling the connector" in {
       reset(mockContactDetailsConnector)
 
       val request = createUpdateContactDetailsRequest(saoSubscriptionId, """{"safeId":""")
@@ -142,10 +142,28 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
       verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
     }
 
-    "return 400 for schema-invalid JSON without calling the connector" in {
+    "return 400 with MISSING_REQUIRED_FIELD for json without a required field without calling the connector" in {
       reset(mockContactDetailsConnector)
 
-      val invalidPayload = validPayload ++ Json.arr(
+      val invalidPayload = Json.arr(
+        Json.obj(
+          "email" -> "jane.doe@example.com"
+        )
+      )
+
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload.toString))
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "[0].name", "reason" -> "MISSING_REQUIRED_FIELD")
+      )
+      verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
+    }
+
+    "return 400 with CANNOT_BE_EMPTY for empty contact name without calling the connector" in {
+      reset(mockContactDetailsConnector)
+
+      val invalidPayload = Json.arr(
         Json.obj(
           "name"  -> "",
           "email" -> "jane.doe@example.com"
@@ -156,8 +174,86 @@ class ContactDetailsControllerSpec extends AnyWordSpec with Matchers with GuiceO
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(
-        Json.obj("path" -> "[2].name", "reason" -> "CANNOT_BE_EMPTY"),
-        Json.obj("path" -> "body", "reason"     -> "LENGTH_OUT_OF_BOUNDS")
+        Json.obj("path" -> "[0].name", "reason" -> "CANNOT_BE_EMPTY")
+      )
+      verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
+    }
+
+    "return 400 with INVALID_DATA_TYPE for a non-string contact name without calling the connector" in {
+      reset(mockContactDetailsConnector)
+
+      val invalidPayload = Json.arr(
+        Json.obj(
+          "name"  -> 123,
+          "email" -> "jane.doe@example.com"
+        )
+      )
+
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload.toString))
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "[0].name", "reason" -> "INVALID_DATA_TYPE")
+      )
+      verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
+    }
+
+    "return 400 with ARRAY_MIN_ITEMS_NOT_MET for empty contacts without calling the connector" in {
+      reset(mockContactDetailsConnector)
+
+      val invalidPayload = Json.arr()
+
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload.toString))
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "body", "reason" -> "ARRAY_MIN_ITEMS_NOT_MET")
+      )
+      verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
+    }
+
+    "return 400 with LENGTH_OUT_OF_BOUNDS for too many contacts without calling the connector" in {
+      reset(mockContactDetailsConnector)
+
+      val invalidPayload = Json.arr(
+        Json.obj(
+          "name"  -> "jane",
+          "email" -> "jane.doe@example.com"
+        ),
+        Json.obj(
+          "name"  -> "jane",
+          "email" -> "jane.doe@example.com"
+        ),
+        Json.obj(
+          "name"  -> "jane",
+          "email" -> "jane.doe@example.com"
+        )
+      )
+
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload.toString))
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "body", "reason" -> "LENGTH_OUT_OF_BOUNDS")
+      )
+      verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
+    }
+
+    "return 400 with LENGTH_OUT_OF_BOUNDS for a name over 160 chars without calling the connector" in {
+      reset(mockContactDetailsConnector)
+
+      val invalidPayload = Json.arr(
+        Json.obj(
+          "name"  -> ("A" * 161),
+          "email" -> "jane.doe@example.com"
+        )
+      )
+
+      val result = routeRequest(createUpdateContactDetailsRequest(saoSubscriptionId, invalidPayload.toString))
+
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsJson(result) shouldBe Json.arr(
+        Json.obj("path" -> "[0].name", "reason" -> "LENGTH_OUT_OF_BOUNDS")
       )
       verify(mockContactDetailsConnector, never()).putContactDetails(any(), any())(using any())
     }
