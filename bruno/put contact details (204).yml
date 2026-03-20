@@ -1,11 +1,11 @@
 info:
-  name: put contact details (200)
+  name: put contact details (204)
   type: http
-  seq: 4
+  seq: 5
 
 http:
   method: PUT
-  url: "{{baseUrl}}/contact-details/12"
+  url: "{{baseUrl}}/contact-details/123"
   body:
     type: json
     data: |-

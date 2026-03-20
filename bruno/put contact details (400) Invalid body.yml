@@ -1,0 +1,27 @@
+info:
+  name: put contact details (400) Invalid body
+  type: http
+  seq: 7
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/contact-details/456"
+  headers:
+    - name: Authorization
+      value: Basic {{base64Password}}
+  body:
+    type: json
+    data: |-
+      [
+        {@@@
+          "name": "Jane Doe",
+          "email": "jane.doe@acme.com"
+        }
+      ]
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
