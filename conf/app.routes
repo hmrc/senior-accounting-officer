@@ -1,6 +1,6 @@
 # microservice specific routes
 
-PUT         /subscriptions                        uk.gov.hmrc.senioraccountingofficer.controllers.SubscriptionsController.putSubscription
+PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingofficer.controllers.SubscriptionsController.putSubscription(saoSubscriptionId: String)
 POST        /notification/:id                     uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification(id: String)
 POST        /certificate/:saoSubscriptionId       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate(saoSubscriptionId: String)
 GET         /obligation/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)

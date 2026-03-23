@@ -33,6 +33,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
     "microservice.services.senior-accounting-officer-stubs.port" -> wireMockPort
   )
 
+  private val subscriptionId = "123"
   private val validPayload = Json.obj(
     "safeId"  -> "XE000123456789",
     "company" -> Json.obj(
@@ -45,10 +46,10 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
     )
   )
 
-  "PUT /subscriptions" must {
+  "PUT /subscriptions/:saoSubscriptionId" must {
     "pass through a successful downstream response" in {
       stubFor(
-        put(urlEqualTo("/subscriptions"))
+        put(urlEqualTo(s"/subscriptions/$subscriptionId"))
           .willReturn(
             aResponse()
               .withStatus(204)
@@ -57,7 +58,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
 
       val response =
         wsClient
-          .url(s"$baseUrl/senior-accounting-officer/subscriptions")
+          .url(s"$baseUrl/senior-accounting-officer/subscriptions/$subscriptionId")
           .put(validPayload)
           .futureValue
 
@@ -66,7 +67,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        putRequestedFor(urlEqualTo("/subscriptions"))
+        putRequestedFor(urlEqualTo(s"/subscriptions/$subscriptionId"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, containing("application/json"))
           .withRequestBody(equalToJson(validPayload.toString))
@@ -77,7 +78,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        put(urlEqualTo("/subscriptions"))
+        put(urlEqualTo(s"/subscriptions/$subscriptionId"))
           .willReturn(
             aResponse()
               .withStatus(400)
@@ -87,7 +88,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
 
       val response =
         wsClient
-          .url(s"$baseUrl/senior-accounting-officer/subscriptions")
+          .url(s"$baseUrl/senior-accounting-officer/subscriptions/$subscriptionId")
           .put(validPayload)
           .futureValue
 
@@ -96,7 +97,7 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        putRequestedFor(urlEqualTo("/subscriptions"))
+        putRequestedFor(urlEqualTo(s"/subscriptions/$subscriptionId"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withRequestBody(equalToJson(validPayload.toString))
       )

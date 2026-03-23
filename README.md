@@ -13,13 +13,13 @@ It currently proxies requests to `senior-accounting-officer-stubs`, which is exp
 Current route:
 
 ```text
-PUT /senior-accounting-officer/subscriptions
+PUT /senior-accounting-officer/subscriptions/:saoSubscriptionId
 ```
 
 The endpoint accepts a raw JSON request body and forwards it to the downstream stubs service at:
 
 ```text
-PUT /subscriptions
+PUT /subscriptions/:saoSubscriptionId
 ```
 
 The downstream response is passed through unchanged, including:
@@ -30,7 +30,7 @@ Example request:
 
 ```bash
 curl -i \
-  -X PUT 'http://localhost:10060/senior-accounting-officer/subscriptions' \
+  -X PUT 'http://localhost:10060/senior-accounting-officer/subscriptions/123' \
   -H 'Content-Type: application/json' \
   --data-raw '{
     "safeId": "XE000123456789",
