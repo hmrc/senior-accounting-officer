@@ -61,7 +61,9 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
     )
   )
 
-  private val subscriptionsUrl = "/senior-accounting-officer/subscriptions"
+  private val subscriptionId                       = "123"
+  private def subscriptionsUrl(id: String): String =
+    s"/senior-accounting-officer/subscriptions/$id"
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] = {
     route(app, request) match {
@@ -70,8 +72,8 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
     }
   }
 
-  private def subscriptionRequest(payload: JsObject): FakeRequest[AnyContentAsText] = {
-    FakeRequest("PUT", subscriptionsUrl)
+  private def subscriptionRequest(payload: JsObject, subscriptionId: String): FakeRequest[AnyContentAsText] = {
+    FakeRequest("PUT", subscriptionsUrl(subscriptionId))
       .withHeaders(CONTENT_TYPE -> "application/json")
       .withTextBody(payload.toString())
   }
@@ -79,20 +81,20 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
   private def assertValidationError(payload: JsObject, expectedError: play.api.libs.json.JsValue): Unit = {
     reset(mockSubscriptionsConnector)
 
-    val result = routeResult(subscriptionRequest(payload))
+    val result = routeResult(subscriptionRequest(payload, subscriptionId))
 
     status(result) shouldBe Status.BAD_REQUEST
     contentAsJson(result) shouldBe Json.arr(expectedError)
-    verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
+    verify(mockSubscriptionsConnector, never()).putSubscription(any(), any())(using any())
   }
 
-  "PUT /subscriptions" should {
+  "PUT /subscriptions/:saoSubscriptionId" should {
     "return 204 when the downstream connector succeeds without a body" in {
       reset(mockSubscriptionsConnector)
-      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
+      when(mockSubscriptionsConnector.putSubscription(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
 
-      val result = routeResult(subscriptionRequest(validPayload))
+      val result = routeResult(subscriptionRequest(validPayload, subscriptionId))
 
       status(result) shouldBe Status.NO_CONTENT
     }
@@ -100,10 +102,10 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
     "return the downstream JSON body for validation errors" in {
       val downstreamBody = """[{"path":"safeId","reason":"INVALID_FORMAT"}]"""
       reset(mockSubscriptionsConnector)
-      when(mockSubscriptionsConnector.putSubscription(any())(using any()))
+      when(mockSubscriptionsConnector.putSubscription(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
 
-      val result = routeResult(subscriptionRequest(validPayload))
+      val result = routeResult(subscriptionRequest(validPayload, subscriptionId))
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) shouldBe downstreamBody
@@ -112,7 +114,7 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
     "return 400 with MALFORMED_REQUEST for malformed JSON without calling the connector" in {
       reset(mockSubscriptionsConnector)
 
-      val request = FakeRequest("PUT", subscriptionsUrl)
+      val request = FakeRequest("PUT", subscriptionsUrl(subscriptionId))
         .withHeaders(CONTENT_TYPE -> "application/json")
         .withTextBody("""{"safeId":""")
 
@@ -120,7 +122,7 @@ class SubscriptionsControllerSpec extends AnyWordSpec with Matchers with GuiceOn
 
       status(result) shouldBe Status.BAD_REQUEST
       contentAsJson(result) shouldBe Json.arr(Json.obj("reason" -> "MALFORMED_REQUEST"))
-      verify(mockSubscriptionsConnector, never()).putSubscription(any())(using any())
+      verify(mockSubscriptionsConnector, never()).putSubscription(any(), any())(using any())
     }
 
     "return 400 with MISSING_REQUIRED_FIELD for schema-invalid JSON without calling the connector" in {

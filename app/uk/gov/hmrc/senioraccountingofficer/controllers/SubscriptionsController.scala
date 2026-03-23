@@ -34,20 +34,21 @@ class SubscriptionsController @Inject() (
 )(using ec: ExecutionContext)
     extends BackendController(cc) {
 
-  def putSubscription: Action[String] = Action.async(parse.tolerantText) { implicit request =>
-    given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def putSubscription(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) {
+    implicit request =>
+      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    JsonErrorHandling.parseJson(request.body) match {
-      case Right(json) =>
-        val errors = JsonErrorHandling.Validators.validateSubscription(json)
-        if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
-        else
-          subscriptionsConnector.putSubscription(request.body).map { response =>
-            if response.body.isBlank then Status(response.status)
-            else Status(response.status)(response.body).as(MimeTypes.JSON)
-          }
-      case Left(errorResult) =>
-        Future.successful(errorResult)
-    }
+      JsonErrorHandling.parseJson(request.body) match {
+        case Right(json) =>
+          val errors = JsonErrorHandling.Validators.validateSubscription(json)
+          if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
+          else
+            subscriptionsConnector.putSubscription(saoSubscriptionId, request.body).map { response =>
+              if response.body.isBlank then Status(response.status)
+              else Status(response.status)(response.body).as(MimeTypes.JSON)
+            }
+        case Left(errorResult) =>
+          Future.successful(errorResult)
+      }
   }
 }
