@@ -1,7 +1,7 @@
 info:
   name: put contact details (204)
   type: http
-  seq: 5
+  seq: 3
 
 http:
   method: PUT

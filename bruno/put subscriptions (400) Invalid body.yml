@@ -1,0 +1,32 @@
+info:
+  name: put subscriptions (400) Invalid body
+  type: http
+  seq: 15
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/subscriptions/123"
+  body:
+    type: json
+    data: |-
+      {@@@
+        "safeId": "XE000123456789",
+        "company": {
+          "companyName": "Acme Manufacturing Ltd",
+          "uniqueTaxReference": "1234567890",
+          "companyRegistrationNumber": "OC123456"
+        },
+        "contacts": [
+          {
+            "name": "Jane Doe",
+            "email": "jane.doe@example.com"
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
