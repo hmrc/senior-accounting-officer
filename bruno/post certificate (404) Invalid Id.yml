@@ -1,0 +1,80 @@
+info:
+  name: post certificate (404) Invalid Id
+  type: http
+  seq: 18
+
+http:
+  method: POST
+  url: "{{baseUrl}}/certificate/456"
+  headers:
+    - name: Authorization
+      value: Basic {{base64Password}}
+  body:
+    type: json
+    data: |-
+      {
+        "declaration": {
+          "seniorAccountingOfficer": {
+            "name": "Firstname Lastname",
+            "email": "Firstname.Lastname@example.com"
+          },
+          "proxy": {
+            "name": "Firstname Lastname"
+          }
+        },
+        "companies": [
+          {
+            "companyName": "Example Ltd",
+            "uniqueTaxReference": "1234567890",
+            "companyReferenceNumber": "AB123456",
+            "companyType": "LTD",
+            "financialYearEndDate": "2024-12-31",
+            "qualifiedRegimes": [
+              "CORPORATION",
+              "VALUE_ADDED"
+            ],
+            "qualificationStatement": "All relevant corporation and VAT obligations have been delayed due to grievance.",
+            "seniorAccountingOfficers": [
+              {
+                "name": "Firstname Lastname",
+                "email": "Firstname.Lastname@example.com",
+                "startDate": "2024-04-01",
+                "endDate": "2025-03-31"
+              },
+              {
+                "name": "Secondpersonname Theirlastname",
+                "email": "non.empty.email@companyname.com",
+                "startDate": "2024-12-01",
+                "endDate": "2025-12-31"
+              }
+            ]
+          },
+          {
+            "companyName": "Example PLC",
+            "uniqueTaxReference": "0987654321",
+            "companyReferenceNumber": "CD654321",
+            "companyType": "PLC",
+            "financialYearEndDate": "2024-06-30",
+            "isDormant": true,
+            "isInAdministration": false,
+            "qualifiedRegimes": [
+              "PAY_AS_YOU_EARN",
+              "PETROLEUM_REVENUE"
+            ],
+            "seniorAccountingOfficers": [
+              {
+                "name": "Another Officer",
+                "startDate": "2024-05-01",
+                "endDate": "2025-04-30"
+              }
+            ]
+          }
+        ],
+        "additionalInformation": "non-empty string"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
