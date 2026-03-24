@@ -1,7 +1,7 @@
 info:
   name: post notification (400) multiple constraint violations
   type: http
-  seq: 10
+  seq: 14
 
 http:
   method: POST

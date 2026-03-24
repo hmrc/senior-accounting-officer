@@ -1,7 +1,7 @@
 info:
   name: post notification (400) Invalid body
   type: http
-  seq: 9
+  seq: 13
 
 http:
   method: POST
