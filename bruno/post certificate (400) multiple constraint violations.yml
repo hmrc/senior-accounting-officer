@@ -6,9 +6,7 @@ info:
 http:
   method: POST
   url: "{{baseUrl}}/certificate/123"
-  headers:
-    - name: Authorization
-      value: Basic {{base64Password}}
+
   body:
     type: json
     data: |-
