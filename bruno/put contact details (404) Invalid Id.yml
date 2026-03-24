@@ -1,14 +1,11 @@
 info:
   name: put contact details (404) Invalid Id
   type: http
-  seq: 6
+  seq: 4
 
 http:
   method: PUT
   url: "{{baseUrl}}/contact-details/456"
-  headers:
-    - name: Authorization
-      value: Basic {{base64Password}}
   body:
     type: json
     data: |-
