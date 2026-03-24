@@ -1,7 +1,7 @@
 info:
   name: put contact details (400) multiple constraint violations
   type: http
-  seq: 6
+  seq: 10
 
 http:
   method: PUT

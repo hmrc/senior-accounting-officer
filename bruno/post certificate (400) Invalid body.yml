@@ -1,12 +1,11 @@
 info:
   name: post certificate (400) Invalid body
   type: http
-  seq: 19
+  seq: 3
 
 http:
   method: POST
   url: "{{baseUrl}}/certificate/123"
-
   body:
     type: json
     data: |-

@@ -1,12 +1,11 @@
 info:
   name: post certificate (400) multiple constraint violations
   type: http
-  seq: 20
+  seq: 4
 
 http:
   method: POST
   url: "{{baseUrl}}/certificate/123"
-
   body:
     type: json
     data: |-

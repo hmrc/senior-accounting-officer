@@ -1,7 +1,7 @@
 info:
   name: get obligation (200)
   type: http
-  seq: 11
+  seq: 15
 
 http:
   method: GET
