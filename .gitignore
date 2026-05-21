@@ -41,3 +41,4 @@ tmp
 
 bruno/.env*
 bruno/node_modules
+!.github
