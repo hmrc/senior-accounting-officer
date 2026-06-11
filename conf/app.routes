@@ -1,8 +1,8 @@
 # microservice specific routes
 
-PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingofficer.controllers.SubscriptionsController.putSubscription(saoSubscriptionId: String)
-POST        /notification/:id                     uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification(id: String)
-POST        /certificate/:saoSubscriptionId       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate(saoSubscriptionId: String)
-GET         /obligation/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)
-GET         /contact-details/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.getContactDetails(saoSubscriptionId: String)
-PUT         /contact-details/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.putContactDetails(saoSubscriptionId: String)
+PUT         /subscriptions/:saoSubscriptionId                                 uk.gov.hmrc.senioraccountingofficer.controllers.SubscriptionsController.putSubscription(saoSubscriptionId: String)
+POST        /subscriptions/:subscriptionId/notifications                     uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification(subscriptionId: String)
+POST        /certificate/:saoSubscriptionId                                   uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate(saoSubscriptionId: String)
+GET         /obligation/:saoSubscriptionId                                    uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)
+GET         /contact-details/:saoSubscriptionId                               uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.getContactDetails(saoSubscriptionId: String)
+PUT         /contact-details/:saoSubscriptionId                               uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.putContactDetails(saoSubscriptionId: String)

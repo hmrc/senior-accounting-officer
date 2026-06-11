@@ -73,8 +73,6 @@ properties:
             type: object
             required:
               - name
-              - startDate
-              - endDate
             properties:
               name:
                 type: string
