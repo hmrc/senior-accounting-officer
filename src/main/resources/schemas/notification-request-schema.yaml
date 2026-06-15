@@ -9,53 +9,51 @@ properties:
     items:
       type: object
       required:
-        - companyName
-        - uniqueTaxReference
-        - companyType
-        - financialYearEndDate
-        - seniorAccountingOfficers
+        - utr
+        - name
+        - accPeriodEnd
+        - status
+        - type
       properties:
-        companyName:
+        crn:
+          type: string
+          pattern: "^([0-9]{8}|[A-Z]{2}[0-9]{6})$"
+        utr:
+          type: string
+          pattern: "^[0-9]{10}$"
+        name:
           type: string
           minLength: 1
           maxLength: 160
-        uniqueTaxReference:
+        accPeriodEnd:
           type: string
-          pattern: "^[0-9]{10}$"
-        companyReferenceNumber:
+          format: date
+        status:
           type: string
-          pattern: "^([0-9]{8}|[A-Z]{2}[0-9]{6})$"
-        companyType:
+        type:
           type: string
           enum:
             - PLC
             - LTD
-        financialYearEndDate:
+  saos:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        fromDate:
           type: string
           format: date
-        seniorAccountingOfficers:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            required:
-              - name
-            properties:
-              name:
-                type: string
-                minLength: 1
-              startDate:
-                type: string
-                format: date
-              endDate:
-                type: string
-                format: date
-              email:
-                type: string
-                format: email
-                minLength: 1
-                maxLength: 254
-  additionalInformation:
-    type: string
-    minLength: 1
-    maxLength: 5000
+        toDate:
+          type: string
+          format: date
