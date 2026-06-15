@@ -36,7 +36,6 @@ class NotificationConnector @Inject() (
   def postNotification(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$id/notifications"
 
-
     httpClientV2
       .post(url)
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)

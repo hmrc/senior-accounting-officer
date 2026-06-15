@@ -38,6 +38,7 @@ import scala.concurrent.Future
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockNotificationService: NotificationService = mock[NotificationService]
+  val id                                           = "123"
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -49,19 +50,20 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
   private val validPayload: JsObject = Json.obj(
     "companies" -> Json.arr(
       Json.obj(
-        "companyName"              -> "Example Ltd",
-        "uniqueTaxReference"       -> "1234567890",
-        "companyReferenceNumber"   -> "AB123456",
-        "companyType"              -> "LTD",
-        "financialYearEndDate"     -> "2024-12-31",
-        "seniorAccountingOfficers" -> Json.arr(
-          Json.obj(
-            "name"      -> "Firstname Lastname",
-            "email"     -> "Firstname.Lastname@example.com",
-            "startDate" -> "2024-04-01",
-            "endDate"   -> "2025-03-31"
-          )
-        )
+        "name"         -> "Example Ltd",
+        "utr"          -> "1234567890",
+        "crn"          -> "AB123456",
+        "type"         -> "LTD",
+        "accPeriodEnd" -> "2024-12-31",
+        "status"       -> "COMPLIANT"
+      )
+    ),
+    "saos" -> Json.arr(
+      Json.obj(
+        "name"     -> "Firstname Lastname",
+        "email"    -> "Firstname.Lastname@example.com",
+        "fromDate" -> "2024-04-01",
+        "toDate"   -> "2025-03-31"
       )
     ),
     "additionalInformation" -> "non-empty string"
@@ -77,13 +79,13 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       case None        => fail("Expected route to be defined")
     }
 
-  "POST /notification" should {
+  "POST /notification/:id" should {
 
     "return the status and body from the downstream service" in {
       val mockResponse = HttpResponse(Status.ACCEPTED, "Accepted Payload")
       when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
 
-      val url     = routes.NotificationController.postNotification("123").url
+      val url     = routes.NotificationController.postNotification(id).url
       val request =
         FakeRequest("POST", url)
           .withTextBody(validPayload.toString())

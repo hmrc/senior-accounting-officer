@@ -31,21 +31,22 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
     """{
       |  "companies": [
       |    {
-      |      "companyName": "Example Ltd",
-      |      "uniqueTaxReference": "1234567890",
-      |      "companyReferenceNumber": "AB123456",
-      |      "companyType": "LTD",
-      |      "financialYearEndDate": "2024-12-31",
-      |      "seniorAccountingOfficers": [
+      |      "name": "Example Ltd",
+      |      "utr": "1234567890",
+      |      "crn": "AB123456",
+      |      "type": "LTD",
+      |      "accPeriodEnd": "2024-12-31",
+      |      "status": "COMPLIANT"
+      |     }
+      |    ],
+      |    "saos": [
       |        {
       |          "name": "Firstname Lastname",
       |          "email": "Firstname.Lastname@example.com",
-      |          "startDate": "2024-04-01",
-      |          "endDate": "2025-03-31"
+      |          "fromDate": "2024-04-01",
+      |          "toDate": "2025-03-31"
       |        }
-      |      ]
-      |    }
-      |  ],
+      |    ],
       |  "additionalInformation": "non-empty string"
       |}""".stripMargin
 
@@ -61,38 +62,50 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       "return MISSING_REQUIRED_FIELD pointing at companies" in {
         val remover        = (__ \ "companies").json.prune
         val updatedJsonStr = Json.parse(validNotification).transform(remover).asOpt.value.toString
-        val errors         = notificationErrors(updatedJsonStr)
+        println(updatedJsonStr)
+        val errors = notificationErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies")
         errors.size shouldBe 1
       }
     }
 
-    "given a company missing uniqueTaxReference" should {
-      "return MISSING_REQUIRED_FIELD pointing at companies[0].uniqueTaxReference" in {
-        val errors = notificationErrors(validNotification.replace(""""uniqueTaxReference": "1234567890",""", ""))
+    "given a company missing utr" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].utr" in {
+        val errors = notificationErrors(validNotification.replace(""""utr": "1234567890",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
-        errors.flatMap(_.path) should contain("companies[0].uniqueTaxReference")
+        errors.flatMap(_.path) should contain("companies[0].utr")
         errors.size shouldBe 1
       }
     }
 
-    "given a seniorAccountingOfficer missing startDate" should {
-      "return MISSING_REQUIRED_FIELD pointing at companies[0].seniorAccountingOfficers[0].startDate" in {
-        val errors = notificationErrors(validNotification.replace(""""startDate": "2024-04-01",""", ""))
+    "given a sao missing fromDate" should {
+      "return MISSING_REQUIRED_FIELD pointing at saos[0].fromDate" in {
+        val errors = notificationErrors(validNotification.replace(""""fromDate": "2024-04-01",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
-        errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].startDate")
+        errors.flatMap(_.path) should contain("saos[0].fromDate")
         errors.size shouldBe 1
       }
     }
 
-    "given a invalid financialYearEndDate format" should {
-      "return INVALID_FORMAT pointing at financialYearEndDate" in {
+    "given an invalid accPeriodEnd format" should {
+      "return INVALID_FORMAT pointing at accPeriodEnd" in {
         val errors = notificationErrors(
-          validNotification.replace(""""financialYearEndDate": "2024-12-31"""", """"financialYearEndDate": "-"""")
+          validNotification.replace(""""accPeriodEnd": "2024-12-31"""", """"accPeriodEnd": "-"""")
         )
         errors.map(_.reason) should contain("INVALID_FORMAT")
-        errors.flatMap(_.path) should contain("companies[0].financialYearEndDate")
+        errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given an invalid enum for company type" should {
+      "return INVALID_ENUM_VALUE pointing at type" in {
+        val errors = notificationErrors(
+          validNotification.replace(""""type": "LTD"""", """"type": """"")
+        )
+        errors.map(_.reason) should contain("INVALID_ENUM_VALUE")
+        errors.flatMap(_.path) should contain("companies[0].type")
         errors.size shouldBe 1
       }
     }

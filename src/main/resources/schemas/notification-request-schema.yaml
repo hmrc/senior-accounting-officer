@@ -1,5 +1,6 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 type: object
+additionalProperties: false
 required:
   - companies
 properties:
@@ -8,6 +9,7 @@ properties:
     minItems: 1
     items:
       type: object
+      additionalProperties: false
       required:
         - utr
         - name
@@ -40,8 +42,10 @@ properties:
     minItems: 1
     items:
       type: object
+      additionalProperties: false
       required:
         - name
+        - fromDate
       properties:
         name:
           type: string
@@ -57,3 +61,7 @@ properties:
         toDate:
           type: string
           format: date
+  additionalInformation:
+    type: string
+    minLength: 1
+    maxLength: 5000
