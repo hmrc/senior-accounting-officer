@@ -62,8 +62,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       "return MISSING_REQUIRED_FIELD pointing at companies" in {
         val remover        = (__ \ "companies").json.prune
         val updatedJsonStr = Json.parse(validNotification).transform(remover).asOpt.value.toString
-        println(updatedJsonStr)
-        val errors = notificationErrors(updatedJsonStr)
+        val errors         = notificationErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies")
         errors.size shouldBe 1
