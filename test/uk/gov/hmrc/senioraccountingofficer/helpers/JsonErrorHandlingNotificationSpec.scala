@@ -29,6 +29,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
 
   private val validNotification =
     """{
+      | "subscriptionId": "123",
       |  "companies": [
       |    {
       |      "name": "Example Ltd",

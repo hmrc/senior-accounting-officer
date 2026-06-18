@@ -3,7 +3,10 @@ type: object
 additionalProperties: false
 required:
   - companies
+  - subscriptionId
 properties:
+  subscriptionId:
+    type: string
   companies:
     type: array
     minItems: 1
