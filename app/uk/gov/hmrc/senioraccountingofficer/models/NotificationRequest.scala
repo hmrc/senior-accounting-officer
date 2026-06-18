@@ -31,8 +31,8 @@ extension (notificationRequest: NotificationRequest) {
 
   def toNotificationDpsRequest: NotificationDpsRequest = {
     NotificationDpsRequest(
-      companies = notificationRequest.companies.map(_.toNotificationDpsRequestCompany),
-      saos = notificationRequest.saos.map(_.toNotificationRequestSao),
+      companies = notificationRequest.companies.map(_.toDpsCompany),
+      saos = notificationRequest.saos.map(_.toDpsSao),
       remarks = notificationRequest.additionalInformation,
       staffPID = None
     )
@@ -50,7 +50,7 @@ final case class Company(
 )
 
 extension (company: Company) {
-  def toNotificationDpsRequestCompany: DpsCompany = {
+  def toDpsCompany: DpsCompany = {
     DpsCompany(
       crn = company.crn,
       utr = company.utr,
@@ -70,7 +70,7 @@ final case class Sao(
 )
 
 extension (sao: Sao) {
-  def toNotificationRequestSao: DpsSao = {
+  def toDpsSao: DpsSao = {
     DpsSao(name = sao.name, fromDate = sao.fromDate, email = sao.email, toDate = sao.toDate)
   }
 }

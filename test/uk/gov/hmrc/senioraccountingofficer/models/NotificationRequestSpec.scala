@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models
 
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.freespec.AnyFreeSpec
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequestSpec.*
-import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, Company}
-import java.time.LocalDate
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, Company as DpsCompany, Sao as DpsSao}
 import org.scalatest.OptionValues
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequestSpec.*
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, NotificationDpsRequest, Sao as DpsSao}
+
+import java.time.LocalDate
 
 class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValues {
   val subscriptionId = "example subscription id"
@@ -77,8 +76,8 @@ object NotificationRequestSpec {
   val status       = "example status"
   val companyType  = "example type"
 
-  val saoName  = "example sao name"
-  val fromDate = LocalDate.parse("2026-01-01").toString()
-  val email    = "example email"
-  val toDate   = LocalDate.parse("2026-03-01").toString()
+  val saoName          = "example sao name"
+  val fromDate: String = LocalDate.parse("2026-01-01").toString()
+  val email            = "example email"
+  val toDate: String   = LocalDate.parse("2026-03-01").toString()
 }
