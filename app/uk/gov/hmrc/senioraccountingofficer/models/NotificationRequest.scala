@@ -40,7 +40,7 @@ extension (notificationRequest: NotificationRequest) {
   }
 }
 
-private final case class Company(
+final case class Company(
     crn: Option[String] = None,
     utr: String,
     name: String,
