@@ -18,6 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, Sao as DpsSao}
 
 final case class NotificationRequest(
     subscriptionId: String,
@@ -30,8 +31,8 @@ extension (notificationRequest: NotificationRequest) {
 
   def toNotificationDpsRequest: NotificationDpsRequest = {
     NotificationDpsRequest(
-      companies = List(),
-      saos = List(),
+      companies = notificationRequest.companies.map(_.toNotificationDpsRequestCompany),
+      saos = notificationRequest.saos.map(_.toNotificationRequestSao),
       remarks = notificationRequest.additionalInformation,
       staffPID = None
     )
@@ -48,6 +49,19 @@ private final case class Company(
     `type`: String
 )
 
+extension (company: Company) {
+  def toNotificationDpsRequestCompany: DpsCompany = {
+    DpsCompany(
+      crn = company.crn,
+      utr = company.utr,
+      name = company.name,
+      accPeriodEnd = company.accPeriodEnd,
+      status = company.status,
+      `type` = company.`type`
+    )
+  }
+}
+
 final case class Sao(
     name: String,
     fromDate: String,
@@ -55,6 +69,11 @@ final case class Sao(
     toDate: String
 )
 
+extension (sao: Sao) {
+  def toNotificationRequestSao: DpsSao = {
+    DpsSao(name = sao.name, fromDate = sao.fromDate, email = sao.email, toDate = sao.toDate)
+  }
+}
 final case class AdditionalInformation(
     `type`: Option[String] = None
 )

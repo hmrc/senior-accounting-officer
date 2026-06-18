@@ -16,18 +16,19 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.toNotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.{ExecutionContext, Future}
+
 import javax.inject.Inject
-import uk.gov.hmrc.senioraccountingofficer.models.toNotificationDpsRequest
 
 class NotificationController @Inject() (
     cc: ControllerComponents,
@@ -43,17 +44,12 @@ class NotificationController @Inject() (
         val errors = JsonErrorHandling.Validators.validateNotification(json)
         if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
         else {
-          val id           = (json \ "subscriptionId").as[String]
-          val body         = Json.prettyPrint(json.as[JsObject] - "subscriptionId")
-          val notification = json.as[NotificationRequest]
-          // val stub = Notifi
-          println("here!!")
-          println(notification)
-
-          val dpsRequest = notification.toNotificationDpsRequest
+          val id                  = (json \ "subscriptionId").as[String]
+          val notificationRequest = json.as[NotificationRequest]
+          val dpsRequest          = notificationRequest.toNotificationDpsRequest
 
           notificationService
-            .postNotification(id, body)
+            .postNotification(id, Json.toJson(dpsRequest).toString)
             .map { response =>
               Status(response.status)(response.body)
             }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Format, Json, OFormat}
 
 final case class NotificationDpsRequest(
     companies: List[Company],
@@ -42,7 +42,7 @@ final case class Sao(
 )
 
 object NotificationDpsRequest {
-  given Format[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
+  given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 }
 
 object Company {
