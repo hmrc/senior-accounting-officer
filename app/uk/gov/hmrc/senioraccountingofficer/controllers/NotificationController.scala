@@ -27,13 +27,13 @@ import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
+import uk.gov.hmrc.senioraccountingofficer.models.toNotificationDpsRequest
 
 class NotificationController @Inject() (
     cc: ControllerComponents,
     notificationService: NotificationService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc) {
-
 
   def postNotification(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
     given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
@@ -43,15 +43,14 @@ class NotificationController @Inject() (
         val errors = JsonErrorHandling.Validators.validateNotification(json)
         if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
         else {
-          val id   = (json \ "subscriptionId").as[String]
-          val body = Json.prettyPrint(json.as[JsObject] - "subscriptionId")
+          val id           = (json \ "subscriptionId").as[String]
+          val body         = Json.prettyPrint(json.as[JsObject] - "subscriptionId")
           val notification = json.as[NotificationRequest]
-          val stub = Notifi
+          // val stub = Notifi
           println("here!!")
           println(notification)
 
-
-
+          val dpsRequest = notification.toNotificationDpsRequest
 
           notificationService
             .postNotification(id, body)

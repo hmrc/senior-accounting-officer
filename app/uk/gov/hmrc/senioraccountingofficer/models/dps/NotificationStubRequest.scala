@@ -14,32 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models
+package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 
-final case class NotificationRequest(
-    subscriptionId: String,
+final case class NotificationDpsRequest(
     companies: List[Company],
     saos: List[Sao],
-    additionalInformation: Option[String] = None
+    remarks: Option[String] = None,
+    staffPID: Option[String] = None
 )
 
-extension (notificationRequest: NotificationRequest) {
-
-  def toNotificationDpsRequest: NotificationDpsRequest = {
-    NotificationDpsRequest(
-      companies = List(),
-      saos = List(),
-      remarks = notificationRequest.additionalInformation,
-      staffPID = None
-    )
-
-  }
-}
-
-private final case class Company(
+final case class Company(
     crn: Option[String] = None,
     utr: String,
     name: String,
@@ -55,12 +41,8 @@ final case class Sao(
     toDate: String
 )
 
-final case class AdditionalInformation(
-    `type`: Option[String] = None
-)
-
-object NotificationRequest {
-  given Format[NotificationRequest] = Json.format[NotificationRequest]
+object NotificationDpsRequest {
+  given Format[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 }
 
 object Company {
