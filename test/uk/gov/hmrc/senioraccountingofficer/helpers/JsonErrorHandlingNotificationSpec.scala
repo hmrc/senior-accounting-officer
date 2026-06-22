@@ -162,5 +162,14 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         errors.size shouldBe 1
       }
     }
+
+    "given a sao missing name" should {
+      "return MISSING_REQUIRED_FIELD pointing at saos[0].name" in {
+        val errors = notificationErrors(validNotification.replaceAll(s""""name": "Firstname Lastname",""", ""))
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("saos[0].name")
+        errors.size shouldBe 1
+      }
+    }
   }
 }
