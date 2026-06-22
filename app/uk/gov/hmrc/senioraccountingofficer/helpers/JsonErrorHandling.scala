@@ -27,10 +27,9 @@ import play.api.mvc.Results.BadRequest
 import scala.io.Source
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 object JsonErrorHandling {
-
-  final case class ApiError(path: Option[String], reason: String)
 
   def parseJson(body: String): Either[Result, JsValue] =
     Try(Json.parse(body)).toEither.left.map(_ => malformedRequest)

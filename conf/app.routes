@@ -1,8 +1,134 @@
 # microservice specific routes
 
+### NoDocs ###
 PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingofficer.controllers.SubscriptionsController.putSubscription(saoSubscriptionId: String)
+
+###
+#  summary: Submit a notification
+#  requestBody:
+#    content:
+#      application/json:
+#        schema:
+#          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest"
+#  responses:
+#    "200":
+#      description: Notification submitted successfully
+#      content:
+#        application/json:
+#          example:
+#            id: "NOT0123456789"
+#            timestamp: "2026-03-01T12:00:14Z"
+#    "400":
+#      description: Syntactically incorrect input
+#      content:
+#        application/json:
+#          schema:
+#            type: array
+#            items:
+#              $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            saoSubscriptionIdMissing:
+#              summary: SAO Subscription ID is missing
+#              value:
+#                - path: "saoSubscriptionId"
+#                  reason: "MISSING_REQUIRED_FIELD"
+#            invalidSaoSubscriptionId:
+#              summary: SAO Subscription ID is invalid
+#              value:
+#                - path: "saoSubscriptionId"
+#                  reason: "INVALID_FORMAT"
+#            missingRequiredField:
+#              summary: A required field is missing
+#              value:
+#                - path: "companies"
+#                  reason: "MISSING_REQUIRED_FIELD"
+#            emptyField:
+#              summary: A field that cannot be empty has no value
+#              value:
+#                - path: "seniorAccountingOfficers.name"
+#                  reason: "CANNOT_BE_EMPTY"
+#            invalidFormat:
+#              summary: Date field provided in wrong format
+#              value:
+#                - path: "financialYearEndDate"
+#                  reason: "INVALID_FORMAT"
+#            patternMismatch:
+#              summary: uniqueTaxReference does not match required numeric pattern
+#              value:
+#                - path: "uniqueTaxReference"
+#                  reason: "INVALID_FORMAT"
+#            invalidEnum:
+#              summary: Invalid company type provided
+#              value:
+#                - path: "companyType"
+#                  reason: "INVALID_ENUM_VALUE"
+#            emailFormatInvalid:
+#              summary: Invalid email format for SAO
+#              value:
+#                - path: "seniorAccountingOfficers.email"
+#                  reason: "INVALID_FORMAT"
+#            lengthOutOfBounds:
+#              summary: Additional info text exceeds max length
+#              value:
+#                - path: "additionalInformation"
+#                  reason: "LENGTH_OUT_OF_BOUNDS"
+#            arrayTooSmall:
+#              summary: At least one seniorAccountingOfficer required
+#              value:
+#                - path: "seniorAccountingOfficers"
+#                  reason: "ARRAY_MIN_ITEMS_NOT_MET"
+#            arrayIsInvalidType:
+#              summary: Field has unexpected JSON type
+#              value:
+#                - path: "companies"
+#                  reason: "INVALID_DATA_TYPE"
+#            multipleValidationErrors:
+#              summary: Multiple validation failures in one request
+#              value:
+#                - path: "companies[0].financialYearEndDate"
+#                  reason: "INVALID_FORMAT"
+#                - path: "companies[1].name"
+#                  reason: "CANNOT_BE_EMPTY"
+#                - path: "additionalInformation"
+#                  reason: "LENGTH_OUT_OF_BOUNDS"
+#            unreadablePayload:
+#              summary: Payload could not be parsed
+#              value:
+#                - reason: "MALFORMED_REQUEST"
+#    "404":
+#      description: Subscription not found
+#    "422":
+#      description: Semantically incorrect input
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "./core.yaml#/components/schemas/semanticErrorResponse"
+#          examples:
+#            invalidSaoStartDate:
+#              value:
+#                path: "companies[0].seniorAccountingOfficers[0].startDate"
+#                reason: "DATE_OUT_OF_BOUNDS"
+#            invalidSaoEndDate:
+#              value:
+#                path: "companies[0].seniorAccountingOfficers[0].endDate"
+#                reason: "DATE_OUT_OF_BOUNDS"
+#            invalidFinancialYearEndDate:
+#              value:
+#                path: "companies[0].financialYearEndDate"
+#                reason: "DATE_OUT_OF_BOUNDS"
+#    "500":
+#      description: Internal server error
+###
 POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
+
+### NoDocs ###
 POST        /certificate/:saoSubscriptionId       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate(saoSubscriptionId: String)
+
+### NoDocs ###
 GET         /obligation/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)
+
+### NoDocs ###
 GET         /contact-details/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.getContactDetails(saoSubscriptionId: String)
+
+### NoDocs ###
 PUT         /contact-details/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.putContactDetails(saoSubscriptionId: String)

@@ -20,26 +20,19 @@ import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, Sao as DpsSao}
 
-final case class NotificationRequest(
-    subscriptionId: String,
-    companies: List[Company],
-    saos: List[Sao],
-    remarks: Option[String]
+final case class Sao(
+    name: String,
+    fromDate: String,
+    email: Option[String] = None,
+    toDate: Option[String]
 )
 
-extension (notificationRequest: NotificationRequest) {
-
-  def toNotificationDpsRequest: NotificationDpsRequest = {
-    NotificationDpsRequest(
-      companies = notificationRequest.companies.map(_.toDpsCompany),
-      saos = notificationRequest.saos.map(_.toDpsSao),
-      remarks = notificationRequest.remarks,
-      staffPID = None
-    )
-
-  }
+object Sao {
+  given Format[Sao] = Json.format[Sao]
 }
 
-object NotificationRequest {
-  given Format[NotificationRequest] = Json.format[NotificationRequest]
+extension (sao: Sao) {
+  def toDpsSao: DpsSao = {
+    DpsSao(name = sao.name, fromDate = sao.fromDate, email = sao.email, toDate = sao.toDate)
+  }
 }
