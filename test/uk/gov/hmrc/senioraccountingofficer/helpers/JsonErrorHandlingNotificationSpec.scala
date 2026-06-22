@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
+import play.api.libs.json.JsValue
 import org.scalactic.Prettifier.default
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
@@ -30,17 +31,14 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
   private def notificationErrors(json: String): Seq[JsonErrorHandling.ApiError] =
     JsonErrorHandling.Validators.validateNotification(Json.parse(json))
 
-  //      |      "name": $generateCompanyName,
-  //      |      "utr": $generateUtr,
-  //      |      "crn": $generateCrn,
   private val validNotification =
     s"""{
       | "subscriptionId": "123",
       |  "companies": [
       |    {
-      |      "name": "$generateCompanyName",
-      |      "utr": "1234567890",
-      |      "crn": "AB123456",
+      |      "name": "Example Ltd",
+      |      "utr": "$generateUtr",
+      |      "crn": "$generateCrn",
       |      "type": "LTD",
       |      "accPeriodEnd": "2024-12-31",
       |      "status": "COMPLIANT"
@@ -57,22 +55,16 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       |  "additionalInformation": "non-empty string"
       |}""".stripMargin
 
-  private def generateCompanyName = {
-    "Example Ltd"
-  }
-
-  private val generateName = {
-    "Firstname Lastname"
-  }
   private def generateCrn = {
     val num = Random.nextInt(1000000)
-    f"$num%010d"
+    f"$num%08d"
   }
 
   private def generateUtr = {
     val seed = Random.nextInt(1000000)
     SaUtrGenerator(seed).nextSaUtr
   }
+
   "Notification validation" when {
 
     "given a fully valid payload" should {
@@ -94,18 +86,21 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
 
     "given a company missing utr" should {
       "return MISSING_REQUIRED_FIELD pointing at companies[0].utr" in {
-        val errors = notificationErrors(validNotification.replace(""""utr": "1234567890",""", ""))
+        val json = Json.parse(validNotification)
+        val utr  = (json \ "companies" \ 0 \ "utr").as[String]
+
+        val errors = notificationErrors(validNotification.replaceAll(s""""utr": "$utr",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies[0].utr")
         errors.size shouldBe 1
       }
     }
 
-    "given a sao missing fromDate" should {
-      "return MISSING_REQUIRED_FIELD pointing at saos[0].fromDate" in {
-        val errors = notificationErrors(validNotification.replace(""""fromDate": "2024-04-01",""", ""))
+    "given a company missing accPeriodEnd" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].accPeriodEnd" in {
+        val errors = notificationErrors(validNotification.replace(""""accPeriodEnd": "2024-12-31",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
-        errors.flatMap(_.path) should contain("saos[0].fromDate")
+        errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
         errors.size shouldBe 1
       }
     }
