@@ -20,7 +20,7 @@ import org.scalactic.Prettifier.default
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.JsValue
+import play.api.libs.json.*
 import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.domain.SaUtrGenerator
 
@@ -96,11 +96,47 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       }
     }
 
+    "given a company missing name" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].name" in {
+        val json        = Json.parse(validNotification)
+        val companyName = (json \ "companies" \ 0 \ "name").as[String]
+
+        val errors = notificationErrors(validNotification.replaceAll(s""""name": "$companyName",""", ""))
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].name")
+        errors.size shouldBe 1
+      }
+    }
+
     "given a company missing accPeriodEnd" should {
       "return MISSING_REQUIRED_FIELD pointing at companies[0].accPeriodEnd" in {
         val errors = notificationErrors(validNotification.replace(""""accPeriodEnd": "2024-12-31",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a company missing status" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].status" in {
+        val regex               = """,\s+"status": "COMPLIANT"""".r
+        val updatedNotification = regex.replaceAllIn(validNotification, "")
+        val errors              = notificationErrors(updatedNotification)
+
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].status")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a company missing type" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].status" in {
+        val regex               = """"type": "LTD",""".r
+        val updatedNotification = regex.replaceAllIn(validNotification, "")
+        val errors              = notificationErrors(updatedNotification)
+
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].type")
         errors.size shouldBe 1
       }
     }

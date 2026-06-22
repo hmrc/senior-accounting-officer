@@ -24,7 +24,7 @@ final case class NotificationRequest(
     subscriptionId: String,
     companies: List[Company],
     saos: List[Sao],
-    additionalInformation: Option[String] = None
+    additionalInformation: Option[String]
 )
 
 extension (notificationRequest: NotificationRequest) {
@@ -65,7 +65,7 @@ extension (company: Company) {
 final case class Sao(
     name: String,
     fromDate: Option[String],
-    email: Option[String] = None,
+    email: Option[String],
     toDate: Option[String]
 )
 
