@@ -64,9 +64,9 @@ extension (company: Company) {
 
 final case class Sao(
     name: String,
-    fromDate: String,
+    fromDate: Option[String],
     email: Option[String] = None,
-    toDate: String
+    toDate: Option[String]
 )
 
 extension (sao: Sao) {
@@ -74,9 +74,6 @@ extension (sao: Sao) {
     DpsSao(name = sao.name, fromDate = sao.fromDate, email = sao.email, toDate = sao.toDate)
   }
 }
-final case class AdditionalInformation(
-    `type`: Option[String] = None
-)
 
 object NotificationRequest {
   given Format[NotificationRequest] = Json.format[NotificationRequest]

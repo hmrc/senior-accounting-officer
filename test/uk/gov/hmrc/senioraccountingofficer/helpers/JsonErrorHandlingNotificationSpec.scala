@@ -21,18 +21,24 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, __}
+import uk.gov.hmrc.domain.SaUtrGenerator
+
+import scala.util.Random
 
 class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def notificationErrors(json: String): Seq[JsonErrorHandling.ApiError] =
     JsonErrorHandling.Validators.validateNotification(Json.parse(json))
 
+  //      |      "name": $generateCompanyName,
+  //      |      "utr": $generateUtr,
+  //      |      "crn": $generateCrn,
   private val validNotification =
-    """{
+    s"""{
       | "subscriptionId": "123",
       |  "companies": [
       |    {
-      |      "name": "Example Ltd",
+      |      "name": "$generateCompanyName",
       |      "utr": "1234567890",
       |      "crn": "AB123456",
       |      "type": "LTD",
@@ -51,6 +57,22 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       |  "additionalInformation": "non-empty string"
       |}""".stripMargin
 
+  private def generateCompanyName = {
+    "Example Ltd"
+  }
+
+  private val generateName = {
+    "Firstname Lastname"
+  }
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%010d"
+  }
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
   "Notification validation" when {
 
     "given a fully valid payload" should {

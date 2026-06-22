@@ -48,7 +48,6 @@ properties:
       additionalProperties: false
       required:
         - name
-        - fromDate
       properties:
         name:
           type: string

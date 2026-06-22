@@ -36,9 +36,9 @@ final case class Company(
 
 final case class Sao(
     name: String,
-    fromDate: String,
+    fromDate: Option[String],
     email: Option[String] = None,
-    toDate: String
+    toDate: Option[String]
 )
 
 object NotificationDpsRequest {

@@ -40,7 +40,7 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
             `type` = companyType
           )
         ),
-        saos = List(Sao(name = saoName, fromDate = fromDate, email = Some(email), toDate = toDate)),
+        saos = List(Sao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
         additionalInformation = Some(additionalInformation)
       )
 
@@ -55,7 +55,7 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
             `type` = companyType
           )
         ),
-        saos = List(DpsSao(name = saoName, fromDate = fromDate, email = Some(email), toDate = toDate)),
+        saos = List(DpsSao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
         remarks = Some(additionalInformation),
         staffPID = None
       )
