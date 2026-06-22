@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
-import play.api.libs.json.JsValue
 import org.scalactic.Prettifier.default
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.JsValue
 import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.domain.SaUtrGenerator
 
