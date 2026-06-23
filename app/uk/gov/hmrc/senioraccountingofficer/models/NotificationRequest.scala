@@ -24,7 +24,7 @@ final case class NotificationRequest(
     subscriptionId: String,
     companies: List[Company],
     saos: List[Sao],
-    additionalInformation: Option[String]
+    remarks: Option[String]
 )
 
 extension (notificationRequest: NotificationRequest) {
@@ -33,7 +33,7 @@ extension (notificationRequest: NotificationRequest) {
     NotificationDpsRequest(
       companies = notificationRequest.companies.map(_.toDpsCompany),
       saos = notificationRequest.saos.map(_.toDpsSao),
-      remarks = notificationRequest.additionalInformation,
+      remarks = notificationRequest.remarks,
       staffPID = None
     )
 

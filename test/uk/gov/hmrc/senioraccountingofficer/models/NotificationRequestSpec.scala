@@ -41,7 +41,7 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
           )
         ),
         saos = List(Sao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
-        additionalInformation = Some(additionalInformation)
+        remarks = Some(remarks)
       )
 
       val expected = NotificationDpsRequest(
@@ -56,7 +56,7 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
           )
         ),
         saos = List(DpsSao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
-        remarks = Some(additionalInformation),
+        remarks = Some(remarks),
         staffPID = None
       )
 
@@ -66,8 +66,8 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
 }
 
 object NotificationRequestSpec {
-  val subscriptionId        = "example subscription id"
-  val additionalInformation = "example additional information"
+  val subscriptionId = "example subscription id"
+  val remarks        = "example additional information"
 
   val crn          = "example crn"
   val utr          = "example utr"

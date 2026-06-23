@@ -63,7 +63,7 @@ properties:
         toDate:
           type: string
           format: date
-  additionalInformation:
+  remarks:
     type: string
     minLength: 1
     maxLength: 5000
