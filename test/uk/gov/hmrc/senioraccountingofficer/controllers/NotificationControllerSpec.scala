@@ -30,10 +30,12 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.Future
+import scala.util.Random
 
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
@@ -52,8 +54,8 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     "companies"      -> Json.arr(
       Json.obj(
         "name"         -> "Example Ltd",
-        "utr"          -> "1234567890",
-        "crn"          -> "AB123456",
+        "utr"          -> generateUtr,
+        "crn"          -> generateCrn,
         "type"         -> "LTD",
         "accPeriodEnd" -> "2024-12-31",
         "status"       -> "COMPLIANT"
@@ -73,6 +75,16 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
   private val invalidPayload: JsObject = Json.obj(
     "any" -> "body"
   )
+
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%08d"
+  }
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
