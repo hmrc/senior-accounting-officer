@@ -52,7 +52,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       |          "toDate": "2025-03-31"
       |        }
       |    ],
-      |  "additionalInformation": "non-empty string"
+      |  "remarks": "non-empty string"
       |}""".stripMargin
 
   private def generateCrn = {

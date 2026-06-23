@@ -54,7 +54,7 @@ class NotificationIntegrationSpec extends ISpecBase {
                                |          "toDate": "2025-03-31"
                                |        }
                                |  ],
-                               |  "additionalInformation": "non-empty string"
+                               |  "remarks": "non-empty string"
                                |}""".stripMargin
 
   "postNotification" must {
@@ -92,7 +92,6 @@ class NotificationIntegrationSpec extends ISpecBase {
               .withBody(downstreamBody)
           )
       )
-
 
       val result = connector.postNotification("123", validPayload).futureValue
 
