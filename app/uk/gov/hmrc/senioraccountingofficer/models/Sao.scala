@@ -17,13 +17,12 @@
 package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, Sao as DpsSao}
+import uk.gov.hmrc.senioraccountingofficer.models.dps.Sao as DpsSao
 
 final case class Sao(
     name: String,
-    fromDate: String,
-    email: Option[String] = None,
+    fromDate: Option[String],
+    email: Option[String],
     toDate: Option[String]
 )
 

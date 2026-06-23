@@ -27,15 +27,15 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #            items:
 #              $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
 #          examples:
-#            saoSubscriptionIdMissing:
+#            subscriptionIdMissing:
 #              summary: SAO Subscription ID is missing
 #              value:
-#                - path: "saoSubscriptionId"
+#                - path: "subscriptionId"
 #                  reason: "MISSING_REQUIRED_FIELD"
 #            invalidSaoSubscriptionId:
 #              summary: SAO Subscription ID is invalid
 #              value:
-#                - path: "saoSubscriptionId"
+#                - path: "subscriptionId"
 #                  reason: "INVALID_FORMAT"
 #            missingRequiredField:
 #              summary: A required field is missing
@@ -45,12 +45,12 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #            emptyField:
 #              summary: A field that cannot be empty has no value
 #              value:
-#                - path: "seniorAccountingOfficers.name"
+#                - path: "saos.name"
 #                  reason: "CANNOT_BE_EMPTY"
 #            invalidFormat:
 #              summary: Date field provided in wrong format
 #              value:
-#                - path: "financialYearEndDate"
+#                - path: "accPeriodEnd"
 #                  reason: "INVALID_FORMAT"
 #            patternMismatch:
 #              summary: uniqueTaxReference does not match required numeric pattern
@@ -65,7 +65,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #            emailFormatInvalid:
 #              summary: Invalid email format for SAO
 #              value:
-#                - path: "seniorAccountingOfficers.email"
+#                - path: "saos.email"
 #                  reason: "INVALID_FORMAT"
 #            lengthOutOfBounds:
 #              summary: Additional info text exceeds max length
@@ -75,7 +75,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #            arrayTooSmall:
 #              summary: At least one seniorAccountingOfficer required
 #              value:
-#                - path: "seniorAccountingOfficers"
+#                - path: "saos"
 #                  reason: "ARRAY_MIN_ITEMS_NOT_MET"
 #            arrayIsInvalidType:
 #              summary: Field has unexpected JSON type
@@ -85,7 +85,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #            multipleValidationErrors:
 #              summary: Multiple validation failures in one request
 #              value:
-#                - path: "companies[0].financialYearEndDate"
+#                - path: "companies[0].accPeriodEnd"
 #                  reason: "INVALID_FORMAT"
 #                - path: "companies[1].name"
 #                  reason: "CANNOT_BE_EMPTY"
@@ -102,19 +102,19 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #      content:
 #        application/json:
 #          schema:
-#            $ref: "./core.yaml#/components/schemas/semanticErrorResponse"
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
 #          examples:
 #            invalidSaoStartDate:
 #              value:
-#                path: "companies[0].seniorAccountingOfficers[0].startDate"
+#                path: "companies[0].saos[0].fromDate"
 #                reason: "DATE_OUT_OF_BOUNDS"
 #            invalidSaoEndDate:
 #              value:
-#                path: "companies[0].seniorAccountingOfficers[0].endDate"
+#                path: "companies[0].saos[0].toDate"
 #                reason: "DATE_OUT_OF_BOUNDS"
 #            invalidFinancialYearEndDate:
 #              value:
-#                path: "companies[0].financialYearEndDate"
+#                path: "companies[0].accPeriodEnd"
 #                reason: "DATE_OUT_OF_BOUNDS"
 #    "500":
 #      description: Internal server error

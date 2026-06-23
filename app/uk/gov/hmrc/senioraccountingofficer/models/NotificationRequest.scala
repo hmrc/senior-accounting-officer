@@ -18,7 +18,6 @@ package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, Sao as DpsSao}
 
 final case class NotificationRequest(
     subscriptionId: String,
