@@ -21,10 +21,11 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, __}
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  private def certificateErrors(json: String): Seq[JsonErrorHandling.ApiError] =
+  private def certificateErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateCertificate(Json.parse(json))
 
   private val validCertificate =

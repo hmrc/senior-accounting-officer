@@ -25,10 +25,11 @@ import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.domain.SaUtrGenerator
 
 import scala.util.Random
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  private def notificationErrors(json: String): Seq[JsonErrorHandling.ApiError] =
+  private def notificationErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateNotification(Json.parse(json))
 
   private val validNotification =

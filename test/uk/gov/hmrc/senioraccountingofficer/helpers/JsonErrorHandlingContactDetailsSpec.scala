@@ -20,10 +20,11 @@ import org.scalactic.Prettifier.default
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 class JsonErrorHandlingContactDetailsSpec extends AnyWordSpec with Matchers {
 
-  private def contactDetailsErrors(json: String): Seq[JsonErrorHandling.ApiError] =
+  private def contactDetailsErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateContactDetails(Json.parse(json))
 
   "ContactDetails validation" when {
