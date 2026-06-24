@@ -69,7 +69,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
         "toDate"   -> "2025-03-31"
       )
     ),
-    "additionalInformation" -> "non-empty string"
+    "remarks" -> "non-empty string"
   )
 
   private val invalidPayload: JsObject = Json.obj(
