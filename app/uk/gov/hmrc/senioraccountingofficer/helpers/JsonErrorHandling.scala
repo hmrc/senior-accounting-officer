@@ -23,11 +23,11 @@ import com.networknt.schema.path.PathType
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 import scala.io.Source
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 object JsonErrorHandling {
 

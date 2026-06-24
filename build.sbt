@@ -13,9 +13,9 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     PlayKeys.playDefaultPort := 10060,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "src/main/resources"
   )
-  .settings(CodeCoverageSettings.settings*)
-  .settings(scalafixSettings*)
-  .settings(playSwaggerSettings*)
+  .settings(CodeCoverageSettings.settings *)
+  .settings(scalafixSettings *)
+  .settings(playSwaggerSettings *)
 
 lazy val it = project
   .enablePlugins(PlayScala)

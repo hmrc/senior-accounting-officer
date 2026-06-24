@@ -23,9 +23,9 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.domain.SaUtrGenerator
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 import scala.util.Random
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
