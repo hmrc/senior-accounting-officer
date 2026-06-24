@@ -70,7 +70,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #            lengthOutOfBounds:
 #              summary: Additional info text exceeds max length
 #              value:
-#                - path: "additionalInformation"
+#                - path: "remarks"
 #                  reason: "LENGTH_OUT_OF_BOUNDS"
 #            arrayTooSmall:
 #              summary: At least one seniorAccountingOfficer required
@@ -89,7 +89,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #                  reason: "INVALID_FORMAT"
 #                - path: "companies[1].name"
 #                  reason: "CANNOT_BE_EMPTY"
-#                - path: "additionalInformation"
+#                - path: "remarks"
 #                  reason: "LENGTH_OUT_OF_BOUNDS"
 #            unreadablePayload:
 #              summary: Payload could not be parsed
