@@ -3,6 +3,7 @@ type: object
 additionalProperties: false
 required:
   - companies
+  - saos
   - subscriptionId
 properties:
   subscriptionId:
