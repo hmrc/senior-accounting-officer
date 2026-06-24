@@ -20,7 +20,11 @@ import org.scalactic.Prettifier.default
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.*
 import play.api.libs.json.{Json, __}
+import uk.gov.hmrc.domain.SaUtrGenerator
+
+import scala.util.Random
 
 class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
@@ -28,26 +32,38 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
     JsonErrorHandling.Validators.validateNotification(Json.parse(json))
 
   private val validNotification =
-    """{
+    s"""{
+      | "subscriptionId": "123",
       |  "companies": [
       |    {
-      |      "companyName": "Example Ltd",
-      |      "uniqueTaxReference": "1234567890",
-      |      "companyReferenceNumber": "AB123456",
-      |      "companyType": "LTD",
-      |      "financialYearEndDate": "2024-12-31",
-      |      "seniorAccountingOfficers": [
+      |      "name": "Example Ltd",
+      |      "utr": "$generateUtr",
+      |      "crn": "$generateCrn",
+      |      "type": "LTD",
+      |      "accPeriodEnd": "2024-12-31",
+      |      "status": "COMPLIANT"
+      |     }
+      |    ],
+      |    "saos": [
       |        {
       |          "name": "Firstname Lastname",
       |          "email": "Firstname.Lastname@example.com",
-      |          "startDate": "2024-04-01",
-      |          "endDate": "2025-03-31"
+      |          "fromDate": "2024-04-01",
+      |          "toDate": "2025-03-31"
       |        }
-      |      ]
-      |    }
-      |  ],
-      |  "additionalInformation": "non-empty string"
+      |    ],
+      |  "remarks": "non-empty string"
       |}""".stripMargin
+
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%08d"
+  }
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
 
   "Notification validation" when {
 
@@ -68,31 +84,90 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       }
     }
 
-    "given a company missing uniqueTaxReference" should {
-      "return MISSING_REQUIRED_FIELD pointing at companies[0].uniqueTaxReference" in {
-        val errors = notificationErrors(validNotification.replace(""""uniqueTaxReference": "1234567890",""", ""))
+    "given a company missing utr" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].utr" in {
+        val json = Json.parse(validNotification)
+        val utr  = (json \ "companies" \ 0 \ "utr").as[String]
+
+        val errors = notificationErrors(validNotification.replaceAll(s""""utr": "$utr",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
-        errors.flatMap(_.path) should contain("companies[0].uniqueTaxReference")
+        errors.flatMap(_.path) should contain("companies[0].utr")
         errors.size shouldBe 1
       }
     }
 
-    "given a seniorAccountingOfficer missing startDate" should {
-      "return MISSING_REQUIRED_FIELD pointing at companies[0].seniorAccountingOfficers[0].startDate" in {
-        val errors = notificationErrors(validNotification.replace(""""startDate": "2024-04-01",""", ""))
+    "given a company missing name" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].name" in {
+        val json        = Json.parse(validNotification)
+        val companyName = (json \ "companies" \ 0 \ "name").as[String]
+
+        val errors = notificationErrors(validNotification.replaceAll(s""""name": "$companyName",""", ""))
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
-        errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].startDate")
+        errors.flatMap(_.path) should contain("companies[0].name")
         errors.size shouldBe 1
       }
     }
 
-    "given a invalid financialYearEndDate format" should {
-      "return INVALID_FORMAT pointing at financialYearEndDate" in {
+    "given a company missing accPeriodEnd" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].accPeriodEnd" in {
+        val errors = notificationErrors(validNotification.replace(""""accPeriodEnd": "2024-12-31",""", ""))
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a company missing status" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].status" in {
+        val regex               = """,\s+"status": "COMPLIANT"""".r
+        val updatedNotification = regex.replaceAllIn(validNotification, "")
+        val errors              = notificationErrors(updatedNotification)
+
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].status")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a company missing type" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].status" in {
+        val regex               = """"type": "LTD",""".r
+        val updatedNotification = regex.replaceAllIn(validNotification, "")
+        val errors              = notificationErrors(updatedNotification)
+
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].type")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given an invalid accPeriodEnd format" should {
+      "return INVALID_FORMAT pointing at accPeriodEnd" in {
         val errors = notificationErrors(
-          validNotification.replace(""""financialYearEndDate": "2024-12-31"""", """"financialYearEndDate": "-"""")
+          validNotification.replace(""""accPeriodEnd": "2024-12-31"""", """"accPeriodEnd": "-"""")
         )
         errors.map(_.reason) should contain("INVALID_FORMAT")
-        errors.flatMap(_.path) should contain("companies[0].financialYearEndDate")
+        errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given an invalid enum for company type" should {
+      "return INVALID_ENUM_VALUE pointing at type" in {
+        val errors = notificationErrors(
+          validNotification.replace(""""type": "LTD"""", """"type": """"")
+        )
+        errors.map(_.reason) should contain("INVALID_ENUM_VALUE")
+        errors.flatMap(_.path) should contain("companies[0].type")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a sao missing name" should {
+      "return MISSING_REQUIRED_FIELD pointing at saos[0].name" in {
+        val errors = notificationErrors(validNotification.replaceAll(s""""name": "Firstname Lastname",""", ""))
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("saos[0].name")
         errors.size shouldBe 1
       }
     }

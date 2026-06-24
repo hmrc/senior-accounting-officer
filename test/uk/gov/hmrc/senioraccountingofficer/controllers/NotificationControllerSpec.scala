@@ -30,14 +30,17 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 
 import scala.concurrent.Future
+import scala.util.Random
 
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockNotificationService: NotificationService = mock[NotificationService]
+  val id                                           = "123"
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -47,29 +50,41 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       .build()
 
   private val validPayload: JsObject = Json.obj(
-    "companies" -> Json.arr(
+    "subscriptionId" -> id,
+    "companies"      -> Json.arr(
       Json.obj(
-        "companyName"              -> "Example Ltd",
-        "uniqueTaxReference"       -> "1234567890",
-        "companyReferenceNumber"   -> "AB123456",
-        "companyType"              -> "LTD",
-        "financialYearEndDate"     -> "2024-12-31",
-        "seniorAccountingOfficers" -> Json.arr(
-          Json.obj(
-            "name"      -> "Firstname Lastname",
-            "email"     -> "Firstname.Lastname@example.com",
-            "startDate" -> "2024-04-01",
-            "endDate"   -> "2025-03-31"
-          )
-        )
+        "name"         -> "Example Ltd",
+        "utr"          -> generateUtr,
+        "crn"          -> generateCrn,
+        "type"         -> "LTD",
+        "accPeriodEnd" -> "2024-12-31",
+        "status"       -> "COMPLIANT"
       )
     ),
-    "additionalInformation" -> "non-empty string"
+    "saos" -> Json.arr(
+      Json.obj(
+        "name"     -> "Firstname Lastname",
+        "email"    -> "Firstname.Lastname@example.com",
+        "fromDate" -> "2024-04-01",
+        "toDate"   -> "2025-03-31"
+      )
+    ),
+    "remarks" -> "non-empty string"
   )
 
   private val invalidPayload: JsObject = Json.obj(
     "any" -> "body"
   )
+
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%08d"
+  }
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
@@ -83,7 +98,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       val mockResponse = HttpResponse(Status.ACCEPTED, "Accepted Payload")
       when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
 
-      val url     = routes.NotificationController.postNotification("123").url
+      val url     = routes.NotificationController.postNotification().url
       val request =
         FakeRequest("POST", url)
           .withTextBody(validPayload.toString())
@@ -98,7 +113,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       val mockResponse = HttpResponse(Status.INTERNAL_SERVER_ERROR, "some raw error body")
       when(mockNotificationService.postNotification(any(), any())(any())).thenReturn(Future.successful(mockResponse))
 
-      val url     = routes.NotificationController.postNotification("123").url
+      val url     = routes.NotificationController.postNotification().url
       val request =
         FakeRequest("POST", url)
           .withTextBody(validPayload.toString())
@@ -110,7 +125,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "return BAD_REQUEST when the payload does not match the schema" in {
-      val url     = routes.NotificationController.postNotification("123").url
+      val url     = routes.NotificationController.postNotification().url
       val request =
         FakeRequest("POST", url)
           .withTextBody(invalidPayload.toString())
@@ -122,7 +137,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "return BAD_REQUEST when the payload is not valid JSON" in {
-      val url     = routes.NotificationController.postNotification("123").url
+      val url     = routes.NotificationController.postNotification().url
       val request =
         FakeRequest("POST", url)
           .withTextBody("this is not json")

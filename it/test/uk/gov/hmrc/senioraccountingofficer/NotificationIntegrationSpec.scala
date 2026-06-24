@@ -38,29 +38,30 @@ class NotificationIntegrationSpec extends ISpecBase {
   private val validPayload = """{
                                |  "companies": [
                                |    {
-                               |      "companyName": "Example Ltd",
-                               |      "uniqueTaxReference": "1234567890",
-                               |      "companyReferenceNumber": "AB123456",
-                               |      "companyType": "LTD",
-                               |      "financialYearEndDate": "2024-12-31",
-                               |      "seniorAccountingOfficers": [
+                               |      "name": "Example Ltd",
+                               |      "utr": "1234567890",
+                               |      "crn": "AB123456",
+                               |      "type": "LTD",
+                               |      "status": "COMPLIANT",
+                               |      "accPeriodEnd": "2024-12-31"
+                               |     }
+                               |    ],
+                               |    "saos": [
                                |        {
                                |          "name": "Firstname Lastname",
                                |          "email": "Firstname.Lastname@example.com",
-                               |          "startDate": "2024-04-01",
-                               |          "endDate": "2025-03-31"
+                               |          "fromDate": "2024-04-01",
+                               |          "toDate": "2025-03-31"
                                |        }
-                               |      ]
-                               |    }
                                |  ],
-                               |  "additionalInformation": "non-empty string"
+                               |  "remarks": "non-empty string"
                                |}""".stripMargin
 
   "postNotification" must {
 
     "pass through a successful downstream response" in {
       stubFor(
-        post(urlEqualTo("/notification/123"))
+        post(urlEqualTo("/subscriptions/123/notifications"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -73,7 +74,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/notification/123"))
+        postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
@@ -81,17 +82,16 @@ class NotificationIntegrationSpec extends ISpecBase {
     }
 
     "pass through a downstream validation error body" in {
-      val downstreamBody = """[{"path":"companies[0].uniqueTaxReference","reason":"INVALID_FORMAT"}]"""
+      val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        post(urlEqualTo("/notification/123"))
+        post(urlEqualTo("/subscriptions/123/notifications"))
           .willReturn(
             aResponse()
               .withStatus(400)
               .withBody(downstreamBody)
           )
       )
-
 
       val result = connector.postNotification("123", validPayload).futureValue
 
@@ -100,7 +100,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/notification/123"))
+        postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
