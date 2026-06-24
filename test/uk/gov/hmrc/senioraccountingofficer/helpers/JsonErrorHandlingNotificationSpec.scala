@@ -23,12 +23,13 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.domain.SaUtrGenerator
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 import scala.util.Random
 
 class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  private def notificationErrors(json: String): Seq[JsonErrorHandling.ApiError] =
+  private def notificationErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateNotification(Json.parse(json))
 
   private val validNotification =

@@ -17,28 +17,30 @@
 package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.Company as DpsCompany
 
-final case class NotificationRequest(
-    subscriptionId: String,
-    companies: List[Company],
-    saos: List[Sao],
-    remarks: Option[String]
+final case class Company(
+    crn: Option[String] = None,
+    utr: String,
+    name: String,
+    accPeriodEnd: String,
+    status: String,
+    `type`: String
 )
 
-extension (notificationRequest: NotificationRequest) {
-
-  def toNotificationDpsRequest: NotificationDpsRequest = {
-    NotificationDpsRequest(
-      companies = notificationRequest.companies.map(_.toDpsCompany),
-      saos = notificationRequest.saos.map(_.toDpsSao),
-      remarks = notificationRequest.remarks,
-      staffPID = None
-    )
-
-  }
+object Company {
+  given Format[Company] = Json.format[Company]
 }
 
-object NotificationRequest {
-  given Format[NotificationRequest] = Json.format[NotificationRequest]
+extension (company: Company) {
+  def toDpsCompany: DpsCompany = {
+    DpsCompany(
+      crn = company.crn,
+      utr = company.utr,
+      name = company.name,
+      accPeriodEnd = company.accPeriodEnd,
+      status = company.status,
+      `type` = company.`type`
+    )
+  }
 }

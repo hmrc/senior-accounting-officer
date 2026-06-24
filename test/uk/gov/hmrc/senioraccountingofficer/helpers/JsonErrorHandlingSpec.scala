@@ -21,6 +21,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import play.api.libs.json.JsNull
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
 class JsonErrorHandlingSpec extends AnyWordSpec with Matchers with OptionValues with EitherValues {
 
@@ -71,21 +72,21 @@ class JsonErrorHandlingSpec extends AnyWordSpec with Matchers with OptionValues 
 
     "return status 400" in {
       JsonErrorHandling
-        .badRequest(Seq(JsonErrorHandling.ApiError(None, "MALFORMED_REQUEST")))
+        .badRequest(Seq(ApiError(None, "MALFORMED_REQUEST")))
         .header
         .status shouldBe 400
     }
 
     "accept errors with a path" in {
       JsonErrorHandling
-        .badRequest(Seq(JsonErrorHandling.ApiError(Some("companies.0.companyName"), "MISSING_REQUIRED_FIELD")))
+        .badRequest(Seq(ApiError(Some("companies.0.companyName"), "MISSING_REQUIRED_FIELD")))
         .header
         .status shouldBe 400
     }
 
     "accept errors without a path" in {
       JsonErrorHandling
-        .badRequest(Seq(JsonErrorHandling.ApiError(None, "MALFORMED_REQUEST")))
+        .badRequest(Seq(ApiError(None, "MALFORMED_REQUEST")))
         .header
         .status shouldBe 400
     }
@@ -94,8 +95,8 @@ class JsonErrorHandlingSpec extends AnyWordSpec with Matchers with OptionValues 
       JsonErrorHandling
         .badRequest(
           Seq(
-            JsonErrorHandling.ApiError(Some("safeId"), "INVALID_FORMAT"),
-            JsonErrorHandling.ApiError(None, "MALFORMED_REQUEST")
+            ApiError(Some("safeId"), "INVALID_FORMAT"),
+            ApiError(None, "MALFORMED_REQUEST")
           )
         )
         .header
