@@ -16,7 +16,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #      content:
 #        application/json:
 #          example:
-#            id: "NOT0123456789"
+#            notificationRef: "NOT0123456789"
 #            timestamp: "2026-03-01T12:00:14Z"
 #    "400":
 #      description: Syntactically incorrect input
