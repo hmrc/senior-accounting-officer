@@ -41,7 +41,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private val mockCertificateConnector = mock[CertificateConnector]
   private val saoSubscriptionId        = "123"
-  private val certificateUrl           = routes.CertificateController.postCertificate().url
+  private def certificateUrl           = routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -51,30 +51,33 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       .build()
 
   private val validPayload: JsObject = Json.obj(
-    "submitterName" -> "Jane Smith",
-    "SAOName" -> "Jane Smith",
-    "SAOEmail" -> "Firstname.Lastname@example.com",
     "subscriptionId" -> saoSubscriptionId,
-    "companies" -> Json.arr(
+    "SAOName"        -> "Jane Smith",
+    "SAOEmail"       -> "Firstname.Lastname@example.com",
+    "companies"      -> Json.arr(
       Json.obj(
-        "crn" -> generateCrn,
-        "utr" -> generateUtr,
-        "name" -> "Example Subsidiary Ltd",
-        "accPeriodEnd" -> "2025-03-31",
-        "status" -> "COMPLIANT",
-        "type" -> "LTD",
-        "isCorporationTaxQualified" -> true,
-        "isVatQualified" -> true,
-        "isPayeQualified" -> true,
+        "crn"                            -> generateCrn,
+        "utr"                            -> generateUtr,
+        "name"                           -> "Example Subsidiary Ltd",
+        "accPeriodEnd"                   -> "2025-03-31",
+        "status"                         -> "COMPLIANT",
+        "type"                           -> "LTD",
+        "isCorporationTaxaQualified"     -> true,
+        "isVatQualified"                 -> true,
+        "isPayeQualified"                -> true,
         "isInsurancePremiumTaxQualified" -> false,
-        "isStampDutyLandTaxQualified" -> false,
+        "isStampDutyLandTaxQualified"    -> false,
         "isStampDutyReserveTaxQualified" -> false,
         "isPetroleumRevenueTaxQualified" -> false,
-        "isCustomsDutiesQualified" -> false,
-        "isExciseDutiesQualified" -> false,
-        "isBankLevyQualified" -> false
+        "isCustomsDutiesQualified"       -> false,
+        "isExciseDutiesQualified"        -> false,
+        "isBankLevyQualified"            -> false
       )
     )
+  )
+
+  private val invalidPayload: JsObject = Json.obj(
+    "any" -> "body"
   )
 
   private def generateCrn = {
@@ -95,7 +98,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private def certificateRequest(payload: String): FakeRequest[AnyContentAsText] =
     FakeRequest("POST", certificateUrl)
-      .withHeaders(CONTENT_TYPE -> "application/json")
+      .withHeaders("Content-Type" -> "text/plain")
       .withTextBody(payload)
 
   private def assertValidationError(payload: String, expectedError: play.api.libs.json.JsValue): Unit = {
@@ -109,12 +112,14 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
   }
 
   "POST /certificate" should {
-    "return 204 when the downstream connector succeeds without a body" in {
+    "return 204 when the downstream connector succeeds with a body" in {
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
+
+      println(certificateUrl)
 
       status(result) shouldBe Status.NO_CONTENT
     }

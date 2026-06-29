@@ -17,25 +17,42 @@
 package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, toDpsCertificateCompany}
 
 final case class CertificateRequest(
-    assistantName: Option[String],
-    SAOName: String,
-    SAOEmail: String,
-    subscriptionId: String,
-    companies: List[Company],
-    remarks: Option[String]
+                                     subscriptionId: String,
+                                     assistantName: Option[String],
+                                     SAOName: String,
+                                     SAOEmail: String, companies: List[CertificateCompany],
+                                     remarks: Option[String]
 )
 
-extension (certificateRequest: CertificateRequest) {
+final case class CertificateCompany(
+                                     crn: Option[String],
+                                     utr: String,
+                                     name: String,
+                                     accPeriodEnd: String,
+                                     status: String,
+                                     `type`: String,
+                                     isCorporationTaxaQualified: Boolean,
+                                     isVatQualified: Boolean,
+                                     isPayeQualified: Boolean,
+                                     isInsurancePremiumTaxQualified: Boolean,
+                                     isStampDutyLandTaxQualified: Boolean,
+                                     isStampDutyReserveTaxQualified: Boolean,
+                                     isPetroleumRevenueTaxQualified: Boolean,
+                                     isCustomsDutiesQualified: Boolean,
+                                     isExciseDutiesQualified: Boolean,
+                                     isBankLevyQualified: Boolean
+                                   )
 
+extension (certificateRequest: CertificateRequest) {
   def toCertificateDpsRequest: CertificateDpsRequest = {
     CertificateDpsRequest(
       submitterName = certificateRequest.assistantName.fold(certificateRequest.SAOName)(name => name),
       saoName = certificateRequest.SAOName,
       saoEmail = certificateRequest.SAOEmail,
-      companies = certificateRequest.companies.map(_.toDpsCompany),
+      companies = certificateRequest.companies.map(_.toDpsCertificateCompany),
       remarks = certificateRequest.remarks,
       staffPID = None
     )

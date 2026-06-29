@@ -33,27 +33,26 @@ class CertificateController @Inject() (cc: ControllerComponents, certificateConn
     ExecutionContext
 ) extends BackendController(cc) {
 
-  def postCertificate(): Action[String] = Action.async(parse.tolerantText) {
-    implicit request =>
-      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def postCertificate(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
+    given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-      JsonErrorHandling.parseJson(request.body) match {
-        case Right(json) =>
-          val errors = JsonErrorHandling.Validators.validateCertificate(json)
-          if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
-          else {
-            val id                 = (json \ "subscriptionId").as[String]
-            val certificateRequest = json.as[CertificateRequest]
-            val dpsRequest         = certificateRequest.toCertificateDpsRequest
+    JsonErrorHandling.parseJson(request.body) match {
+      case Right(json) =>
+        val errors = JsonErrorHandling.Validators.validateCertificate(json)
+        if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
+        else {
+          val id                 = (json \ "subscriptionId").as[String]
+          val certificateRequest = json.as[CertificateRequest]
+          val dpsRequest         = certificateRequest.toCertificateDpsRequest
 
-            certificateConnector
-              .postCertificate(id, Json.toJson(dpsRequest).toString)
-              .map { response =>
-                Status(response.status)(response.body)
-              }
-          }
-        case Left(errorResult) =>
-          Future.successful(errorResult)
-      }
+          certificateConnector
+            .postCertificate(id, Json.toJson(dpsRequest).toString)
+            .map { response =>
+              Status(response.status)(response.body)
+            }
+        }
+      case Left(errorResult) =>
+        Future.successful(errorResult)
+    }
   }
 }
