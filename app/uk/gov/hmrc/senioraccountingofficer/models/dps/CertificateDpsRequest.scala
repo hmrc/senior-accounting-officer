@@ -51,6 +51,10 @@ object CertificateDpsRequest {
   given OFormat[CertificateDpsRequest] = Json.format[CertificateDpsRequest]
 }
 
+object CertificateDPSCompany {
+  given OFormat[CertificateDPSCompany] = Json.format[CertificateDPSCompany]
+}
+
 extension (certificateCompany: CertificateCompany) {
   def toDpsCertificateCompany: CertificateDPSCompany = {
     CertificateDPSCompany(

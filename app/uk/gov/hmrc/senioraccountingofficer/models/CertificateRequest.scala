@@ -23,7 +23,8 @@ final case class CertificateRequest(
                                      subscriptionId: String,
                                      assistantName: Option[String],
                                      SAOName: String,
-                                     SAOEmail: String, companies: List[CertificateCompany],
+                                     SAOEmail: String, 
+                                     companies: List[CertificateCompany],
                                      remarks: Option[String]
 )
 
@@ -61,4 +62,8 @@ extension (certificateRequest: CertificateRequest) {
 
 object CertificateRequest {
   given Format[CertificateRequest] = Json.format[CertificateRequest]
+}
+
+object CertificateCompany {
+  given Format[CertificateCompany] = Json.format[CertificateCompany]
 }

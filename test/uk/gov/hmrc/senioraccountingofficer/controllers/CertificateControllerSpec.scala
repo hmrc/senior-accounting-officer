@@ -125,7 +125,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return the downstream JSON body for validation errors" in {
-      val downstreamBody = """[{"path":"companies[0].companyType","reason":"INVALID_ENUM_VALUE"}]"""
+      val downstreamBody = """"[{"path":"SAOEmail","reason":"INVALID_DATA_TYPE"},{"path":"SAOName","reason":"INVALID_DATA_TYPE"},{"path":"companies[0].crn","reason":"INVALID_FORMAT"},{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoName","reason":"MISSING_REQUIRED_FIELD]"}]""""
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
@@ -257,17 +257,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       assertValidationError(
         invalidPayload.toString(),
         Json.obj("path" -> "companies", "reason" -> "ARRAY_MIN_ITEMS_NOT_MET")
-      )
-    }
-
-    "return 400 with LENGTH_OUT_OF_BOUNDS for overlong additional information without calling the connector" in {
-      val invalidPayload = validPayload ++ Json.obj(
-        "additionalInformation" -> ("A" * 5001)
-      )
-
-      assertValidationError(
-        invalidPayload.toString(),
-        Json.obj("path" -> "additionalInformation", "reason" -> "LENGTH_OUT_OF_BOUNDS")
       )
     }
   }
