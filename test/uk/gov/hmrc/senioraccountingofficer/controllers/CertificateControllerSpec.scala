@@ -30,16 +30,18 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 
 import scala.concurrent.Future
+import scala.util.Random
 
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   private val mockCertificateConnector = mock[CertificateConnector]
   private val saoSubscriptionId        = "123"
-  private val certificateUrl           = s"/senior-accounting-officer/certificate/$saoSubscriptionId"
+  private val certificateUrl           = routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -49,34 +51,41 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       .build()
 
   private val validPayload: JsObject = Json.obj(
-    "declaration" -> Json.obj(
-      "seniorAccountingOfficer" -> Json.obj(
-        "name"  -> "John Doe",
-        "email" -> "john.doe@example.com"
-      ),
-      "proxy" -> Json.obj(
-        "name" -> "Jane Smith"
-      )
-    ),
+    "submitterName" -> "Jane Smith",
+    "SAOName" -> "Jane Smith",
+    "SAOEmail" -> "Firstname.Lastname@example.com",
+    "subscriptionId" -> saoSubscriptionId,
     "companies" -> Json.arr(
       Json.obj(
-        "companyName"              -> "Example Ltd",
-        "uniqueTaxReference"       -> "1234567890",
-        "companyReferenceNumber"   -> "AB123456",
-        "companyType"              -> "LTD",
-        "financialYearEndDate"     -> "2024-12-31",
-        "seniorAccountingOfficers" -> Json.arr(
-          Json.obj(
-            "name"      -> "Firstname Lastname",
-            "email"     -> "firstname.lastname@example.com",
-            "startDate" -> "2024-04-01",
-            "endDate"   -> "2025-03-31"
-          )
-        )
+        "crn" -> generateCrn,
+        "utr" -> generateUtr,
+        "name" -> "Example Subsidiary Ltd",
+        "accPeriodEnd" -> "2025-03-31",
+        "status" -> "COMPLIANT",
+        "type" -> "LTD",
+        "isCorporationTaxQualified" -> true,
+        "isVatQualified" -> true,
+        "isPayeQualified" -> true,
+        "isInsurancePremiumTaxQualified" -> false,
+        "isStampDutyLandTaxQualified" -> false,
+        "isStampDutyReserveTaxQualified" -> false,
+        "isPetroleumRevenueTaxQualified" -> false,
+        "isCustomsDutiesQualified" -> false,
+        "isExciseDutiesQualified" -> false,
+        "isBankLevyQualified" -> false
       )
-    ),
-    "additionalInformation" -> "non-empty string"
+    )
   )
+
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%010d"
+  }
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
@@ -99,7 +108,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     verify(mockCertificateConnector, never()).postCertificate(any(), any())(using any())
   }
 
-  "POST /certificate/:saoSubscriptionId" should {
+  "POST /certificate" should {
     "return 204 when the downstream connector succeeds without a body" in {
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))

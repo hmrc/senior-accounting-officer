@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import play.api.http.MimeTypes
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
+import uk.gov.hmrc.senioraccountingofficer.models.{CertificateRequest, toCertificateDpsRequest}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -32,7 +33,7 @@ class CertificateController @Inject() (cc: ControllerComponents, certificateConn
     ExecutionContext
 ) extends BackendController(cc) {
 
-  def postCertificate(saoSubscriptionId: String): Action[String] = Action.async(parse.tolerantText) {
+  def postCertificate(): Action[String] = Action.async(parse.tolerantText) {
     implicit request =>
       given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
@@ -40,11 +41,17 @@ class CertificateController @Inject() (cc: ControllerComponents, certificateConn
         case Right(json) =>
           val errors = JsonErrorHandling.Validators.validateCertificate(json)
           if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
-          else
-            certificateConnector.postCertificate(saoSubscriptionId, request.body).map { response =>
-              if response.body.isBlank then Status(response.status)
-              else Status(response.status)(response.body).as(MimeTypes.JSON)
-            }
+          else {
+            val id                 = (json \ "subscriptionId").as[String]
+            val certificateRequest = json.as[CertificateRequest]
+            val dpsRequest         = certificateRequest.toCertificateDpsRequest
+
+            certificateConnector
+              .postCertificate(id, Json.toJson(dpsRequest).toString)
+              .map { response =>
+                Status(response.status)(response.body)
+              }
+          }
         case Left(errorResult) =>
           Future.successful(errorResult)
       }

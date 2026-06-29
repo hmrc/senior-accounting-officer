@@ -17,86 +17,85 @@
 package uk.gov.hmrc.senioraccountingofficer
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import play.api.http.HeaderNames
+import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json.Json
 import play.api.libs.ws.readableAsString
 import play.api.libs.ws.writeableOf_JsValue
 import support.ISpecBase
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
+import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 
 class CertificateIntegrationSpec extends ISpecBase {
 
   private val appConfig         = app.injector.instanceOf[AppConfig]
+  private val connector = app.injector.instanceOf[CertificateConnector]
   private val saoSubscriptionId = "123"
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
+
 
   override def additionalConfigs: Map[String, Any] = Map(
     "microservice.services.senior-accounting-officer-stubs.host" -> wireMockHost,
     "microservice.services.senior-accounting-officer-stubs.port" -> wireMockPort
   )
 
-  private val validPayload = Json.obj(
-    "declaration" -> Json.obj(
-      "seniorAccountingOfficer" -> Json.obj(
-        "name"  -> "John Doe",
-        "email" -> "john.doe@example.com"
-      ),
-      "proxy" -> Json.obj(
-        "name" -> "Jane Smith"
-      )
-    ),
-    "companies" -> Json.arr(
-      Json.obj(
-        "companyName"            -> "Example Ltd",
-        "uniqueTaxReference"     -> "1234567890",
-        "companyReferenceNumber" -> "AB123456",
-        "companyType"            -> "LTD",
-        "financialYearEndDate"   -> "2024-12-31",
-        "seniorAccountingOfficers" -> Json.arr(
-          Json.obj(
-            "name"      -> "Firstname Lastname",
-            "email"     -> "firstname.lastname@example.com",
-            "startDate" -> "2024-04-01",
-            "endDate"   -> "2025-03-31"
-          )
-        )
-      )
-    ),
-    "additionalInformation" -> "non-empty string"
-  )
+  private val validPayload = """{
+                                |  "submitterName": "Jane Smith",
+                                |  "SAOName": "Jane Smith",
+                                |  "SAOEmail": "jane.smith@example.com",
+                                |  "companies": [
+                                |    {
+                                |      "crn": "1234567890",
+                                |      "utr": "AB123456",
+                                |      "name": "Example Subsidiary Ltd",
+                                |      "accPeriodEnd": "2025-03-31",
+                                |      "status": "COMPLIANT",
+                                |      "type": "LTD",
+                                |      "isCorporationTaxQualified": true,
+                                |      "isVatQualified": true,
+                                |      "isPayeQualified": true,
+                                |      "isInsurancePremiumTaxQualified": false,
+                                |      "isStampDutyLandTaxQualified": false,
+                                |      "isStampDutyReserveTaxQualified": false,
+                                |      "isPetroleumRevenueTaxQualified": false,
+                                |      "isCustomsDutiesQualified": false,
+                                |      "isExciseDutiesQualified": false,
+                                |      "isBankLevyQualified": false
+                                |    }
+                                |  ],
+                                |  "remarks": "non-empty string"
+                                |}""".stripMargin
 
-  "POST /certificate/:saoSubscriptionId" must {
+
+  "POST /certificate" must {
     "pass through a successful downstream response" in {
       stubFor(
-        post(urlEqualTo(s"/certificate/$saoSubscriptionId"))
+        post(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
           .willReturn(
             aResponse()
-              .withStatus(204)
+              .withStatus(200)
           )
       )
 
-      val response =
-        wsClient
-          .url(s"$baseUrl/senior-accounting-officer/certificate/$saoSubscriptionId")
-          .post(validPayload)
-          .futureValue
+      val result = connector.postCertificate("123", validPayload).futureValue
 
-      response.status mustBe 204
-      response.body mustBe ""
+      result.status mustBe 200
 
       verify(
         1,
-        postRequestedFor(urlEqualTo(s"/certificate/$saoSubscriptionId"))
+        postRequestedFor(urlEqualTo("/subscriptions/123/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
-          .withHeader(HeaderNames.CONTENT_TYPE, containing("application/json"))
-          .withRequestBody(equalToJson(validPayload.toString))
+          .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
+          .withRequestBody(equalToJson(validPayload))
       )
     }
 
     "pass through a downstream validation error body" in {
-      val downstreamBody = """[{"path":"companies[0].companyType","reason":"INVALID_ENUM_VALUE"}]"""
+      val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        post(urlEqualTo(s"/certificate/$saoSubscriptionId"))
+        post(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
           .willReturn(
             aResponse()
               .withStatus(400)
@@ -104,20 +103,17 @@ class CertificateIntegrationSpec extends ISpecBase {
           )
       )
 
-      val response =
-        wsClient
-          .url(s"$baseUrl/senior-accounting-officer/certificate/$saoSubscriptionId")
-          .post(validPayload)
-          .futureValue
+      val result = connector.postCertificate("123", validPayload).futureValue
 
-      response.status mustBe 400
-      response.body mustBe downstreamBody
+      result.status mustBe 400
+      result.body mustBe downstreamBody
 
       verify(
         1,
-        postRequestedFor(urlEqualTo(s"/certificate/$saoSubscriptionId"))
+        postRequestedFor(urlEqualTo("/subscriptions/123/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
-          .withRequestBody(equalToJson(validPayload.toString))
+          .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
+          .withRequestBody(equalToJson(validPayload))
       )
     }
   }
