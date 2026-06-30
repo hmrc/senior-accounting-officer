@@ -20,39 +20,39 @@ import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, toDpsCertificateCompany}
 
 final case class CertificateRequest(
-                                     subscriptionId: String,
-                                     assistantName: Option[String],
-                                     SAOName: String,
-                                     SAOEmail: String, 
-                                     companies: List[CertificateCompany],
-                                     remarks: Option[String]
+    subscriptionId: String,
+    submitterName: Option[String],
+    saoName: String,
+    saoEmail: String,
+    companies: List[CertificateCompany],
+    remarks: Option[String]
 )
 
 final case class CertificateCompany(
-                                     crn: Option[String],
-                                     utr: String,
-                                     name: String,
-                                     accPeriodEnd: String,
-                                     status: String,
-                                     `type`: String,
-                                     isCorporationTaxaQualified: Boolean,
-                                     isVatQualified: Boolean,
-                                     isPayeQualified: Boolean,
-                                     isInsurancePremiumTaxQualified: Boolean,
-                                     isStampDutyLandTaxQualified: Boolean,
-                                     isStampDutyReserveTaxQualified: Boolean,
-                                     isPetroleumRevenueTaxQualified: Boolean,
-                                     isCustomsDutiesQualified: Boolean,
-                                     isExciseDutiesQualified: Boolean,
-                                     isBankLevyQualified: Boolean
-                                   )
+    crn: Option[String],
+    utr: String,
+    name: String,
+    accPeriodEnd: String,
+    status: String,
+    `type`: String,
+    isCorporationTaxQualified: Boolean,
+    isVatQualified: Boolean,
+    isPayeQualified: Boolean,
+    isInsurancePremiumTaxQualified: Boolean,
+    isStampDutyLandTaxQualified: Boolean,
+    isStampDutyReserveTaxQualified: Boolean,
+    isPetroleumRevenueTaxQualified: Boolean,
+    isCustomsDutiesQualified: Boolean,
+    isExciseDutiesQualified: Boolean,
+    isBankLevyQualified: Boolean
+)
 
 extension (certificateRequest: CertificateRequest) {
   def toCertificateDpsRequest: CertificateDpsRequest = {
     CertificateDpsRequest(
-      submitterName = certificateRequest.assistantName.fold(certificateRequest.SAOName)(name => name),
-      saoName = certificateRequest.SAOName,
-      saoEmail = certificateRequest.SAOEmail,
+      submitterName = certificateRequest.submitterName.fold(certificateRequest.saoName)(name => name),
+      saoName = certificateRequest.saoName,
+      saoEmail = certificateRequest.saoEmail,
       companies = certificateRequest.companies.map(_.toDpsCertificateCompany),
       remarks = certificateRequest.remarks,
       staffPID = None

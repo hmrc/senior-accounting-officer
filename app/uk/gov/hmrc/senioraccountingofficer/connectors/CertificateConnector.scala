@@ -18,14 +18,15 @@ package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import play.api.http.MimeTypes
 import play.api.libs.ws.writeableOf_String
-import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 
-import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
+
+import java.net.URL
 import javax.inject.Inject
 
 class CertificateConnector @Inject() (appConfig: AppConfig, httpClientV2: HttpClientV2)(implicit ec: ExecutionContext) {

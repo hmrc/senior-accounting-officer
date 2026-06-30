@@ -20,44 +20,50 @@ import org.scalactic.Prettifier.default
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{Json, __}
+import play.api.libs.json.*
+import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+
+import scala.util.Random
 
 class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def certificateErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateCertificate(Json.parse(json))
 
-  private val validCertificate =
-    """{
-      |  "declaration": {
-      |    "seniorAccountingOfficer": {
-      |      "name": "John Doe",
-      |      "email": "john.doe@example.com"
-      |    },
-      |    "proxy": {
-      |      "name": "Jane Smith"
-      |    }
-      |  },
-      |  "companies": [
-      |    {
-      |      "companyName": "Example Ltd",
-      |      "uniqueTaxReference": "1234567890",
-      |      "companyReferenceNumber": "AB123456",
-      |      "companyType": "LTD",
-      |      "financialYearEndDate": "2024-12-31",
-      |      "seniorAccountingOfficers": [
-      |        {
-      |          "name": "Firstname Lastname",
-      |          "email": "Firstname.Lastname@example.com",
-      |          "startDate": "2024-04-01",
-      |          "endDate": "2025-03-31"
-      |        }
-      |      ]
-      |    }
-      |  ],
-      |  "additionalInformation": "non-empty string"
-      |}""".stripMargin
+  private val saoSubscriptionId = "123"
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
+
+  private val validCertificate = Json
+    .obj(
+      "subscriptionId" -> saoSubscriptionId,
+      "saoName"        -> "Jane Smith",
+      "saoEmail"       -> "Firstname.Lastname@example.com",
+      "companies"      -> Json.arr(
+        Json.obj(
+          "utr"                            -> generateUtr,
+          "name"                           -> "Example Subsidiary Ltd",
+          "accPeriodEnd"                   -> "2025-03-31",
+          "status"                         -> "COMPLIANT",
+          "type"                           -> "LTD",
+          "isCorporationTaxQualified"      -> true,
+          "isVatQualified"                 -> true,
+          "isPayeQualified"                -> true,
+          "isInsurancePremiumTaxQualified" -> false,
+          "isStampDutyLandTaxQualified"    -> false,
+          "isStampDutyReserveTaxQualified" -> false,
+          "isPetroleumRevenueTaxQualified" -> false,
+          "isCustomsDutiesQualified"       -> false,
+          "isExciseDutiesQualified"        -> false,
+          "isBankLevyQualified"            -> false
+        )
+      )
+    )
+    .toString
 
   "Certificate validation" when {
 
@@ -67,32 +73,24 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
     }
 
-    "given a valid payload without proxy" should {
-      "return no errors" in {
-        val remover        = (__ \ "declaration" \ "proxy").json.prune
-        val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
-        certificateErrors(updatedJsonStr) shouldBe empty
-      }
-    }
-
-    "given a valid letter-prefix companyRegistrationNumber" should {
-      "return no errors" in {
-        certificateErrors(
-          validCertificate.replace(
-            """"companyRegistrationNumber": "12345678"""",
-            """"companyRegistrationNumber": "AB123456""""
-          )
-        ) shouldBe empty
-      }
-    }
-
-    "given a certificate is missing declaration" should {
-      "return MISSING_REQUIRED_FIELD pointing at declaration" in {
-        val remover        = (__ \ "declaration").json.prune
+    "given a certificate is missing saoName" should {
+      "return MISSING_REQUIRED_FIELD pointing at saoName" in {
+        val remover        = (__ \ "saoName").json.prune
         val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
-        errors.flatMap(_.path) should contain("declaration")
+        errors.flatMap(_.path) should contain("saoName")
+        errors.size shouldBe 1
+      }
+    }
+
+    "given a certificate is missing saoEmail" should {
+      "return MISSING_REQUIRED_FIELD pointing at saoEmail" in {
+        val remover        = (__ \ "saoEmail").json.prune
+        val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
+        val errors         = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("saoEmail")
         errors.size shouldBe 1
       }
     }
@@ -108,42 +106,26 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
     }
 
-    "given a invalid financialYearEndDate format" should {
-      "return INVALID_FORMAT pointing at financialYearEndDate" in {
-        val errors = certificateErrors(
-          validCertificate.replace(""""financialYearEndDate": "2024-12-31"""", """"financialYearEndDate": "-"""")
-        )
-        errors.map(_.reason) should contain("INVALID_FORMAT")
-        errors.flatMap(_.path) should contain("companies[0].financialYearEndDate")
-        errors.size shouldBe 1
-      }
-    }
+    "given a utr is missing, nested in company" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].utr" in {
+        val json             = Json.parse(validCertificate)
+        val companies        = (json \ "companies").as[JsArray]
+        val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "utr"))
+        val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
-    "given a invalid SAO start date format" should {
-      "return INVALID_FORMAT pointing at SAO start date" in {
-        val errors =
-          certificateErrors(validCertificate.replace(""""startDate": "2024-04-01"""", """"startDate": "-""""))
-        errors.map(_.reason) should contain("INVALID_FORMAT")
-        errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].startDate")
-        errors.size shouldBe 1
-      }
-    }
-
-    "given a invalid SAO end date format" should {
-      "return INVALID_FORMAT pointing at SAO end date" in {
-        val errors = certificateErrors(validCertificate.replace(""""endDate": "2025-03-31"""", """"endDate": "-""""))
-        errors.map(_.reason) should contain("INVALID_FORMAT")
-        errors.flatMap(_.path) should contain("companies[0].seniorAccountingOfficers[0].endDate")
+        val errors = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].utr")
         errors.size shouldBe 1
       }
     }
 
     "given a invalid email format for the declaration" should {
       "return INVALID_FORMAT pointing at email" in {
-        val updatedJsonStr = validCertificate.replace("john.doe@example.com", "not-an-email")
+        val updatedJsonStr = validCertificate.replace("Firstname.Lastname@example.com", "not-an-email")
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("INVALID_FORMAT")
-        errors.flatMap(_.path) should contain("declaration.seniorAccountingOfficer.email")
+        errors.flatMap(_.path) should contain("saoEmail")
         errors.size shouldBe 1
       }
     }

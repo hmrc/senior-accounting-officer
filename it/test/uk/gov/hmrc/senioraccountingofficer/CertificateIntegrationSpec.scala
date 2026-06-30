@@ -42,8 +42,8 @@ class CertificateIntegrationSpec extends ISpecBase {
 
   private val validPayload = """{
                                 |  "submitterName": "Jane Smith",
-                                |  "SAOName": "Jane Smith",
-                                |  "SAOEmail": "jane.smith@example.com",
+                                |  "saoName": "Jane Smith",
+                                |  "saoEmail": "jane.smith@example.com",
                                 |  "companies": [
                                 |    {
                                 |      "crn": "1234567890",

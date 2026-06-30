@@ -39,12 +39,12 @@ class CertificateController @Inject() (cc: ControllerComponents, certificateConn
     JsonErrorHandling.parseJson(request.body) match {
       case Right(json) =>
         val errors = JsonErrorHandling.Validators.validateCertificate(json)
-        if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
-        else {
+        if errors.nonEmpty then {
+          Future.successful(JsonErrorHandling.badRequest(errors))
+        } else {
           val id                 = (json \ "subscriptionId").as[String]
           val certificateRequest = json.as[CertificateRequest]
           val dpsRequest         = certificateRequest.toCertificateDpsRequest
-
           certificateConnector
             .postCertificate(id, Json.toJson(dpsRequest).toString)
             .map { response =>

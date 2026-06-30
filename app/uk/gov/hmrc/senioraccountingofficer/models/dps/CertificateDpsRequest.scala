@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.senioraccountingofficer.models.{CertificateCompany, Company}
+import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 
 final case class CertificateDpsRequest(
     submitterName: String,
@@ -35,7 +35,7 @@ final case class CertificateDPSCompany(
     accPeriodEnd: String,
     status: String,
     `type`: String,
-    isCorporationTaxaQualified: Boolean,
+    isCorporationTaxQualified: Boolean,
     isVatQualified: Boolean,
     isPayeQualified: Boolean,
     isInsurancePremiumTaxQualified: Boolean,
@@ -64,7 +64,7 @@ extension (certificateCompany: CertificateCompany) {
       accPeriodEnd = certificateCompany.accPeriodEnd,
       status = certificateCompany.status,
       `type` = certificateCompany.`type`,
-      isCorporationTaxaQualified = certificateCompany.isCorporationTaxaQualified,
+      isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
       isVatQualified = certificateCompany.isVatQualified,
       isPayeQualified = certificateCompany.isPayeQualified,
       isInsurancePremiumTaxQualified = certificateCompany.isInsurancePremiumTaxQualified,
