@@ -1,0 +1,23 @@
+info:
+  name: post notification (400) missing company and sao details
+  type: http
+  seq: 16
+
+http:
+  method: POST
+  url: "{{baseUrl}}/notification"
+  body:
+    type: json
+    data: |-
+      {
+        "subscriptionId": "123",
+        "companies": [],
+        "saos": [],
+      "remarks": "testremarks"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

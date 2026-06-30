@@ -1,0 +1,39 @@
+info:
+  name: post notification (201) valid request
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: "{{baseUrl}}/notification"
+  body:
+    type: json
+    data: |-
+      {
+        "subscriptionId": "123",
+        "companies": [
+          {
+            "crn": "65476489",
+            "utr": "1233456679",
+            "name": "TestCompanyName",
+            "accPeriodEnd": "2009-09-09",
+            "status": "DORMANT",
+            "type": "LTD"
+          }
+        ],
+        "saos": [
+          {
+            "name": "Testname",
+            "fromDate": "2020-03-10",
+            "email": "testname@email.com",
+            "toDate": "2021-03-10"
+          }
+        ],
+        "remarks":"testremarks"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
