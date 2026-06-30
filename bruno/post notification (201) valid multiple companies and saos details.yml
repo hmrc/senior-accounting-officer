@@ -1,0 +1,52 @@
+info:
+  name: post notification (201) valid multiple companies and saos details
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: "{{baseUrl}}/notification"
+  body:
+    type: json
+    data: |-
+      {
+        "subscriptionId": "123",
+        "companies": [
+          {
+            "crn": "11223344",
+            "utr": "2236324676",
+            "name": "Example Subsidiary Ltd",
+            "accPeriodEnd": "2025-07-06",
+            "status": "DORMANT",
+            "type": "LTD"
+          },
+          {
+            "crn": "87203355",
+            "utr": "2233445566",
+            "name": "Example Subsidiary Ltd",
+            "accPeriodEnd": "2020-03-01",
+            "status": "ACTIVE",
+            "type": "PLC"
+          }
+        ],
+        "saos": [
+          {
+            "name": "Testname1",
+            "email": "test.name1@example.com",
+            "fromDate": "2024-04-01",
+            "toDate": "2025-03-31"
+          },
+          {
+            "name": "Testname2",
+            "email": "test.name2@example.com",
+            "fromDate": "2020-04-01",
+            "toDate": "2025-03-31"
+          }
+        ]
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
