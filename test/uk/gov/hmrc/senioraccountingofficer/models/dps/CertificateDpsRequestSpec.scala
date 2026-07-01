@@ -22,12 +22,9 @@ import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
 
-import java.time.LocalDate
-
 class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionValues {
-  val subscriptionId = "example subscription id"
 
-  val certificateCompany: CertificateCompany =
+  val certificateCompanyWithCrn: CertificateCompany =
     CertificateCompany(
       crn = Some(crn),
       utr = utr,
@@ -47,29 +44,75 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       isBankLevyQualified = false
     )
 
+  val certificateCompanyWithoutCrn: CertificateCompany =
+    CertificateCompany(
+      crn = None,
+      utr = utr,
+      name = companyName,
+      accPeriodEnd = accPeriodEnd,
+      status = status,
+      `type` = companyType,
+      isCorporationTaxQualified = true,
+      isVatQualified = true,
+      isPayeQualified = false,
+      isInsurancePremiumTaxQualified = false,
+      isStampDutyLandTaxQualified = false,
+      isStampDutyReserveTaxQualified = false,
+      isPetroleumRevenueTaxQualified = false,
+      isCustomsDutiesQualified = false,
+      isExciseDutiesQualified = false,
+      isBankLevyQualified = false
+    )
+
   "toCertificateDpsCompany" should {
-    "map from CertificateCompany to CertificateDpsCompany" in {
-      val sut = certificateCompany
+    "map from CertificateCompany to CertificateDpsCompany mapped with crn" in {
+      val sut = certificateCompanyWithCrn
 
       val expected =
-          CertificateDPSCompany(
-            crn = Some(crn),
-            utr = utr,
-            name = companyName,
-            accPeriodEnd = accPeriodEnd,
-            status = status,
-            `type` = companyType,
-            isCorporationTaxQualified = true,
-            isVatQualified = true,
-            isPayeQualified = false,
-            isInsurancePremiumTaxQualified = false,
-            isStampDutyLandTaxQualified = false,
-            isStampDutyReserveTaxQualified = false,
-            isPetroleumRevenueTaxQualified = false,
-            isCustomsDutiesQualified = false,
-            isExciseDutiesQualified = false,
-            isBankLevyQualified = false
-          )
+        CertificateDPSCompany(
+          crn = Some(crn),
+          utr = utr,
+          name = companyName,
+          accPeriodEnd = accPeriodEnd,
+          status = status,
+          `type` = companyType,
+          isCorporationTaxQualified = true,
+          isVatQualified = true,
+          isPayeQualified = false,
+          isInsurancePremiumTaxQualified = false,
+          isStampDutyLandTaxQualified = false,
+          isStampDutyReserveTaxQualified = false,
+          isPetroleumRevenueTaxQualified = false,
+          isCustomsDutiesQualified = false,
+          isExciseDutiesQualified = false,
+          isBankLevyQualified = false
+        )
+
+      sut.toDpsCertificateCompany shouldBe expected
+    }
+
+    "map from CertificateCompany to CertificateDpsCompany mapped without crn" in {
+      val sut = certificateCompanyWithoutCrn
+
+      val expected =
+        CertificateDPSCompany(
+          crn = None,
+          utr = utr,
+          name = companyName,
+          accPeriodEnd = accPeriodEnd,
+          status = status,
+          `type` = companyType,
+          isCorporationTaxQualified = true,
+          isVatQualified = true,
+          isPayeQualified = false,
+          isInsurancePremiumTaxQualified = false,
+          isStampDutyLandTaxQualified = false,
+          isStampDutyReserveTaxQualified = false,
+          isPetroleumRevenueTaxQualified = false,
+          isCustomsDutiesQualified = false,
+          isExciseDutiesQualified = false,
+          isBankLevyQualified = false
+        )
 
       sut.toDpsCertificateCompany shouldBe expected
     }
@@ -77,19 +120,10 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
 }
 
 object CertificateDpsRequestSpec {
-  val subscriptionId = "example subscription id"
-  val submitterName  = "example submitter name"
-  val remarks        = "example additional information"
-
   val crn          = "example crn"
   val utr          = "example utr"
   val companyName  = "example company name"
   val accPeriodEnd = "example accPeriodEnd"
   val status       = "example status"
   val companyType  = "example type"
-
-  val saoName          = "example sao name"
-  val fromDate: String = LocalDate.parse("2026-01-01").toString()
-  val email            = "example email"
-  val toDate: String   = LocalDate.parse("2026-03-01").toString()
 }
