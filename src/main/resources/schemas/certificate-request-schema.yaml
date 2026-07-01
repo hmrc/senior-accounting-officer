@@ -2,95 +2,85 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 type: object
 additionalProperties: false
 required:
-  - declaration
+  - saoName
+  - saoEmail
   - companies
+  - subscriptionId
 properties:
-  declaration:
-    type: object
-    additionalProperties: false
-    required:
-      - seniorAccountingOfficer
-    properties:
-      seniorAccountingOfficer:
-        type: object
-        additionalProperties: false
-        required:
-          - name
-          - email
-        properties:
-          name:
-            type: string
-            minLength: 1
-          email:
-            type: string
-            format: email
-            minLength: 1
-            maxLength: 254
-      proxy:
-        type: object
-        additionalProperties: false
-        required:
-          - name
-        properties:
-          name:
-            type: string
-            minLength: 1
+  submitterName:
+    type: string
+    minLength: 1
+    maxLength: 160
+  saoName:
+    type: string
+    minLength: 1
+    maxLength: 160
+  saoEmail:
+    type: string
+    format: email
+    minLength: 1
+    maxLength: 254
+  subscriptionId:
+    type: string
   companies:
     type: array
     minItems: 1
     items:
       type: object
       required:
-        - companyName
-        - uniqueTaxReference
-        - companyReferenceNumber
-        - companyType
-        - financialYearEndDate
-        - seniorAccountingOfficers
+        - utr
+        - name
+        - accPeriodEnd
+        - status
+        - type
+        - isCorporationTaxQualified
+        - isVatQualified
+        - isPayeQualified
+        - isInsurancePremiumTaxQualified
+        - isStampDutyLandTaxQualified
+        - isStampDutyReserveTaxQualified
+        - isPetroleumRevenueTaxQualified
+        - isCustomsDutiesQualified
+        - isExciseDutiesQualified
+        - isBankLevyQualified
       properties:
-        companyName:
+        crn:
+          type: string
+          pattern: "^([0-9]{8}|[A-Z]{2}[0-9]{6})$"
+        utr:
+          type: string
+          pattern: "^[0-9]{10}$"
+        name:
           type: string
           minLength: 1
           maxLength: 160
-        uniqueTaxReference:
+        accPeriodEnd:
           type: string
-          pattern: "^[0-9]{10}$"
-        companyReferenceNumber:
+          format: date
+        status:
           type: string
-          pattern: "^([0-9]{8}|[A-Z]{2}[0-9]{6})$"
-        companyType:
+        type:
           type: string
           enum:
             - PLC
             - LTD
-        financialYearEndDate:
-          type: string
-          format: date
-        seniorAccountingOfficers:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            required:
-              - name
-              - startDate
-              - endDate
-            properties:
-              name:
-                type: string
-                minLength: 1
-              startDate:
-                type: string
-                format: date
-              endDate:
-                type: string
-                format: date
-              email:
-                type: string
-                format: email
-                minLength: 1
-                maxLength: 254
-  additionalInformation:
-    type: string
-    minLength: 1
-    maxLength: 5000
+        isCorporationTaxQualified:
+          type: boolean
+        isVatQualified:
+          type: boolean
+        isPayeQualified:
+          type: boolean
+        isInsurancePremiumTaxQualified:
+          type: boolean
+        isStampDutyLandTaxQualified:
+          type: boolean
+        isStampDutyReserveTaxQualified:
+          type: boolean
+        isPetroleumRevenueTaxQualified:
+          type: boolean
+        isCustomsDutiesQualified:
+          type: boolean
+        isExciseDutiesQualified:
+          type: boolean
+        isBankLevyQualified:
+          type: boolean

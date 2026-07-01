@@ -30,16 +30,18 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 
 import scala.concurrent.Future
+import scala.util.Random
 
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   private val mockCertificateConnector = mock[CertificateConnector]
   private val saoSubscriptionId        = "123"
-  private val certificateUrl           = s"/senior-accounting-officer/certificate/$saoSubscriptionId"
+  private def certificateUrl           = routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -49,34 +51,34 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       .build()
 
   private val validPayload: JsObject = Json.obj(
-    "declaration" -> Json.obj(
-      "seniorAccountingOfficer" -> Json.obj(
-        "name"  -> "John Doe",
-        "email" -> "john.doe@example.com"
-      ),
-      "proxy" -> Json.obj(
-        "name" -> "Jane Smith"
-      )
-    ),
-    "companies" -> Json.arr(
+    "subscriptionId" -> saoSubscriptionId,
+    "saoName"        -> "Jane Smith",
+    "saoEmail"       -> "Firstname.Lastname@example.com",
+    "companies"      -> Json.arr(
       Json.obj(
-        "companyName"              -> "Example Ltd",
-        "uniqueTaxReference"       -> "1234567890",
-        "companyReferenceNumber"   -> "AB123456",
-        "companyType"              -> "LTD",
-        "financialYearEndDate"     -> "2024-12-31",
-        "seniorAccountingOfficers" -> Json.arr(
-          Json.obj(
-            "name"      -> "Firstname Lastname",
-            "email"     -> "firstname.lastname@example.com",
-            "startDate" -> "2024-04-01",
-            "endDate"   -> "2025-03-31"
-          )
-        )
+        "utr"                            -> generateUtr,
+        "name"                           -> "Example Subsidiary Ltd",
+        "accPeriodEnd"                   -> "2025-03-31",
+        "status"                         -> "COMPLIANT",
+        "type"                           -> "LTD",
+        "isCorporationTaxQualified"      -> true,
+        "isVatQualified"                 -> true,
+        "isPayeQualified"                -> true,
+        "isInsurancePremiumTaxQualified" -> false,
+        "isStampDutyLandTaxQualified"    -> false,
+        "isStampDutyReserveTaxQualified" -> false,
+        "isPetroleumRevenueTaxQualified" -> false,
+        "isCustomsDutiesQualified"       -> false,
+        "isExciseDutiesQualified"        -> false,
+        "isBankLevyQualified"            -> false
       )
-    ),
-    "additionalInformation" -> "non-empty string"
+    )
   )
+
+  private def generateUtr = {
+    val seed = Random.nextInt(1000000)
+    SaUtrGenerator(seed).nextSaUtr
+  }
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
@@ -86,7 +88,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private def certificateRequest(payload: String): FakeRequest[AnyContentAsText] =
     FakeRequest("POST", certificateUrl)
-      .withHeaders(CONTENT_TYPE -> "application/json")
+      .withHeaders("Content-Type" -> "text/plain")
       .withTextBody(payload)
 
   private def assertValidationError(payload: String, expectedError: play.api.libs.json.JsValue): Unit = {
@@ -99,19 +101,19 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     verify(mockCertificateConnector, never()).postCertificate(any(), any())(using any())
   }
 
-  "POST /certificate/:saoSubscriptionId" should {
-    "return 204 when the downstream connector succeeds without a body" in {
+  "POST /certificate" should {
+    "return 204 when the downstream connector succeeds with a body" in {
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
-
       status(result) shouldBe Status.NO_CONTENT
     }
 
     "return the downstream JSON body for validation errors" in {
-      val downstreamBody = """[{"path":"companies[0].companyType","reason":"INVALID_ENUM_VALUE"}]"""
+      val downstreamBody =
+        """"[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},{"path":"SAOName","reason":"INVALID_DATA_TYPE"},{"path":"companies[0].crn","reason":"INVALID_FORMAT"},{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoName","reason":"MISSING_REQUIRED_FIELD]"}]""""
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
@@ -122,13 +124,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       contentAsString(result) shouldBe downstreamBody
     }
 
-    "return 400 with MALFORMED_REQUEST for malformed JSON without calling the connector" in {
-      assertValidationError(
-        """{"declaration":""",
-        Json.obj("reason" -> "MALFORMED_REQUEST")
-      )
-    }
-
     "return 400 with MISSING_REQUIRED_FIELD for schema-invalid JSON without calling the connector" in {
       assertValidationError(
         (validPayload - "companies").toString(),
@@ -136,50 +131,25 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with MISSING_REQUIRED_FIELD for a nested missing field without calling the connector" in {
+    "return 400 with CANNOT_BE_EMPTY for an empty SAO name without calling the connector" in {
       val invalidPayload = validPayload ++ Json.obj(
-        "declaration" -> Json.obj(
-          "seniorAccountingOfficer" -> Json.obj(
-            "name" -> "John Doe"
-          )
-        )
+        "saoName" -> ""
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "declaration.seniorAccountingOfficer.email", "reason" -> "MISSING_REQUIRED_FIELD")
-      )
-    }
-
-    "return 400 with CANNOT_BE_EMPTY for an empty declaration name without calling the connector" in {
-      val invalidPayload = validPayload ++ Json.obj(
-        "declaration" -> Json.obj(
-          "seniorAccountingOfficer" -> Json.obj(
-            "name"  -> "",
-            "email" -> "john.doe@example.com"
-          )
-        )
-      )
-
-      assertValidationError(
-        invalidPayload.toString(),
-        Json.obj("path" -> "declaration.seniorAccountingOfficer.name", "reason" -> "CANNOT_BE_EMPTY")
+        Json.obj("path" -> "saoName", "reason" -> "CANNOT_BE_EMPTY")
       )
     }
 
     "return 400 with INVALID_DATA_TYPE for a non-string SAO name without calling the connector" in {
       val invalidPayload = validPayload ++ Json.obj(
-        "declaration" -> Json.obj(
-          "seniorAccountingOfficer" -> Json.obj(
-            "name"  -> 123,
-            "email" -> "john.doe@example.com"
-          )
-        )
+        "saoName" -> 123
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "declaration.seniorAccountingOfficer.name", "reason" -> "INVALID_DATA_TYPE")
+        Json.obj("path" -> "saoName", "reason" -> "INVALID_DATA_TYPE")
       )
     }
 
@@ -194,19 +164,14 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with INVALID_FORMAT for an invalid declaration email without calling the connector" in {
+    "return 400 with INVALID_FORMAT for an invalid sao email without calling the connector" in {
       val invalidPayload = validPayload ++ Json.obj(
-        "declaration" -> Json.obj(
-          "seniorAccountingOfficer" -> Json.obj(
-            "name"  -> "John Doe",
-            "email" -> "not-an-email"
-          )
-        )
+        "saoEmail" -> "not-an-email"
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "declaration.seniorAccountingOfficer.email", "reason" -> "INVALID_FORMAT")
+        Json.obj("path" -> "saoEmail", "reason" -> "INVALID_FORMAT")
       )
     }
 
@@ -214,26 +179,28 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val invalidPayload = validPayload ++ Json.obj(
         "companies" -> Json.arr(
           Json.obj(
-            "companyName"              -> "Example Ltd",
-            "uniqueTaxReference"       -> "1234567890",
-            "companyReferenceNumber"   -> "AB123456",
-            "companyType"              -> "LLP",
-            "financialYearEndDate"     -> "2024-12-31",
-            "seniorAccountingOfficers" -> Json.arr(
-              Json.obj(
-                "name"      -> "Firstname Lastname",
-                "email"     -> "firstname.lastname@example.com",
-                "startDate" -> "2024-04-01",
-                "endDate"   -> "2025-03-31"
-              )
-            )
+            "utr"                            -> generateUtr,
+            "name"                           -> "Example Subsidiary Ltd",
+            "accPeriodEnd"                   -> "2025-03-31",
+            "status"                         -> "COMPLIANT",
+            "type"                           -> "NOT VALID",
+            "isCorporationTaxQualified"      -> true,
+            "isVatQualified"                 -> true,
+            "isPayeQualified"                -> true,
+            "isInsurancePremiumTaxQualified" -> false,
+            "isStampDutyLandTaxQualified"    -> false,
+            "isStampDutyReserveTaxQualified" -> false,
+            "isPetroleumRevenueTaxQualified" -> false,
+            "isCustomsDutiesQualified"       -> false,
+            "isExciseDutiesQualified"        -> false,
+            "isBankLevyQualified"            -> false
           )
         )
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "companies[0].companyType", "reason" -> "INVALID_ENUM_VALUE")
+        Json.obj("path" -> "companies[0].type", "reason" -> "INVALID_ENUM_VALUE")
       )
     }
 
@@ -243,17 +210,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       assertValidationError(
         invalidPayload.toString(),
         Json.obj("path" -> "companies", "reason" -> "ARRAY_MIN_ITEMS_NOT_MET")
-      )
-    }
-
-    "return 400 with LENGTH_OUT_OF_BOUNDS for overlong additional information without calling the connector" in {
-      val invalidPayload = validPayload ++ Json.obj(
-        "additionalInformation" -> ("A" * 5001)
-      )
-
-      assertValidationError(
-        invalidPayload.toString(),
-        Json.obj("path" -> "additionalInformation", "reason" -> "LENGTH_OUT_OF_BOUNDS")
       )
     }
   }

@@ -19,19 +19,23 @@ package uk.gov.hmrc.senioraccountingofficer.connectors
 import play.api.http.MimeTypes
 import play.api.libs.ws.writeableOf_String
 import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import java.net.URL
 import javax.inject.Inject
 
-class CertificateConnector @Inject() (appConfig: AppConfig, httpClient: HttpClientV2)(using ExecutionContext) {
+class CertificateConnector @Inject() (appConfig: AppConfig, httpClientV2: HttpClientV2)(implicit ec: ExecutionContext) {
 
-  def postCertificate(saoSubscriptionId: String, body: String)(using HeaderCarrier): Future[HttpResponse] = {
-    given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
-    httpClient
-      .post(url"${appConfig.stubsBaseUrl}/certificate/$saoSubscriptionId")
+  def postCertificate(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$id/certificates"
+
+    httpClientV2
+      .post(url)
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .setHeader("Content-Type" -> MimeTypes.JSON)
       .withBody(body)

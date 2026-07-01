@@ -128,7 +128,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
 
 ### NoDocs ###
-POST        /certificate/:saoSubscriptionId       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate(saoSubscriptionId: String)
+POST        /certificate       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate()
 
 ### NoDocs ###
 GET         /obligation/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)
