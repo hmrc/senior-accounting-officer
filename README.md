@@ -69,7 +69,7 @@ This repository utilises [play-swagger](https://github.com/play-swagger/play-swa
 The schema is generated upon running `sbt run`. It can be found in `/target/swagger/swagger.json` from the root of the repository.
 
 
-## Running tests with BRUNO
+## Running tests with Bruno
 
 Users can import the collection into Bruno and, once the required environment setup is complete, run the protected service requests directly.
 
