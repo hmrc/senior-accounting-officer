@@ -106,8 +106,8 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
     }
 
-    "given a utr is missing, nested in company" should {
-      "return MISSING_REQUIRED_FIELD pointing at companies[0].utr" in {
+    "given that fields are nested in the companies object" should {
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].utr when no utr is given" in {
         val json             = Json.parse(validCertificate)
         val companies        = (json \ "companies").as[JsArray]
         val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "utr"))
@@ -116,6 +116,66 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val errors = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
         errors.flatMap(_.path) should contain("companies[0].utr")
+        errors.size shouldBe 1
+      }
+
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].name when no name is given" in {
+        val json = Json.parse(validCertificate)
+        val companies = (json \ "companies").as[JsArray]
+        val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "name"))
+        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+
+        val errors = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].name")
+        errors.size shouldBe 1
+      }
+
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].accPeriodEnd when no accPeriodEnd is given" in {
+        val json = Json.parse(validCertificate)
+        val companies = (json \ "companies").as[JsArray]
+        val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "accPeriodEnd"))
+        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+
+        val errors = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
+        errors.size shouldBe 1
+      }
+
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].status when no status is given" in {
+        val json = Json.parse(validCertificate)
+        val companies = (json \ "companies").as[JsArray]
+        val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "status"))
+        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+
+        val errors = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].status")
+        errors.size shouldBe 1
+      }
+
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].type when no type is given" in {
+        val json = Json.parse(validCertificate)
+        val companies = (json \ "companies").as[JsArray]
+        val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "type"))
+        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+
+        val errors = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].type")
+        errors.size shouldBe 1
+      }
+
+      "return MISSING_REQUIRED_FIELD pointing at companies[0].isCorporationTaxQualified when no isCorporationTaxQualified boolean is given" in {
+        val json = Json.parse(validCertificate)
+        val companies = (json \ "companies").as[JsArray]
+        val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "isCorporationTaxQualified"))
+        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+
+        val errors = certificateErrors(updatedJsonStr)
+        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.flatMap(_.path) should contain("companies[0].isCorporationTaxQualified")
         errors.size shouldBe 1
       }
     }
