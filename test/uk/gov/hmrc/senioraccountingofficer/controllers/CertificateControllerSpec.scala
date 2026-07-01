@@ -111,6 +111,16 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       status(result) shouldBe Status.NO_CONTENT
     }
 
+    "return the status and body from the downstream service for 5xx" in {
+      val mockResponse = HttpResponse(Status.INTERNAL_SERVER_ERROR, "some raw error body")
+      when(mockCertificateConnector.postCertificate(any(), any())(any())).thenReturn(Future.successful(mockResponse))
+
+      val result = routeResult(certificateRequest(validPayload.toString()))
+
+      status(result) shouldBe Status.INTERNAL_SERVER_ERROR
+      contentAsString(result) shouldBe "some raw error body"
+    }
+
     "return the downstream JSON body for validation errors" in {
       val downstreamBody =
         """"[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},{"path":"SAOName","reason":"INVALID_DATA_TYPE"},{"path":"companies[0].crn","reason":"INVALID_FORMAT"},{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoName","reason":"MISSING_REQUIRED_FIELD]"}]""""
@@ -211,6 +221,16 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
         invalidPayload.toString(),
         Json.obj("path" -> "companies", "reason" -> "ARRAY_MIN_ITEMS_NOT_MET")
       )
+    }
+
+    "return BAD_REQUEST when the payload is not valid JSON" in {
+      val request =
+        FakeRequest("POST", certificateUrl)
+          .withTextBody("this is not json")
+          .withHeaders("Content-Type" -> "text/plain")
+      val result = routeResult(request)
+      status(result) shouldBe Status.BAD_REQUEST
+      contentAsString(result) should include("MALFORMED_REQUEST")
     }
   }
 }
