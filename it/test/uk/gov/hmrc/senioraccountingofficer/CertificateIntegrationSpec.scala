@@ -110,7 +110,7 @@ class CertificateIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/subscriptions/123/certificates"))
+        postRequestedFor(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
