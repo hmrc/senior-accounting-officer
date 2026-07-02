@@ -196,7 +196,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #                - path: "companies"
 #                  reason: "INVALID_DATA_TYPE"
 #            arrayTooSmall:
-#              summary: At least one seniorAccountingOfficer required
+#              summary: At least one company required
 #              value:
 #                - path: "companies"
 #                  reason: "ARRAY_MIN_ITEMS_NOT_MET"
@@ -207,8 +207,6 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #                  reason: "INVALID_FORMAT"
 #                - path: "companies[0].name"
 #                  reason: "CANNOT_BE_EMPTY"
-#                - path: "remarks"
-#                  reason: "LENGTH_OUT_OF_BOUNDS"
 #            unreadablePayload:
 #              summary: Payload could not be parsed
 #              value:
@@ -226,7 +224,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #              value:
 #                path: "saoName"
 #                reason: "LENGTH_OUT_OF_BOUNDS"
-#            invalidFinancialYearEndDate:
+#            invalidAccPeriodEnd:
 #              value:
 #                path: "companies[0].accPeriodEnd"
 #                reason: "DATE_OUT_OF_BOUNDS"
