@@ -29,9 +29,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.net.URL
 import javax.inject.Inject
 
-class CertificateConnector @Inject() (appConfig: AppConfig, httpClientV2: HttpClientV2)(implicit ec: ExecutionContext) {
+class CertificateConnector @Inject() (appConfig: AppConfig, httpClientV2: HttpClientV2)(using ExecutionContext) {
 
-  def postCertificate(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def postCertificate(id: String, body: String)(using HeaderCarrier): Future[HttpResponse] = {
     val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$id/certificates"
 
     httpClientV2

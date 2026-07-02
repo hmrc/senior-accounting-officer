@@ -33,6 +33,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
+import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec.*
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -102,18 +103,19 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
   }
 
   "POST /certificate" should {
-    "return 204 when the downstream connector succeeds with a body" in {
+    "return 201 when the downstream connector succeeds with a body" in {
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.NO_CONTENT)))
+        .thenReturn(Future.successful(HttpResponse(status = Status.CREATED)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
-      status(result) shouldBe Status.NO_CONTENT
+      status(result) shouldBe Status.CREATED
     }
 
     "return the status and body from the downstream service for 5xx" in {
-      val mockResponse = HttpResponse(Status.INTERNAL_SERVER_ERROR, "some raw error body")
-      when(mockCertificateConnector.postCertificate(any(), any())(any())).thenReturn(Future.successful(mockResponse))
+      val mockResponse = HttpResponse(Status.INTERNAL_SERVER_ERROR, bodyError)
+      when(mockCertificateConnector.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
@@ -122,8 +124,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return the downstream JSON body for validation errors" in {
-      val downstreamBody =
-        """"[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},{"path":"SAOName","reason":"INVALID_DATA_TYPE"},{"path":"companies[0].crn","reason":"INVALID_FORMAT"},{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},{"path":"saoName","reason":"MISSING_REQUIRED_FIELD]"}]""""
       reset(mockCertificateConnector)
       when(mockCertificateConnector.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
@@ -233,4 +233,16 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       contentAsString(result) should include("MALFORMED_REQUEST")
     }
   }
+}
+
+object CertificateControllerSpec {
+  val downstreamBody: String =
+    """[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},
+      |{"path":"SAOName","reason":"INVALID_DATA_TYPE"},
+      |{"path":"companies[0].crn","reason":"INVALID_FORMAT"},
+      |{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},
+      |{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},
+      |{"path":"saoName","reason":"MISSING_REQUIRED_FIELD"}]""".stripMargin
+
+  val bodyError: String = "some raw error body"
 }

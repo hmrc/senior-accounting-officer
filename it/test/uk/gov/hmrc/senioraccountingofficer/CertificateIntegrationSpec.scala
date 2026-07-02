@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import play.api.http.{HeaderNames, MimeTypes}
+import play.api.http.{HeaderNames, MimeTypes, Status}
 import play.api.libs.json.Json
 import play.api.libs.ws.readableAsString
 import play.api.libs.ws.writeableOf_JsValue
@@ -32,7 +32,7 @@ class CertificateIntegrationSpec extends ISpecBase {
   private val connector = app.injector.instanceOf[CertificateConnector]
   private val saoSubscriptionId = "123"
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given HeaderCarrier = HeaderCarrier()
 
 
   override def additionalConfigs: Map[String, Any] = Map(
@@ -74,17 +74,17 @@ class CertificateIntegrationSpec extends ISpecBase {
         post(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
           .willReturn(
             aResponse()
-              .withStatus(200)
+              .withStatus(Status.CREATED)
           )
       )
 
       val result = connector.postCertificate("123", validPayload).futureValue
 
-      result.status mustBe 200
+      result.status mustBe Status.CREATED
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/subscriptions/123/certificates"))
+        postRequestedFor(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
@@ -98,14 +98,14 @@ class CertificateIntegrationSpec extends ISpecBase {
         post(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
           .willReturn(
             aResponse()
-              .withStatus(400)
+              .withStatus(Status.BAD_REQUEST)
               .withBody(downstreamBody)
           )
       )
 
       val result = connector.postCertificate("123", validPayload).futureValue
 
-      result.status mustBe 400
+      result.status mustBe Status.BAD_REQUEST
       result.body mustBe downstreamBody
 
       verify(

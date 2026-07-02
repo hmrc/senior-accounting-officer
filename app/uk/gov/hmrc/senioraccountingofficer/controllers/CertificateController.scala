@@ -18,9 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.{CertificateRequest, toCertificateDpsRequest}
@@ -34,8 +32,6 @@ class CertificateController @Inject() (cc: ControllerComponents, certificateConn
 ) extends BackendController(cc) {
 
   def postCertificate(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
-    given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
     JsonErrorHandling.parseJson(request.body) match {
       case Right(json) =>
         val errors = JsonErrorHandling.Validators.validateCertificate(json)

@@ -23,57 +23,11 @@ final case class CertificateDpsRequest(
     submitterName: String,
     saoName: String,
     saoEmail: String,
-    companies: List[CertificateDPSCompany],
+    companies: List[CertificateCompany],
     remarks: Option[String] = None,
     staffPID: Option[String] = None
 )
 
-final case class CertificateDPSCompany(
-    crn: Option[String],
-    utr: String,
-    name: String,
-    accPeriodEnd: String,
-    status: String,
-    `type`: String,
-    isCorporationTaxQualified: Boolean,
-    isVatQualified: Boolean,
-    isPayeQualified: Boolean,
-    isInsurancePremiumTaxQualified: Boolean,
-    isStampDutyLandTaxQualified: Boolean,
-    isStampDutyReserveTaxQualified: Boolean,
-    isPetroleumRevenueTaxQualified: Boolean,
-    isCustomsDutiesQualified: Boolean,
-    isExciseDutiesQualified: Boolean,
-    isBankLevyQualified: Boolean
-)
-
 object CertificateDpsRequest {
   given OFormat[CertificateDpsRequest] = Json.format[CertificateDpsRequest]
-}
-
-object CertificateDPSCompany {
-  given OFormat[CertificateDPSCompany] = Json.format[CertificateDPSCompany]
-}
-
-extension (certificateCompany: CertificateCompany) {
-  def toDpsCertificateCompany: CertificateDPSCompany = {
-    CertificateDPSCompany(
-      crn = certificateCompany.crn,
-      utr = certificateCompany.utr,
-      name = certificateCompany.name,
-      accPeriodEnd = certificateCompany.accPeriodEnd,
-      status = certificateCompany.status,
-      `type` = certificateCompany.`type`,
-      isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
-      isVatQualified = certificateCompany.isVatQualified,
-      isPayeQualified = certificateCompany.isPayeQualified,
-      isInsurancePremiumTaxQualified = certificateCompany.isInsurancePremiumTaxQualified,
-      isStampDutyLandTaxQualified = certificateCompany.isStampDutyLandTaxQualified,
-      isStampDutyReserveTaxQualified = certificateCompany.isStampDutyReserveTaxQualified,
-      isPetroleumRevenueTaxQualified = certificateCompany.isPetroleumRevenueTaxQualified,
-      isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
-      isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
-      isBankLevyQualified = certificateCompany.isBankLevyQualified
-    )
-  }
 }

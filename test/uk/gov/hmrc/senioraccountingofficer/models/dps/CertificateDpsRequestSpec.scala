@@ -21,10 +21,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
+import uk.gov.hmrc.senioraccountingofficer.models.{CertificateCompany as CertificateDpsCompany, toDpsCertificateCompany}
 
 class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  val certificateCompanyWithCrn: CertificateCompany =
+  val certificateCompanyWithCrn: CertificateDpsCompany =
     CertificateCompany(
       crn = Some(crn),
       utr = utr,
@@ -69,7 +70,7 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       val sut = certificateCompanyWithCrn
 
       val expected =
-        CertificateDPSCompany(
+        CertificateDpsCompany(
           crn = Some(crn),
           utr = utr,
           name = companyName,
@@ -95,7 +96,7 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       val sut = certificateCompanyWithoutCrn
 
       val expected =
-        CertificateDPSCompany(
+        CertificateDpsCompany(
           crn = None,
           utr = utr,
           name = companyName,

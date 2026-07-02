@@ -19,9 +19,9 @@ package uk.gov.hmrc.senioraccountingofficer.models
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.submitterName
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequestSpec.*
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDPSCompany, CertificateDpsRequest}
+import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany as CertificateDpsCompany
+import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
+import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 
 import java.time.LocalDate
 
@@ -93,7 +93,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         saoName = saoName,
         saoEmail = email,
         companies = List(
-          CertificateDPSCompany(
+          CertificateDpsCompany(
             crn = Some(crn),
             utr = utr,
             name = companyName,
@@ -127,7 +127,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         saoName = saoName,
         saoEmail = email,
         companies = List(
-          CertificateDPSCompany(
+          CertificateDpsCompany(
             crn = Some(crn),
             utr = utr,
             name = companyName,
