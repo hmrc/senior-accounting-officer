@@ -53,20 +53,15 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #                - path: "accPeriodEnd"
 #                  reason: "INVALID_FORMAT"
 #            patternMismatch:
-#              summary: uniqueTaxReference does not match required numeric pattern
+#              summary: utr does not match required numeric pattern
 #              value:
-#                - path: "uniqueTaxReference"
+#                - path: "utr"
 #                  reason: "INVALID_FORMAT"
 #            invalidEnum:
 #              summary: Invalid company type provided
 #              value:
-#                - path: "companyType"
+#                - path: "type"
 #                  reason: "INVALID_ENUM_VALUE"
-#            emailFormatInvalid:
-#              summary: Invalid email format for SAO
-#              value:
-#                - path: "saos.email"
-#                  reason: "INVALID_FORMAT"
 #            lengthOutOfBounds:
 #              summary: Additional info text exceeds max length
 #              value:
@@ -121,7 +116,123 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 ###
 POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
 
-### NoDocs ###
+###
+#  summary: Submit a certificate
+#  requestBody:
+#    content:
+#      application/json:
+#        schema:
+#          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.CertificateRequest"
+#  responses:
+#    "201":
+#      description: Certificate submitted successfully
+#      content:
+#        application/json:
+#          example:
+#            id: "CRT0123456789"
+#            timestamp: "2026-03-01T12:00:14Z"
+#    "400":
+#      description: Syntactically incorrect input
+#      content:
+#        application/json:
+#          schema:
+#            type: array
+#            items:
+#              $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            subscriptionIdMissing:
+#              summary: SAO Subscription ID is missing
+#              value:
+#                - path: "subscriptionId"
+#                  reason: "MISSING_REQUIRED_FIELD"
+#            invalidSaoSubscriptionId:
+#              summary: SAO Subscription ID is invalid
+#              value:
+#                - path: "subscriptionId"
+#                  reason: "INVALID_FORMAT"
+#            missingRequiredField:
+#              summary: A required field is missing
+#              value:
+#                - path: "companies"
+#                  reason: "MISSING_REQUIRED_FIELD"
+#            missingRequiredField:
+#              summary: A required field is missing
+#              value:
+#                - path: "saoEmail"
+#                  reason: "MISSING_REQUIRED_FIELD"
+#            saoEmailIsInvalidType:
+#              summary: Field has unexpected JSON type
+#              value:
+#                - path: "saoEmail"
+#                  reason: "INVALID_DATA_TYPE"
+#            invalidFormat:
+#              summary: Date field provided in wrong format
+#              value:
+#                - path: "accPeriodEnd"
+#                  reason: "INVALID_FORMAT"
+#            patternMismatch:
+#              summary: utr does not match required numeric pattern
+#              value:
+#                - path: "utr"
+#                  reason: "INVALID_FORMAT"
+#            invalidEnum:
+#              summary: Invalid company type provided
+#              value:
+#                - path: "type"
+#                  reason: "INVALID_ENUM_VALUE"
+#            emailFormatInvalid:
+#              summary: Invalid email format for SAO
+#              value:
+#                - path: "saoEmail"
+#                  reason: "INVALID_FORMAT"
+#            lengthOutOfBounds:
+#              summary: Additional info text exceeds max length
+#              value:
+#                - path: "remarks"
+#                  reason: "LENGTH_OUT_OF_BOUNDS"
+#            arrayIsInvalidType:
+#              summary: Field has unexpected JSON type
+#              value:
+#                - path: "companies"
+#                  reason: "INVALID_DATA_TYPE"
+#            arrayTooSmall:
+#              summary: At least one seniorAccountingOfficer required
+#              value:
+#                - path: "companies"
+#                  reason: "ARRAY_MIN_ITEMS_NOT_MET"
+#            multipleValidationErrors:
+#              summary: Multiple validation failures in one request
+#              value:
+#                - path: "companies[0].accPeriodEnd"
+#                  reason: "INVALID_FORMAT"
+#                - path: "companies[1].name"
+#                  reason: "CANNOT_BE_EMPTY"
+#                - path: "remarks"
+#                  reason: "LENGTH_OUT_OF_BOUNDS"
+#            unreadablePayload:
+#              summary: Payload could not be parsed
+#              value:
+#                - reason: "MALFORMED_REQUEST"
+#    "404":
+#      description: Subscription not found
+#    "422":
+#      description: Semantically incorrect input
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            invalidSaoName:
+#              value:
+#                path: "saoName"
+#                reason: "LENGTH_OUT_OF_BOUNDS"
+#            invalidFinancialYearEndDate:
+#              value:
+#                path: "companies[0].accPeriodEnd"
+#                reason: "DATE_OUT_OF_BOUNDS"
+#    "500":
+#      description: Internal server error
+###
 POST        /certificate       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate()
 
 ### NoDocs ###
