@@ -16,4 +16,32 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models
 
-final case class ApiError(path: Option[String], reason: String)
+import play.api.libs.json.*
+import play.api.libs.json.Reads.*
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
+
+final case class ApiError(reason: Reason, path: Option[String] = None)
+
+object ApiError {
+
+  enum Reason {
+    case DOWNSTREAM_SERVICE_ERROR,
+      DOWNSTREAM_SERVICE_UNAVAILABLE,
+      DOWNSTREAM_SERVICE_MISALIGNMENT,
+      MALFORMED_REQUEST,
+      MISSING_REQUIRED_FIELD,
+      INVALID_DATA_TYPE,
+      INVALID_FORMAT,
+      INVALID_ENUM_VALUE,
+      ARRAY_MIN_ITEMS_NOT_MET,
+      LENGTH_OUT_OF_BOUNDS,
+      CANNOT_BE_EMPTY
+  }
+
+  object Reason {
+    given Reads[Reason]  = JsPath.read[String].map(name => Reason.valueOf(name))
+    given Writes[Reason] = Writes[Reason](r => JsString(r.toString))
+  }
+
+  given OFormat[ApiError] = Json.format[ApiError]
+}

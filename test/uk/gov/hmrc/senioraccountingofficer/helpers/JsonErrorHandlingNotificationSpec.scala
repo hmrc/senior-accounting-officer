@@ -24,6 +24,7 @@ import play.api.libs.json.*
 import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 
 import scala.util.Random
 
@@ -79,7 +80,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val remover        = (__ \ "companies").json.prune
         val updatedJsonStr = Json.parse(validNotification).transform(remover).asOpt.value.toString
         val errors         = notificationErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies")
         errors.size shouldBe 1
       }
@@ -91,7 +92,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val utr  = (json \ "companies" \ 0 \ "utr").as[String]
 
         val errors = notificationErrors(validNotification.replaceAll(s""""utr": "$utr",""", ""))
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].utr")
         errors.size shouldBe 1
       }
@@ -103,7 +104,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val companyName = (json \ "companies" \ 0 \ "name").as[String]
 
         val errors = notificationErrors(validNotification.replaceAll(s""""name": "$companyName",""", ""))
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].name")
         errors.size shouldBe 1
       }
@@ -112,7 +113,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
     "given a company missing accPeriodEnd" should {
       "return MISSING_REQUIRED_FIELD pointing at companies[0].accPeriodEnd" in {
         val errors = notificationErrors(validNotification.replace(""""accPeriodEnd": "2024-12-31",""", ""))
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
         errors.size shouldBe 1
       }
@@ -124,7 +125,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val updatedNotification = regex.replaceAllIn(validNotification, "")
         val errors              = notificationErrors(updatedNotification)
 
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].status")
         errors.size shouldBe 1
       }
@@ -136,7 +137,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val updatedNotification = regex.replaceAllIn(validNotification, "")
         val errors              = notificationErrors(updatedNotification)
 
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].type")
         errors.size shouldBe 1
       }
@@ -147,7 +148,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val errors = notificationErrors(
           validNotification.replace(""""accPeriodEnd": "2024-12-31"""", """"accPeriodEnd": "-"""")
         )
-        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.map(_.reason) should contain(Reason.INVALID_FORMAT)
         errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
         errors.size shouldBe 1
       }
@@ -158,7 +159,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
         val errors = notificationErrors(
           validNotification.replace(""""type": "LTD"""", """"type": """"")
         )
-        errors.map(_.reason) should contain("INVALID_ENUM_VALUE")
+        errors.map(_.reason) should contain(Reason.INVALID_ENUM_VALUE)
         errors.flatMap(_.path) should contain("companies[0].type")
         errors.size shouldBe 1
       }
@@ -167,7 +168,7 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
     "given a sao missing name" should {
       "return MISSING_REQUIRED_FIELD pointing at saos[0].name" in {
         val errors = notificationErrors(validNotification.replaceAll(s""""name": "Firstname Lastname",""", ""))
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("saos[0].name")
         errors.size shouldBe 1
       }

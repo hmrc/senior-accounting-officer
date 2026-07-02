@@ -16,15 +16,19 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
+import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
-import uk.gov.hmrc.senioraccountingofficer.models.toNotificationDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
+import uk.gov.hmrc.senioraccountingofficer.models.notification.*
+import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, toNotificationDpsRequest}
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
+import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,7 +38,8 @@ class NotificationController @Inject() (
     cc: ControllerComponents,
     notificationService: NotificationService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc) {
+    extends BackendController(cc)
+    with Logging {
 
   def postNotification(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
     given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
@@ -49,9 +54,25 @@ class NotificationController @Inject() (
           val dpsRequest          = notificationRequest.toNotificationDpsRequest
 
           notificationService
-            .postNotification(id, Json.toJson(dpsRequest).toString)
-            .map { response =>
-              Status(response.status)(response.body)
+            .postNotification(id, dpsRequest)
+            .map {
+              case Success(id) =>
+                Ok(Json.toJson(NotificationResponse(id)))
+              case MalformedResponse(downstreamService) =>
+                logger.warn(s"[Notification][$downstreamService][MalformedResponse]")
+                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+              case BadRequestFailure(downstreamService, _) =>
+                logger.warn(s"[Notification][$downstreamService][BAD_REQUEST]")
+                InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+              case InternalServerFailure(downstreamService, _) =>
+                logger.warn(s"[Notification][$downstreamService][INTERNAL_SERVER_ERROR]")
+                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
+              case ServiceUnavailableFailure(downstreamService) =>
+                logger.warn(s"[Notification][$downstreamService][SERVICE_UNAVAILABLE]")
+                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
+              case UnknownFailure(downstreamService, status, _) =>
+                logger.warn(s"[Notification][$downstreamService][Unknown]status=$status")
+                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
             }
         }
       case Left(errorResult) =>

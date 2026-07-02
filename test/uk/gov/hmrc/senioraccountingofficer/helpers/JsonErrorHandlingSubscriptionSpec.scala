@@ -22,6 +22,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, __}
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 
 class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers with OptionValues {
 
@@ -65,7 +66,7 @@ class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers with O
         val remover        = (__ \ "company").json.prune
         val updatedJsonStr = Json.parse(validSubscription).transform(remover).asOpt.value.toString
         val errors         = subscriptionErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("company")
         errors.size shouldBe 1
       }
@@ -76,7 +77,7 @@ class JsonErrorHandlingSubscriptionSpec extends AnyWordSpec with Matchers with O
         val remover        = (__ \ "safeId").json.prune
         val updatedJsonStr = Json.parse(validSubscription).transform(remover).asOpt.value.toString
         val errors         = subscriptionErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("safeId")
         errors.size shouldBe 1
       }
