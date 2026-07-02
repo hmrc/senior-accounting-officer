@@ -120,10 +120,10 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
 
       "return MISSING_REQUIRED_FIELD pointing at companies[0].name when no name is given" in {
-        val json = Json.parse(validCertificate)
-        val companies = (json \ "companies").as[JsArray]
+        val json             = Json.parse(validCertificate)
+        val companies        = (json \ "companies").as[JsArray]
         val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "name"))
-        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+        val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
@@ -132,10 +132,10 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
 
       "return MISSING_REQUIRED_FIELD pointing at companies[0].accPeriodEnd when no accPeriodEnd is given" in {
-        val json = Json.parse(validCertificate)
-        val companies = (json \ "companies").as[JsArray]
+        val json             = Json.parse(validCertificate)
+        val companies        = (json \ "companies").as[JsArray]
         val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "accPeriodEnd"))
-        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+        val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
@@ -144,10 +144,10 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
 
       "return MISSING_REQUIRED_FIELD pointing at companies[0].status when no status is given" in {
-        val json = Json.parse(validCertificate)
-        val companies = (json \ "companies").as[JsArray]
+        val json             = Json.parse(validCertificate)
+        val companies        = (json \ "companies").as[JsArray]
         val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "status"))
-        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+        val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
@@ -156,10 +156,10 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
 
       "return MISSING_REQUIRED_FIELD pointing at companies[0].type when no type is given" in {
-        val json = Json.parse(validCertificate)
-        val companies = (json \ "companies").as[JsArray]
+        val json             = Json.parse(validCertificate)
+        val companies        = (json \ "companies").as[JsArray]
         val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "type"))
-        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+        val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
@@ -168,10 +168,10 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
 
       "return MISSING_REQUIRED_FIELD pointing at companies[0].isCorporationTaxQualified when no isCorporationTaxQualified boolean is given" in {
-        val json = Json.parse(validCertificate)
-        val companies = (json \ "companies").as[JsArray]
+        val json             = Json.parse(validCertificate)
+        val companies        = (json \ "companies").as[JsArray]
         val updatedCompanies = JsArray(companies.value.map(_.as[JsObject] - "isCorporationTaxQualified"))
-        val updatedJsonStr = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
+        val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
