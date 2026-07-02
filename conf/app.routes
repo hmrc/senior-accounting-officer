@@ -168,7 +168,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #            invalidFormat:
 #              summary: Date field provided in wrong format
 #              value:
-#                - path: "accPeriodEnd"
+#                - path: "companies[0].accPeriodEnd"
 #                  reason: "INVALID_FORMAT"
 #            patternMismatch:
 #              summary: utr does not match required numeric pattern
@@ -205,7 +205,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #              value:
 #                - path: "companies[0].accPeriodEnd"
 #                  reason: "INVALID_FORMAT"
-#                - path: "companies[1].name"
+#                - path: "companies[0].name"
 #                  reason: "CANNOT_BE_EMPTY"
 #                - path: "remarks"
 #                  reason: "LENGTH_OUT_OF_BOUNDS"
