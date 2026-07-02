@@ -11,6 +11,7 @@ object CodeCoverageSettings {
     "prod.*",
     ".*Routes.*",
     "testOnly.*",
+    "uk.gov.hmrc.senioraccountingofficer.models.*",
     "testOnlyDoNotUseInAppConf.*"
   )
 
