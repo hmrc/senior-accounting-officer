@@ -33,7 +33,9 @@ val playSwaggerSettings: Seq[Setting[?]] = Seq(
   ),
   swaggerRoutesFile := "app.routes",
   swaggerV3         := true,
-  swaggerPrettyJson := true
+  swaggerPrettyJson := true,
+  swaggerTarget     := new File("conf"),
+  swaggerFileName   := "openapi.json"
 )
 
 addCommandAlias("checkLint", "scalafmtSbtCheck;scalafmtCheckAll")

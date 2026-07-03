@@ -66,7 +66,7 @@ sbt it/test
 
 This repository utilises [play-swagger](https://github.com/play-swagger/play-swagger) to generate an open api specification using a code-first approach.
 
-The schema is generated upon running `sbt run`. It can be found in `/target/swagger/swagger.json` from the root of the repository.
+The schema is generated upon running `sbt run`. It can be found in `/conf/openapi.json` from the root of the repository.
 
 
 ## Running tests with Bruno

@@ -1,0 +1,520 @@
+{
+  "paths" : {
+    "/notification" : {
+      "post" : {
+        "operationId" : "postNotification",
+        "tags" : [ "app" ],
+        "summary" : "Submit a notification",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Notification submitted successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "required" : [ "notificationRef" ],
+                  "properties" : {
+                    "notificationRef" : {
+                      "type" : "string"
+                    }
+                  }
+                },
+                "example" : {
+                  "notificationRef" : "NOT0123456789"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Syntactically incorrect input",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+                  }
+                },
+                "examples" : {
+                  "subscriptionIdMissing" : {
+                    "summary" : "SAO Subscription ID is missing",
+                    "value" : [ {
+                      "path" : "subscriptionId",
+                      "reason" : "MISSING_REQUIRED_FIELD"
+                    } ]
+                  },
+                  "invalidSaoSubscriptionId" : {
+                    "summary" : "SAO Subscription ID is invalid",
+                    "value" : [ {
+                      "path" : "subscriptionId",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "missingRequiredField" : {
+                    "summary" : "A required field is missing",
+                    "value" : [ {
+                      "path" : "companies",
+                      "reason" : "MISSING_REQUIRED_FIELD"
+                    } ]
+                  },
+                  "emptyField" : {
+                    "summary" : "A field that cannot be empty has no value",
+                    "value" : [ {
+                      "path" : "saos.name",
+                      "reason" : "CANNOT_BE_EMPTY"
+                    } ]
+                  },
+                  "invalidFormat" : {
+                    "summary" : "Date field provided in wrong format",
+                    "value" : [ {
+                      "path" : "accPeriodEnd",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "patternMismatch" : {
+                    "summary" : "utr does not match required numeric pattern",
+                    "value" : [ {
+                      "path" : "utr",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "invalidEnum" : {
+                    "summary" : "Invalid company type provided",
+                    "value" : [ {
+                      "path" : "type",
+                      "reason" : "INVALID_ENUM_VALUE"
+                    } ]
+                  },
+                  "lengthOutOfBounds" : {
+                    "summary" : "Additional info text exceeds max length",
+                    "value" : [ {
+                      "path" : "remarks",
+                      "reason" : "LENGTH_OUT_OF_BOUNDS"
+                    } ]
+                  },
+                  "arrayTooSmall" : {
+                    "summary" : "At least one seniorAccountingOfficer required",
+                    "value" : [ {
+                      "path" : "saos",
+                      "reason" : "ARRAY_MIN_ITEMS_NOT_MET"
+                    } ]
+                  },
+                  "arrayIsInvalidType" : {
+                    "summary" : "Field has unexpected JSON type",
+                    "value" : [ {
+                      "path" : "companies",
+                      "reason" : "INVALID_DATA_TYPE"
+                    } ]
+                  },
+                  "multipleValidationErrors" : {
+                    "summary" : "Multiple validation failures in one request",
+                    "value" : [ {
+                      "path" : "companies[0].accPeriodEnd",
+                      "reason" : "INVALID_FORMAT"
+                    }, {
+                      "path" : "companies[1].name",
+                      "reason" : "CANNOT_BE_EMPTY"
+                    }, {
+                      "path" : "remarks",
+                      "reason" : "LENGTH_OUT_OF_BOUNDS"
+                    } ]
+                  },
+                  "unreadablePayload" : {
+                    "summary" : "Payload could not be parsed",
+                    "value" : [ {
+                      "reason" : "MALFORMED_REQUEST"
+                    } ]
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Subscription not found"
+          },
+          "422" : {
+            "description" : "Semantically incorrect input",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+                },
+                "examples" : {
+                  "invalidSaoStartDate" : {
+                    "value" : {
+                      "path" : "companies[0].saos[0].fromDate",
+                      "reason" : "DATE_OUT_OF_BOUNDS"
+                    }
+                  },
+                  "invalidSaoEndDate" : {
+                    "value" : {
+                      "path" : "companies[0].saos[0].toDate",
+                      "reason" : "DATE_OUT_OF_BOUNDS"
+                    }
+                  },
+                  "invalidFinancialYearEndDate" : {
+                    "value" : {
+                      "path" : "companies[0].accPeriodEnd",
+                      "reason" : "DATE_OUT_OF_BOUNDS"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Internal server error"
+          }
+        }
+      }
+    },
+    "/certificate" : {
+      "post" : {
+        "operationId" : "postCertificate",
+        "tags" : [ "app" ],
+        "summary" : "Submit a certificate",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.CertificateRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Certificate submitted successfully",
+            "content" : {
+              "application/json" : {
+                "example" : {
+                  "certificateRef" : "CRT0123456789"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Syntactically incorrect input",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+                  }
+                },
+                "examples" : {
+                  "subscriptionIdMissing" : {
+                    "summary" : "SAO Subscription ID is missing",
+                    "value" : [ {
+                      "path" : "subscriptionId",
+                      "reason" : "MISSING_REQUIRED_FIELD"
+                    } ]
+                  },
+                  "invalidSaoSubscriptionId" : {
+                    "summary" : "SAO Subscription ID is invalid",
+                    "value" : [ {
+                      "path" : "subscriptionId",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "missingRequiredField" : {
+                    "summary" : "A required field is missing",
+                    "value" : [ {
+                      "path" : "saoEmail",
+                      "reason" : "MISSING_REQUIRED_FIELD"
+                    } ]
+                  },
+                  "saoEmailIsInvalidType" : {
+                    "summary" : "Field has unexpected JSON type",
+                    "value" : [ {
+                      "path" : "saoEmail",
+                      "reason" : "INVALID_DATA_TYPE"
+                    } ]
+                  },
+                  "invalidFormat" : {
+                    "summary" : "Date field provided in wrong format",
+                    "value" : [ {
+                      "path" : "companies[0].accPeriodEnd",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "patternMismatch" : {
+                    "summary" : "utr does not match required numeric pattern",
+                    "value" : [ {
+                      "path" : "utr",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "invalidEnum" : {
+                    "summary" : "Invalid company type provided",
+                    "value" : [ {
+                      "path" : "type",
+                      "reason" : "INVALID_ENUM_VALUE"
+                    } ]
+                  },
+                  "emailFormatInvalid" : {
+                    "summary" : "Invalid email format for SAO",
+                    "value" : [ {
+                      "path" : "saoEmail",
+                      "reason" : "INVALID_FORMAT"
+                    } ]
+                  },
+                  "lengthOutOfBounds" : {
+                    "summary" : "Additional info text exceeds max length",
+                    "value" : [ {
+                      "path" : "remarks",
+                      "reason" : "LENGTH_OUT_OF_BOUNDS"
+                    } ]
+                  },
+                  "arrayIsInvalidType" : {
+                    "summary" : "Field has unexpected JSON type",
+                    "value" : [ {
+                      "path" : "companies",
+                      "reason" : "INVALID_DATA_TYPE"
+                    } ]
+                  },
+                  "arrayTooSmall" : {
+                    "summary" : "At least one company required",
+                    "value" : [ {
+                      "path" : "companies",
+                      "reason" : "ARRAY_MIN_ITEMS_NOT_MET"
+                    } ]
+                  },
+                  "multipleValidationErrors" : {
+                    "summary" : "Multiple validation failures in one request",
+                    "value" : [ {
+                      "path" : "companies[0].accPeriodEnd",
+                      "reason" : "INVALID_FORMAT"
+                    }, {
+                      "path" : "companies[0].name",
+                      "reason" : "CANNOT_BE_EMPTY"
+                    } ]
+                  },
+                  "unreadablePayload" : {
+                    "summary" : "Payload could not be parsed",
+                    "value" : [ {
+                      "reason" : "MALFORMED_REQUEST"
+                    } ]
+                  }
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Subscription not found"
+          },
+          "422" : {
+            "description" : "Semantically incorrect input",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+                },
+                "examples" : {
+                  "invalidSaoName" : {
+                    "value" : {
+                      "path" : "saoName",
+                      "reason" : "LENGTH_OUT_OF_BOUNDS"
+                    }
+                  },
+                  "invalidAccPeriodEnd" : {
+                    "value" : {
+                      "path" : "companies[0].accPeriodEnd",
+                      "reason" : "DATE_OUT_OF_BOUNDS"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500" : {
+            "description" : "Internal server error"
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany" : {
+        "properties" : {
+          "crn" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "utr" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "accPeriodEnd" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "isCorporationTaxQualified" : {
+            "type" : "boolean"
+          },
+          "isVatQualified" : {
+            "type" : "boolean"
+          },
+          "isPayeQualified" : {
+            "type" : "boolean"
+          },
+          "isInsurancePremiumTaxQualified" : {
+            "type" : "boolean"
+          },
+          "isStampDutyLandTaxQualified" : {
+            "type" : "boolean"
+          },
+          "isStampDutyReserveTaxQualified" : {
+            "type" : "boolean"
+          },
+          "isPetroleumRevenueTaxQualified" : {
+            "type" : "boolean"
+          },
+          "isCustomsDutiesQualified" : {
+            "type" : "boolean"
+          },
+          "isExciseDutiesQualified" : {
+            "type" : "boolean"
+          },
+          "isBankLevyQualified" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "utr", "name", "accPeriodEnd", "status", "type", "isCorporationTaxQualified", "isVatQualified", "isPayeQualified", "isInsurancePremiumTaxQualified", "isStampDutyLandTaxQualified", "isStampDutyReserveTaxQualified", "isPetroleumRevenueTaxQualified", "isCustomsDutiesQualified", "isExciseDutiesQualified", "isBankLevyQualified" ]
+      },
+      "uk.gov.hmrc.senioraccountingofficer.models.CertificateRequest" : {
+        "properties" : {
+          "subscriptionId" : {
+            "type" : "string"
+          },
+          "submitterName" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "saoName" : {
+            "type" : "string"
+          },
+          "saoEmail" : {
+            "type" : "string"
+          },
+          "companies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany"
+            }
+          },
+          "remarks" : {
+            "type" : "string",
+            "nullable" : true
+          }
+        },
+        "required" : [ "subscriptionId", "saoName", "saoEmail", "companies" ]
+      },
+      "uk.gov.hmrc.senioraccountingofficer.models.ApiError" : {
+        "properties" : {
+          "path" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ]
+      },
+      "uk.gov.hmrc.senioraccountingofficer.models.Sao" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          },
+          "fromDate" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "email" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "toDate" : {
+            "type" : "string",
+            "nullable" : true
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "uk.gov.hmrc.senioraccountingofficer.models.Company" : {
+        "properties" : {
+          "crn" : {
+            "type" : "string",
+            "nullable" : true
+          },
+          "utr" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "accPeriodEnd" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "utr", "name", "accPeriodEnd", "status", "type" ]
+      },
+      "uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest" : {
+        "properties" : {
+          "subscriptionId" : {
+            "type" : "string"
+          },
+          "companies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.Company"
+            }
+          },
+          "saos" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.Sao"
+            }
+          },
+          "remarks" : {
+            "type" : "string",
+            "nullable" : true
+          }
+        },
+        "required" : [ "subscriptionId", "companies", "saos" ]
+      }
+    }
+  },
+  "tags" : [ ],
+  "info" : {
+    "version" : "1.0.0",
+    "title" : "API",
+    "description" : "REST API"
+  },
+  "openapi" : "3.0.0"
+}
