@@ -28,19 +28,19 @@ final case class CertificateRequest(
     remarks: Option[String]
 )
 
-extension (certificateRequest: CertificateRequest) {
-  def toCertificateDpsRequest: CertificateDpsRequest = {
-    CertificateDpsRequest(
-      submitterName = certificateRequest.submitterName.fold(certificateRequest.saoName)(name => name),
-      saoName = certificateRequest.saoName,
-      saoEmail = certificateRequest.saoEmail,
-      companies = certificateRequest.companies.map(_.toDpsCertificateCompany),
-      remarks = certificateRequest.remarks,
-      staffPID = None
-    )
-  }
-}
-
 object CertificateRequest {
   given Format[CertificateRequest] = Json.format[CertificateRequest]
+
+  extension (certificateRequest: CertificateRequest) {
+    def toCertificateDpsRequest: CertificateDpsRequest = {
+      CertificateDpsRequest(
+        submitterName = certificateRequest.submitterName.fold(certificateRequest.saoName)(name => name),
+        saoName = certificateRequest.saoName,
+        saoEmail = certificateRequest.saoEmail,
+        companies = certificateRequest.companies.map(_.toCertificateCompany),
+        remarks = certificateRequest.remarks,
+        staffPID = None
+      )
+    }
+  }
 }

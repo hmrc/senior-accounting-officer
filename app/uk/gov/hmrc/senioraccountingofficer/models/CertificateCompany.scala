@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany as CertificateDpsCompany
+import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsCompany
 
 final case class CertificateCompany(
     crn: Option[String],
@@ -40,27 +40,48 @@ final case class CertificateCompany(
 
 object CertificateCompany {
   given OFormat[CertificateCompany] = Json.format[CertificateCompany]
-}
 
-extension (certificateCompany: CertificateCompany) {
-  def toDpsCertificateCompany: CertificateDpsCompany = {
-    CertificateDpsCompany(
-      crn = certificateCompany.crn,
-      utr = certificateCompany.utr,
-      name = certificateCompany.name,
-      accPeriodEnd = certificateCompany.accPeriodEnd,
-      status = certificateCompany.status,
-      `type` = certificateCompany.`type`,
-      isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
-      isVatQualified = certificateCompany.isVatQualified,
-      isPayeQualified = certificateCompany.isPayeQualified,
-      isInsurancePremiumTaxQualified = certificateCompany.isInsurancePremiumTaxQualified,
-      isStampDutyLandTaxQualified = certificateCompany.isStampDutyLandTaxQualified,
-      isStampDutyReserveTaxQualified = certificateCompany.isStampDutyReserveTaxQualified,
-      isPetroleumRevenueTaxQualified = certificateCompany.isPetroleumRevenueTaxQualified,
-      isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
-      isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
-      isBankLevyQualified = certificateCompany.isBankLevyQualified
-    )
+  extension (certificateCompany: CertificateCompany) {
+    def toDpsCertificateCompany: CertificateDpsCompany = {
+      CertificateDpsCompany(
+        crn = certificateCompany.crn,
+        utr = certificateCompany.utr,
+        name = certificateCompany.name,
+        accPeriodEnd = certificateCompany.accPeriodEnd,
+        status = certificateCompany.status,
+        `type` = certificateCompany.`type`,
+        isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
+        isVatQualified = certificateCompany.isVatQualified,
+        isPayeQualified = certificateCompany.isPayeQualified,
+        isInsurancePremiumTaxQualified = certificateCompany.isInsurancePremiumTaxQualified,
+        isStampDutyLandTaxQualified = certificateCompany.isStampDutyLandTaxQualified,
+        isStampDutyReserveTaxQualified = certificateCompany.isStampDutyReserveTaxQualified,
+        isPetroleumRevenueTaxQualified = certificateCompany.isPetroleumRevenueTaxQualified,
+        isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
+        isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
+        isBankLevyQualified = certificateCompany.isBankLevyQualified
+      )
+    }
+
+    def toCertificateCompany: CertificateCompany = {
+      CertificateCompany(
+        crn = certificateCompany.crn,
+        utr = certificateCompany.utr,
+        name = certificateCompany.name,
+        accPeriodEnd = certificateCompany.accPeriodEnd,
+        status = certificateCompany.status,
+        `type` = certificateCompany.`type`,
+        isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
+        isVatQualified = certificateCompany.isVatQualified,
+        isPayeQualified = certificateCompany.isPayeQualified,
+        isInsurancePremiumTaxQualified = certificateCompany.isInsurancePremiumTaxQualified,
+        isStampDutyLandTaxQualified = certificateCompany.isStampDutyLandTaxQualified,
+        isStampDutyReserveTaxQualified = certificateCompany.isStampDutyReserveTaxQualified,
+        isPetroleumRevenueTaxQualified = certificateCompany.isPetroleumRevenueTaxQualified,
+        isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
+        isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
+        isBankLevyQualified = certificateCompany.isBankLevyQualified
+      )
+    }
   }
 }

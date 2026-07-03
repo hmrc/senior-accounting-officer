@@ -21,7 +21,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
-import uk.gov.hmrc.senioraccountingofficer.models.{CertificateRequest, toCertificateDpsRequest}
+import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequest
 
 import scala.concurrent.{ExecutionContext, Future}
 

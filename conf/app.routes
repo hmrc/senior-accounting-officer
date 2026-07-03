@@ -129,8 +129,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #      content:
 #        application/json:
 #          example:
-#            id: "CRT0123456789"
-#            timestamp: "2026-03-01T12:00:14Z"
+#            certificateRef: "CRT0123456789"
 #    "400":
 #      description: Syntactically incorrect input
 #      content:
