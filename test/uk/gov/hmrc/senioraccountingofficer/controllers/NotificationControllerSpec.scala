@@ -41,7 +41,7 @@ import scala.util.Random
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockNotificationService: NotificationService = mock[NotificationService]
-  val id                                           = "123"
+  val subscriptionId                               = "123"
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
@@ -51,7 +51,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       .build()
 
   private val validPayload: JsObject = Json.obj(
-    "subscriptionId" -> id,
+    "subscriptionId" -> subscriptionId,
     "companies"      -> Json.arr(
       Json.obj(
         "name"         -> "Example Ltd",
@@ -108,7 +108,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "NotificationService returns Success must return 200" in {
-      val mockResponse = Success("ID")
+      val mockResponse = Success("ID", true)
       when(mockNotificationService.postNotification(any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
@@ -120,7 +120,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       val result = routeResult(request)
 
       status(result) mustBe Status.OK
-      contentAsJson(result) mustBe Json.parse("""{"notificationRef":"ID"}""")
+      contentAsJson(result) mustBe Json.parse("""{"notificationRef":"ID","isPdfAvailable":true}""")
     }
 
     "NotificationService returns MalformedResponse must return 502" in {
@@ -139,7 +139,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "NotificationService returns BadRequestFailure must return 502" in {
-      val mockResponse = BadRequestFailure(DPS, "")
+      val mockResponse = BadRequestFailure(DPS)
       when(mockNotificationService.postNotification(any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
@@ -154,7 +154,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "NotificationService returns InternalServerFailure must return 502" in {
-      val mockResponse = InternalServerFailure(DPS, "")
+      val mockResponse = InternalServerFailure(DPS)
       when(mockNotificationService.postNotification(any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
@@ -184,7 +184,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "NotificationService returns UnknownFailure must return 502" in {
-      val mockResponse = UnknownFailure(DPS, 1, "")
+      val mockResponse = UnknownFailure(DPS, 1)
       when(mockNotificationService.postNotification(any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 

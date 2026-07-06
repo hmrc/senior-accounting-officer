@@ -30,6 +30,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.Downstre
 import scala.concurrent.{ExecutionContext, Future}
 
 import NotificationService.PostNotificationResponse.*
+import NotificationServiceSpec.*
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -41,23 +42,17 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
-      val requestId    = "123"
-      val testRequest  = NotificationDpsRequest(List.empty, List.empty)
-      val responseId   = "responseId"
-      val responseBody = s"""{"notificationRef":"$responseId"}"""
-      val mockResponse = HttpResponse(201, responseBody)
+      val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
-      result mustBe Success(responseId)
+      result mustBe Success(notificationId, true)
     }
 
-    "return MalformedResponse(DPS) for an invalid 201 response from DPS" in {
-      val requestId    = "123"
-      val testRequest  = NotificationDpsRequest(List.empty, List.empty)
-      val responseBody = s"""{}"""
-      val mockResponse = HttpResponse(201, responseBody)
+    "return MalformedResponse(DPS) for a malformed 201 response from DPS" in {
+      val malformedResponseBody = "{"
+      val mockResponse          = HttpResponse(201, malformedResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
       val result = service.postNotification(requestId, testRequest).futureValue
@@ -65,35 +60,37 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
       result mustBe MalformedResponse(DPS)
     }
 
-    "return BadRequestFailure(DPS, ) for an 400 response from DPS" in {
-      val requestId    = "123"
-      val testRequest  = NotificationDpsRequest(List.empty, List.empty)
-      val responseBody = s"""{}"""
-      val mockResponse = HttpResponse(400, responseBody)
+    "return MalformedResponse(DPS) for an invalid 201 response from DPS" in {
+      val invalidResponseBody = "{}"
+      val mockResponse        = HttpResponse(201, invalidResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
-      result mustBe BadRequestFailure(DPS, responseBody)
+      result mustBe MalformedResponse(DPS)
     }
 
-    "return InternalServerFailure(DPS, ) for an 500 response from DPS" in {
-      val requestId    = "123"
-      val testRequest  = NotificationDpsRequest(List.empty, List.empty)
-      val responseBody = s"""{}"""
-      val mockResponse = HttpResponse(500, responseBody)
+    "return BadRequestFailure(DPS) for an 400 response from DPS" in {
+      val mockResponse = HttpResponse(400)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
-      result mustBe InternalServerFailure(DPS, responseBody)
+      result mustBe BadRequestFailure(DPS)
+    }
+
+    "return InternalServerFailure(DPS) for an 500 response from DPS" in {
+      val mockResponse = HttpResponse(500)
+      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+
+      val result = service.postNotification(requestId, testRequest).futureValue
+
+      result mustBe InternalServerFailure(DPS)
     }
 
     "return ServiceUnavailableFailure(DPS) for an 503 response from DPS" in {
       val requestId    = "123"
-      val testRequest  = NotificationDpsRequest(List.empty, List.empty)
-      val responseBody = s"""{}"""
-      val mockResponse = HttpResponse(503, responseBody)
+      val mockResponse = HttpResponse(503)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
       val result = service.postNotification(requestId, testRequest).futureValue
@@ -101,17 +98,22 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
       result mustBe ServiceUnavailableFailure(DPS)
     }
 
-    "return UnknownFailure(DPS, , ) for an 600 response from DPS" in {
-      val requestId        = "123"
-      val testRequest      = NotificationDpsRequest(List.empty, List.empty)
-      val responseBody     = s"""{}"""
+    "return UnknownFailure(DPS, status) for an unexpected status response from DPS" in {
       val unexpectedStatus = 600
-      val mockResponse     = HttpResponse(unexpectedStatus, responseBody)
+      val mockResponse     = HttpResponse(unexpectedStatus)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
-      result mustBe UnknownFailure(DPS, unexpectedStatus, responseBody)
+      result mustBe UnknownFailure(DPS, unexpectedStatus)
     }
   }
+
+}
+
+object NotificationServiceSpec {
+  val requestId                           = "123"
+  val testRequest: NotificationDpsRequest = NotificationDpsRequest(List.empty, List.empty)
+  val notificationId                      = "notificationId"
+  val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationId"}"""
 }
