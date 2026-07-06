@@ -16,18 +16,53 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import play.api.http.Status.*
+import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
+import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
+import NotificationService.*
+import NotificationService.PostNotificationResponse.*
+
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector
-) {
+)(using ExecutionContext) {
 
-  def postNotification(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    notificationConnector.postNotification(id, body)
+  def postNotification(id: String, request: NotificationDpsRequest)(using
+      HeaderCarrier
+  ): Future[PostNotificationResponse] = {
+    notificationConnector.postNotification(id, request).map {
+      case HttpResponse(CREATED, body, _) =>
+        val res = Json.parse(body).validate[NotificationDpsResponse].asEither
+        res.left
+          .map(errs => MalformedResponse(DPS))
+          .map(response => Success(response.notificationRef))
+          .merge
+      case HttpResponse(BAD_REQUEST, body, _)           => BadRequestFailure(DPS, body)
+      case HttpResponse(INTERNAL_SERVER_ERROR, body, _) => InternalServerFailure(DPS, body)
+      case HttpResponse(SERVICE_UNAVAILABLE, body, _)   => ServiceUnavailableFailure(DPS)
+      case HttpResponse(status, body, _)                => UnknownFailure(DPS, status, body)
+    }
+  }
+}
+
+object NotificationService {
+  enum DownstreamService {
+    case DPS
+  }
+  enum PostNotificationResponse {
+    case Success(notificationId: String)                                           extends PostNotificationResponse
+    case MalformedResponse(downstreamService: DownstreamService)                   extends PostNotificationResponse
+    case BadRequestFailure(downstreamService: DownstreamService, body: String)     extends PostNotificationResponse
+    case InternalServerFailure(downstreamService: DownstreamService, body: String) extends PostNotificationResponse
+    case ServiceUnavailableFailure(downstreamService: DownstreamService)           extends PostNotificationResponse
+    case UnknownFailure(downstreamService: DownstreamService, status: Int, body: String)
+        extends PostNotificationResponse
   }
 }

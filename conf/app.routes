@@ -96,29 +96,10 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #              summary: Payload could not be parsed
 #              value:
 #                - reason: "MALFORMED_REQUEST"
-#    "404":
-#      description: Subscription not found
-#    "422":
-#      description: Semantically incorrect input
-#      content:
-#        application/json:
-#          schema:
-#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
-#          examples:
-#            invalidSaoStartDate:
-#              value:
-#                path: "companies[0].saos[0].fromDate"
-#                reason: "DATE_OUT_OF_BOUNDS"
-#            invalidSaoEndDate:
-#              value:
-#                path: "companies[0].saos[0].toDate"
-#                reason: "DATE_OUT_OF_BOUNDS"
-#            invalidFinancialYearEndDate:
-#              value:
-#                path: "companies[0].accPeriodEnd"
-#                reason: "DATE_OUT_OF_BOUNDS"
 #    "500":
 #      description: Internal server error
+#    "502":
+#      description: Downstream server error
 ###
 POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
 

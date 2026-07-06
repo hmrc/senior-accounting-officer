@@ -22,6 +22,7 @@ import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company, NotificationDpsRequest, Sao}
 
 class NotificationIntegrationSpec extends ISpecBase {
 
@@ -35,14 +36,37 @@ class NotificationIntegrationSpec extends ISpecBase {
     "microservice.services.senior-accounting-officer-stubs.port" -> wireMockPort
   )
 
-  private val validPayload = """{
+  private val request =
+    NotificationDpsRequest(
+      companies = List(
+        Company(
+          crn = Some("AB123456"),
+          utr = "1234567890",
+          name = "Example Ltd",
+          accPeriodEnd = "2024-12-31",
+          status = "Active",
+          `type` = "LTD"
+        )
+      ),
+      saos = List(
+        Sao(
+          name = "Firstname Lastname",
+          email = Some("Firstname.Lastname@example.com"),
+          fromDate = Some("2024-04-01"),
+          toDate = Some("2025-03-31")
+        )
+      ),
+      remarks = Some("non-empty string")
+    )
+
+  private val requestJson = """{
                                |  "companies": [
                                |    {
                                |      "name": "Example Ltd",
                                |      "utr": "1234567890",
                                |      "crn": "AB123456",
                                |      "type": "LTD",
-                               |      "status": "COMPLIANT",
+                               |      "status": "Active",
                                |      "accPeriodEnd": "2024-12-31"
                                |     }
                                |    ],
@@ -68,7 +92,7 @@ class NotificationIntegrationSpec extends ISpecBase {
           )
       )
 
-      val result = connector.postNotification("123", validPayload).futureValue
+      val result = connector.postNotification("123", request).futureValue
 
       result.status mustBe 200
 
@@ -77,7 +101,7 @@ class NotificationIntegrationSpec extends ISpecBase {
         postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
-          .withRequestBody(equalToJson(validPayload))
+          .withRequestBody(equalToJson(requestJson))
       )
     }
 
@@ -93,7 +117,7 @@ class NotificationIntegrationSpec extends ISpecBase {
           )
       )
 
-      val result = connector.postNotification("123", validPayload).futureValue
+      val result = connector.postNotification("123", request).futureValue
 
       result.status mustBe 400
       result.body mustBe downstreamBody
@@ -103,7 +127,7 @@ class NotificationIntegrationSpec extends ISpecBase {
         postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
-          .withRequestBody(equalToJson(validPayload))
+          .withRequestBody(equalToJson(requestJson))
       )
     }
   }
