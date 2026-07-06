@@ -15,7 +15,8 @@ object AppDependencies {
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
       .exclude("com.fasterxml.jackson.core", "jackson-core")
       .exclude("com.fasterxml.jackson.core", "jackson-annotations")
-      .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml")
+      .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
+    "org.typelevel" %% "cats-core" % "2.13.0"
   )
 
   val test: Seq[ModuleID] = Seq(

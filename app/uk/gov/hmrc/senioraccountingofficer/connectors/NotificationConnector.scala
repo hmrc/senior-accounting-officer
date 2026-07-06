@@ -35,10 +35,10 @@ class NotificationConnector @Inject() (
 )(implicit ec: ExecutionContext) {
 
   def postNotification(
-      id: String,
+      subscriptionId: String,
       request: NotificationDpsRequest
   )(using HeaderCarrier): Future[HttpResponse] = {
-    val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$id/notifications"
+    val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$subscriptionId/notifications"
 
     httpClientV2
       .post(url)
