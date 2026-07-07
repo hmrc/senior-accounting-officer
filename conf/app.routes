@@ -11,7 +11,7 @@ PUT         /subscriptions/:saoSubscriptionId     uk.gov.hmrc.senioraccountingof
 #        schema:
 #          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest"
 #  responses:
-#    "201":
+#    "200":
 #      description: Notification submitted successfully
 #      content:
 #        application/json:
