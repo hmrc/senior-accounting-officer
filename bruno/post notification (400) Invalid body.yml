@@ -1,11 +1,11 @@
 info:
   name: post notification (400) Invalid body
   type: http
-  seq: 13
+  seq: 15
 
 http:
   method: POST
-  url: "{{baseUrl}}/notification/123"
+  url: "{{baseUrl}}/notification"
   body:
     type: json
     data: |-

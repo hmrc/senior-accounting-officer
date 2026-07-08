@@ -1,7 +1,7 @@
 info:
   name: put subscriptions (200)
   type: http
-  seq: 17
+  seq: 19
 
 http:
   method: PUT

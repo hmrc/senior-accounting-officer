@@ -20,10 +20,11 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.networknt.schema.*
 import com.networknt.schema.keyword.KeywordType
 import com.networknt.schema.path.PathType
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 
 import scala.io.Source
 import scala.jdk.CollectionConverters.*
@@ -35,19 +36,10 @@ object JsonErrorHandling {
     Try(Json.parse(body)).toEither.left.map(_ => malformedRequest)
 
   private def malformedRequest: Result =
-    badRequest(Seq(ApiError(None, "MALFORMED_REQUEST")))
+    badRequest(Seq(ApiError(reason = Reason.MALFORMED_REQUEST)))
 
   def badRequest(errors: Seq[ApiError]): Result =
-    BadRequest(
-      JsArray(
-        errors.map { error =>
-          error.path match {
-            case Some(path) => Json.obj("path" -> path, "reason" -> error.reason)
-            case None       => Json.obj("reason" -> error.reason)
-          }
-        }
-      )
-    )
+    BadRequest(Json.toJson(errors))
 
   object Validators {
 
@@ -85,20 +77,20 @@ object JsonErrorHandling {
     private def toApiError(error: Error, rootPrefix: Option[String]): ApiError = {
       val keyword = KeywordType.fromValue(error.getKeyword)
       val reason  = keyword match {
-        case KeywordType.REQUIRED                           => "MISSING_REQUIRED_FIELD"
-        case KeywordType.TYPE                               => "INVALID_DATA_TYPE"
-        case KeywordType.ADDITIONAL_PROPERTIES              => "INVALID_DATA_TYPE"
-        case KeywordType.PATTERN                            => "INVALID_FORMAT"
-        case KeywordType.FORMAT                             => "INVALID_FORMAT"
-        case KeywordType.ENUM                               => "INVALID_ENUM_VALUE"
-        case KeywordType.MIN_ITEMS                          => "ARRAY_MIN_ITEMS_NOT_MET"
-        case KeywordType.MAX_ITEMS                          => "LENGTH_OUT_OF_BOUNDS"
-        case KeywordType.MAX_LENGTH                         => "LENGTH_OUT_OF_BOUNDS"
-        case KeywordType.MIN_LENGTH if isEmptyString(error) => "CANNOT_BE_EMPTY"
-        case KeywordType.MIN_LENGTH                         => "LENGTH_OUT_OF_BOUNDS"
-        case _                                              => "INVALID_DATA_TYPE"
+        case KeywordType.REQUIRED                           => Reason.MISSING_REQUIRED_FIELD
+        case KeywordType.TYPE                               => Reason.INVALID_DATA_TYPE
+        case KeywordType.ADDITIONAL_PROPERTIES              => Reason.INVALID_DATA_TYPE
+        case KeywordType.PATTERN                            => Reason.INVALID_FORMAT
+        case KeywordType.FORMAT                             => Reason.INVALID_FORMAT
+        case KeywordType.ENUM                               => Reason.INVALID_ENUM_VALUE
+        case KeywordType.MIN_ITEMS                          => Reason.ARRAY_MIN_ITEMS_NOT_MET
+        case KeywordType.MAX_ITEMS                          => Reason.LENGTH_OUT_OF_BOUNDS
+        case KeywordType.MAX_LENGTH                         => Reason.LENGTH_OUT_OF_BOUNDS
+        case KeywordType.MIN_LENGTH if isEmptyString(error) => Reason.CANNOT_BE_EMPTY
+        case KeywordType.MIN_LENGTH                         => Reason.LENGTH_OUT_OF_BOUNDS
+        case _                                              => Reason.INVALID_DATA_TYPE
       }
-      ApiError(pathFor(error, rootPrefix), reason)
+      ApiError(reason = reason, path = pathFor(error, rootPrefix))
     }
 
     private def pathFor(error: Error, rootPrefix: Option[String]): Option[String] = {

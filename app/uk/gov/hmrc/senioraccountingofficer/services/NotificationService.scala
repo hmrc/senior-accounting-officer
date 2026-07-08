@@ -16,18 +16,60 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import cats.data.EitherT
+import play.api.http.Status.*
+import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
+import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
+import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 import javax.inject.Inject
 
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector
-) {
+)(using ExecutionContext) {
 
-  def postNotification(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    notificationConnector.postNotification(id, body)
+  def postNotification(subscriptionId: String, request: NotificationDpsRequest)(using
+      HeaderCarrier
+  ): Future[PostNotificationResponse] = {
+    for {
+      dpsResult <- postNotificationDps(subscriptionId, request)
+      isPdfAvailable = true // TODO placeholder value for the result of generate PDF
+    } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = isPdfAvailable)
+  }.merge
+
+  private def postNotificationDps(subscriptionId: String, request: NotificationDpsRequest)(using
+      HeaderCarrier
+  ): EitherT[Future, PostNotificationResponse with Failure, NotificationDpsResponse] = {
+    EitherT(notificationConnector.postNotification(subscriptionId, request).map {
+      case HttpResponse(CREATED, body, _) =>
+        Try(Json.parse(body).validate[NotificationDpsResponse].asEither).toEither.flatten.left
+          .map(_ => MalformedResponse(DPS))
+      case HttpResponse(BAD_REQUEST, body, _)           => Left(BadRequestFailure(DPS))
+      case HttpResponse(INTERNAL_SERVER_ERROR, body, _) => Left(InternalServerFailure(DPS))
+      case HttpResponse(SERVICE_UNAVAILABLE, body, _)   => Left(ServiceUnavailableFailure(DPS))
+      case HttpResponse(status, body, _)                => Left(UnknownFailure(DPS, status))
+    })
+  }
+}
+
+object NotificationService {
+  enum DownstreamService {
+    case DPS
+  }
+  sealed trait Failure
+  enum PostNotificationResponse {
+    case Success(notificationId: String, isPdfAvailable: Boolean)          extends PostNotificationResponse
+    case MalformedResponse(downstreamService: DownstreamService)           extends PostNotificationResponse with Failure
+    case BadRequestFailure(downstreamService: DownstreamService)           extends PostNotificationResponse with Failure
+    case InternalServerFailure(downstreamService: DownstreamService)       extends PostNotificationResponse with Failure
+    case ServiceUnavailableFailure(downstreamService: DownstreamService)   extends PostNotificationResponse with Failure
+    case UnknownFailure(downstreamService: DownstreamService, status: Int) extends PostNotificationResponse with Failure
   }
 }

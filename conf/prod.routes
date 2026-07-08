@@ -1,3 +1,4 @@
 # Add all the application routes to the app.routes file
 ->         /senior-accounting-officer              app.Routes
+->         /                          internal.Routes
 ->         /                          health.Routes

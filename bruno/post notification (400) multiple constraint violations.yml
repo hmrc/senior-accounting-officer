@@ -1,58 +1,35 @@
 info:
   name: post notification (400) multiple constraint violations
   type: http
-  seq: 14
+  seq: 16
 
 http:
   method: POST
-  url: "{{baseUrl}}/notification/123"
+  url: "{{baseUrl}}/notification"
   body:
     type: json
     data: |-
       {
         "companies": [
           {
-            "companyName": "",
-            "uniqueTaxReference": "1234567890",
-            "companyReferenceNumber": "AB123456",
-            "companyType": "LTD",
-            "financialYearEndDate": "2024-12-31",
-            "seniorAccountingOfficers": [
-              {
-                "name": "Firstname Lastname",
-                "email": "Firstname.Lastname@example.com",
-                "startDate": "2024-04-01",
-                "endDate": "2025-03-31"
-              },
-              {
-                "name": "Secondpersonname Theirlastname",
-                "email": "nonemptyemail@companyname.com",
-                "startDate": "2024-12-01",
-                "endDate": "2025-12-31"
-              }
-            ]
-          },
-          {
-            "companyName": "Example PLC",
-            "uniqueTaxReference": "0987654321",
-            "companyReferenceNumber": "CD654321",
-            "companyType": "PLCW",
-            "financialYearEndDate": "2024-06-30",
-            "seniorAccountingOfficers": [
-              {
-                "name": "Firstname Lastname",
-                "address": "SOME RANDOM THING",
-                "email": "Firstname.Lastname      example.com",
-                "startDate": "1 Jan 2020",
-                "endDate": "---"
-              }, 
-              {
-                
-              }
-            ]
+            "crn": "65476489",
+            "utr": "156679",
+            "name": "",
+            "accPeriodEnd": "09-09-2009",
+            "status": "DORMANT",
+            "type": "AAA",
+            "TYPO": ""
           }
         ],
-        "additionalInformation": "non-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty stringnon-empty string"
+        "saos": [
+          {
+            "name": "",
+            "fromDate": "2020-03-10",
+            "email": "testname    @email.com",
+            "toDate": "2021-03-10"
+          }
+        ],
+        "remarks": "Knowing the word count of a text canKnowing the word count of a text canKnowing the word count of a text canKnowing t be important. For example, if an author has to write a minimum or maximum amount of words for an article, essay, report, story, book, paper, you name it. WordCounter will help to make sure its word count reaches a specific requirement or stays within a certain limit.Apart from counting words and characters, our online editor can help you to improve word choice and writing style, and, optionally, help you to detect grammar mistakes and plagiarism. To check word count, simply place your cursor into the text box above and start typing. You'll see the number of characters and words increase or decrease as you type, delete, and edit them. You can also copy and paste text from another program over into the online editor above. The Auto-Save feature will make sure you won't lose any changes while editing, even if you leave the site and come back later. Tip: Bookmark this page now. Knowing the word count of a text can be important. For example, if an author has to write a minimum or maximum amount of words for an article, essay, report, story, book, paper, you name it. WordCounter will help to make sure its word count reaches a specific requirement or stays within a certain limit.Apart from counting words and characters, our online editor can help you to improve word choice and writing style, and, optionally, help you to detect grammar mistakes and plagiarism. To check word count, simply place your cursor into the text box above and start typing. You'll see the number of characters and words increase or decrease as you type, delete, and edit them. You can also copy and paste text from another program over into the online editor above. The Auto-Save feature will make sure you won't lose any changes while editing, even if you leave the site and come back later. Tip: Bookmark this page now. Knowing the word count of a text can be important. For example, if an author has to write a minimum or maximum amount of words for an article, essay, report, story, book, paper, you name it. WordCounter will help to make sure its word count reaches a specific requirement or stays within a certain limit.Apart from counting words and characters, our online editor can help you to improve word choice and writing style, and, optionally, help you to detect grammar mistakes and plagiarism. To check word count, simply place your cursor into the text box above and start typing. You'll see the number of characters and words increase or decrease as you type, delete, and edit them. You can also copy and paste text from another program over into the online editor above. The Auto-Save feature will make sure you won't lose any changes while editing, even if you leave the site and come back later. Tip: Bookmark this page now. Knowing the word count of a text can be important. For example, if an author has to write a minimum or maximum amount of words for an article, essay, report, story, book, paper, you name it. WordCounter will help to make sure its word count reaches a specific requirement or stays within a certain limit.Apart from counting words and characters, our online editor can help you to improve word choice and writing style, and, optionally, help you to detect grammar mistakes and plagiarism. To check word count, simply place your cursor into the text box above and start typing. You'll see the number of characters and words increase or decrease as you type, delete, and edit them. You can also copy and paste text from another program over into the online editor above. The Auto-Save feature will make sure you won't lose any changes while editing, even if you leave the site and come back later. Tip: Bookmark this page now.Knowing the word count of a text can be important. For example, if an author has to write a minimum or maximum amount of words for an article, essay, report, story, book, paper, you name it. WordCounter will help to make sure its word count reaches a specific requirement or stays within a certain limit.Apart from counting words and characters, our online editor can help you to improve word choice and writing style, and, optionally, help you to detect grammar mistakes and plagiarism. To check word count, simply place your cursor into the text box above and start typing. You'll see the number of characters and words increase or decrease as you type, delete, and edit them. You can also copy and paste text from another program over into the online editor above. The Auto-Save feature will make sure you won't lose any changes while editing, even if you leave the site and come back later. Tip: Bookmark this page now.Knowing the word count of a text can be important. For example, if an author has to write a minimum or maximum amount of words for an article, essay, report, story, book, paper, you name it. WordCounter will help to make sure its word count reaches a specific requirement or stays within a certain limi"
       }
 
 settings:

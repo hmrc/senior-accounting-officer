@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
-import play.api.http.MimeTypes
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
+import play.api.libs.json.*
+import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
+import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,14 +34,16 @@ class NotificationConnector @Inject() (
     appConfig: AppConfig
 )(implicit ec: ExecutionContext) {
 
-  def postNotification(id: String, body: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$id/notifications"
+  def postNotification(
+      subscriptionId: String,
+      request: NotificationDpsRequest
+  )(using HeaderCarrier): Future[HttpResponse] = {
+    val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$subscriptionId/notifications"
 
     httpClientV2
       .post(url)
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
-      .setHeader("Content-Type" -> MimeTypes.JSON)
-      .withBody(body)
+      .withBody(Json.toJson(request))
       .execute[HttpResponse]
   }
 }

@@ -55,7 +55,7 @@ properties:
           minLength: 1
         email:
           type: string
-          format: email
+          pattern: "^.+[@].+[.].+$"
           minLength: 1
           maxLength: 254
         fromDate:

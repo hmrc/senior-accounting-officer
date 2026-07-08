@@ -23,6 +23,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 
 import scala.util.Random
 
@@ -78,7 +79,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val remover        = (__ \ "saoName").json.prune
         val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("saoName")
         errors.size shouldBe 1
       }
@@ -89,7 +90,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val remover        = (__ \ "saoEmail").json.prune
         val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("saoEmail")
         errors.size shouldBe 1
       }
@@ -100,7 +101,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val remover        = (__ \ "companies").json.prune
         val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies")
         errors.size shouldBe 1
       }
@@ -114,7 +115,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].utr")
         errors.size shouldBe 1
       }
@@ -126,7 +127,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].name")
         errors.size shouldBe 1
       }
@@ -138,7 +139,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].accPeriodEnd")
         errors.size shouldBe 1
       }
@@ -150,7 +151,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].status")
         errors.size shouldBe 1
       }
@@ -162,7 +163,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].type")
         errors.size shouldBe 1
       }
@@ -174,7 +175,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr   = (json.as[JsObject] + ("companies" -> updatedCompanies)).toString
 
         val errors = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("MISSING_REQUIRED_FIELD")
+        errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
         errors.flatMap(_.path) should contain("companies[0].isCorporationTaxQualified")
         errors.size shouldBe 1
       }
@@ -184,7 +185,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       "return INVALID_FORMAT pointing at email" in {
         val updatedJsonStr = validCertificate.replace("Firstname.Lastname@example.com", "not-an-email")
         val errors         = certificateErrors(updatedJsonStr)
-        errors.map(_.reason) should contain("INVALID_FORMAT")
+        errors.map(_.reason) should contain(Reason.INVALID_FORMAT)
         errors.flatMap(_.path) should contain("saoEmail")
         errors.size shouldBe 1
       }
