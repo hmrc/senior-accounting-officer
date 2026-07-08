@@ -17,7 +17,7 @@ properties:
     maxLength: 160
   saoEmail:
     type: string
-    format: email
+    pattern: "^.+[@].+[.].+$"
     minLength: 1
     maxLength: 254
   subscriptionId:
