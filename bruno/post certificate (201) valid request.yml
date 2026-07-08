@@ -1,7 +1,7 @@
 info:
-  name: post certificate (400) Invalid body
+  name: post certificate (201) valid request
   type: http
-  seq: 5
+  seq: 1
 
 http:
   method: POST
@@ -9,11 +9,11 @@ http:
   body:
     type: json
     data: |-
-      {@@@
+      {
         "subscriptionId": "123",
         "submitterName": "Submittername",
         "saoName": "SubmitterTestName",
-        "saoEmail": "test@emailcom",
+        "saoEmail": "test@email.com",
         "companies": [
           {
             "crn": "12435678",
