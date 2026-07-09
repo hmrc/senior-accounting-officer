@@ -32,7 +32,7 @@ import javax.inject.Inject
 class CertificateConnector @Inject() (appConfig: AppConfig, httpClientV2: HttpClientV2)(using ExecutionContext) {
 
   def postCertificate(id: String, body: String)(using HeaderCarrier): Future[HttpResponse] = {
-    val url: URL = url"${appConfig.stubsBaseUrl}/subscriptions/$id/certificates"
+    val url: URL = url"${appConfig.hipHost}/subscriptions/$id/certificates"
 
     httpClientV2
       .post(url)

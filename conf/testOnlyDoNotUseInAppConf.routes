@@ -10,4 +10,8 @@
 # Failing to follow this rule may result in test routes deployed in production.
 
 # Add all the application routes to the prod.routes file
-->         /                          prod.Routes
+->         /                                prod.Routes
+
+GET        /test-only/stub-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.StubsProxyController.proxy(path)
+POST       /test-only/stub-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.StubsProxyController.proxy(path)
+PUT        /test-only/stub-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.StubsProxyController.proxy(path)
