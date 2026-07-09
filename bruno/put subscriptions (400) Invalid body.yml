@@ -1,7 +1,7 @@
 info:
   name: put subscriptions (400) Invalid body
   type: http
-  seq: 21
+  seq: 25
 
 http:
   method: PUT
