@@ -1,19 +1,19 @@
 info:
-  name: post certificate (400) Invalid body
+  name: post certificate (404) invalid request url
   type: http
-  seq: 5
+  seq: 3
 
 http:
   method: POST
-  url: "{{baseUrl}}/certificate"
+  url: "{{baseUrl}}/certificates"
   body:
     type: json
     data: |-
-      {@@@
+      {
         "subscriptionId": "123",
         "submitterName": "Submittername",
         "saoName": "SubmitterTestName",
-        "saoEmail": "test@emailcom",
+        "saoEmail": "test@email.com",
         "companies": [
           {
             "crn": "12435678",
