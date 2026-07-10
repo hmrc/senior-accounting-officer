@@ -21,8 +21,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 
 final case class CertificateDpsRequest(
     submitterName: String,
-    saoName: String,
-    saoEmail: String,
+    SAOName: String,
+    SAOEmail: String,
     companies: List[CertificateCompany],
     remarks: Option[String] = None,
     staffPID: Option[String] = None

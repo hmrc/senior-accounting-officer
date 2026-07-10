@@ -31,8 +31,8 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
   val certificateRequestWithSubmitterName: CertificateRequest = CertificateRequest(
     subscriptionId = subscriptionId,
     submitterName = Some(submitterName),
-    saoName = saoName,
-    saoEmail = email,
+    SAOName = SAOName,
+    SAOEmail = email,
     companies = List(
       CertificateCompany(
         crn = Some(crn),
@@ -59,8 +59,8 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
   val certificateRequestWithoutSubmitterName: CertificateRequest = CertificateRequest(
     subscriptionId = subscriptionId,
     submitterName = None,
-    saoName = saoName,
-    saoEmail = email,
+    SAOName = SAOName,
+    SAOEmail = email,
     companies = List(
       CertificateCompany(
         crn = Some(crn),
@@ -90,8 +90,8 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
 
       val expected = CertificateDpsRequest(
         submitterName = submitterName,
-        saoName = saoName,
-        saoEmail = email,
+        SAOName = SAOName,
+        SAOEmail = email,
         companies = List(
           CertificateDpsCompany(
             crn = Some(crn),
@@ -123,9 +123,9 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
       val sut = certificateRequestWithoutSubmitterName
 
       val expected = CertificateDpsRequest(
-        submitterName = saoName,
-        saoName = saoName,
-        saoEmail = email,
+        submitterName = SAOName,
+        SAOName = SAOName,
+        SAOEmail = email,
         companies = List(
           CertificateDpsCompany(
             crn = Some(crn),
@@ -167,7 +167,7 @@ object CertificateRequestSpec {
   val status       = "example status"
   val companyType  = "example type"
 
-  val saoName          = "example sao name"
+  val SAOName          = "example sao name"
   val fromDate: String = LocalDate.parse("2026-01-01").toString()
   val email            = "example email"
   val toDate: String   = LocalDate.parse("2026-03-01").toString()

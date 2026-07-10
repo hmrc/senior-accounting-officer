@@ -42,8 +42,8 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
   private val validCertificate = Json
     .obj(
       "subscriptionId" -> saoSubscriptionId,
-      "saoName"        -> "Jane Smith",
-      "saoEmail"       -> "Firstname.Lastname@example.com",
+      "SAOName"        -> "Jane Smith",
+      "SAOEmail"       -> "Firstname.Lastname@example.com",
       "companies"      -> Json.arr(
         Json.obj(
           "utr"                            -> generateUtr,
@@ -74,24 +74,24 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       }
     }
 
-    "given a certificate is missing saoName" should {
-      "return MISSING_REQUIRED_FIELD pointing at saoName" in {
-        val remover        = (__ \ "saoName").json.prune
+    "given a certificate is missing SAOName" should {
+      "return MISSING_REQUIRED_FIELD pointing at SAOName" in {
+        val remover        = (__ \ "SAOName").json.prune
         val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
-        errors.flatMap(_.path) should contain("saoName")
+        errors.flatMap(_.path) should contain("SAOName")
         errors.size shouldBe 1
       }
     }
 
-    "given a certificate is missing saoEmail" should {
-      "return MISSING_REQUIRED_FIELD pointing at saoEmail" in {
-        val remover        = (__ \ "saoEmail").json.prune
+    "given a certificate is missing SAOEmail" should {
+      "return MISSING_REQUIRED_FIELD pointing at SAOEmail" in {
+        val remover        = (__ \ "SAOEmail").json.prune
         val updatedJsonStr = Json.parse(validCertificate).transform(remover).asOpt.value.toString
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain(Reason.MISSING_REQUIRED_FIELD)
-        errors.flatMap(_.path) should contain("saoEmail")
+        errors.flatMap(_.path) should contain("SAOEmail")
         errors.size shouldBe 1
       }
     }
@@ -186,7 +186,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
         val updatedJsonStr = validCertificate.replace("Firstname.Lastname@example.com", "not-an-email")
         val errors         = certificateErrors(updatedJsonStr)
         errors.map(_.reason) should contain(Reason.INVALID_FORMAT)
-        errors.flatMap(_.path) should contain("saoEmail")
+        errors.flatMap(_.path) should contain("SAOEmail")
         errors.size shouldBe 1
       }
     }

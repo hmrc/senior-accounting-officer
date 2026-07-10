@@ -53,8 +53,8 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private val validPayload: JsObject = Json.obj(
     "subscriptionId" -> saoSubscriptionId,
-    "saoName"        -> "Jane Smith",
-    "saoEmail"       -> "Firstname.Lastname@example.com",
+    "SAOName"        -> "Jane Smith",
+    "SAOEmail"       -> "Firstname.Lastname@example.com",
     "companies"      -> Json.arr(
       Json.obj(
         "utr"                            -> generateUtr,
@@ -143,23 +143,23 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
     "return 400 with CANNOT_BE_EMPTY for an empty SAO name without calling the connector" in {
       val invalidPayload = validPayload ++ Json.obj(
-        "saoName" -> ""
+        "SAOName" -> ""
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "saoName", "reason" -> "CANNOT_BE_EMPTY")
+        Json.obj("path" -> "SAOName", "reason" -> "CANNOT_BE_EMPTY")
       )
     }
 
     "return 400 with INVALID_DATA_TYPE for a non-string SAO name without calling the connector" in {
       val invalidPayload = validPayload ++ Json.obj(
-        "saoName" -> 123
+        "SAOName" -> 123
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "saoName", "reason" -> "INVALID_DATA_TYPE")
+        Json.obj("path" -> "SAOName", "reason" -> "INVALID_DATA_TYPE")
       )
     }
 
@@ -176,12 +176,12 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
     "return 400 with INVALID_FORMAT for an invalid sao email without calling the connector" in {
       val invalidPayload = validPayload ++ Json.obj(
-        "saoEmail" -> "not-an-email"
+        "SAOEmail" -> "not-an-email"
       )
 
       assertValidationError(
         invalidPayload.toString(),
-        Json.obj("path" -> "saoEmail", "reason" -> "INVALID_FORMAT")
+        Json.obj("path" -> "SAOEmail", "reason" -> "INVALID_FORMAT")
       )
     }
 
@@ -237,12 +237,12 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
 object CertificateControllerSpec {
   val downstreamBody: String =
-    """[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},
+    """[{"path":"SAOEmail","reason":"INVALID_DATA_TYPE"},
       |{"path":"SAOName","reason":"INVALID_DATA_TYPE"},
       |{"path":"companies[0].crn","reason":"INVALID_FORMAT"},
       |{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},
-      |{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},
-      |{"path":"saoName","reason":"MISSING_REQUIRED_FIELD"}]""".stripMargin
+      |{"path":"SAOEmail","reason":"MISSING_REQUIRED_FIELD"},
+      |{"path":"SAOName","reason":"MISSING_REQUIRED_FIELD"}]""".stripMargin
 
   val bodyError: String = "some raw error body"
 }

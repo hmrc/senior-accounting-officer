@@ -11,8 +11,8 @@ http:
     data: |-
       {
         "submitterName": "firstname lastname",
-        "saoName": "firstname lastname",
-        "saoEmail": "name@email.com",
+        "SAOName": "firstname lastname",
+        "SAOEmail": "name@email.com",
         "subscriptionId": "123",
         "companies": [
           {

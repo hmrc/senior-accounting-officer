@@ -22,8 +22,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 final case class CertificateRequest(
     subscriptionId: String,
     submitterName: Option[String],
-    saoName: String,
-    saoEmail: String,
+    SAOName: String,
+    SAOEmail: String,
     companies: List[CertificateCompany],
     remarks: Option[String]
 )
@@ -34,9 +34,9 @@ object CertificateRequest {
   extension (certificateRequest: CertificateRequest) {
     def toCertificateDpsRequest: CertificateDpsRequest = {
       CertificateDpsRequest(
-        submitterName = certificateRequest.submitterName.fold(certificateRequest.saoName)(name => name),
-        saoName = certificateRequest.saoName,
-        saoEmail = certificateRequest.saoEmail,
+        submitterName = certificateRequest.submitterName.fold(certificateRequest.SAOName)(name => name),
+        SAOName = certificateRequest.SAOName,
+        SAOEmail = certificateRequest.SAOEmail,
         companies = certificateRequest.companies.map(_.toCertificateCompany),
         remarks = certificateRequest.remarks,
         staffPID = None

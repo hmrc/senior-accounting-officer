@@ -2,8 +2,8 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 type: object
 additionalProperties: false
 required:
-  - saoName
-  - saoEmail
+  - SAOName
+  - SAOEmail
   - companies
   - subscriptionId
 properties:
@@ -11,11 +11,11 @@ properties:
     type: string
     minLength: 1
     maxLength: 160
-  saoName:
+  SAOName:
     type: string
     minLength: 1
     maxLength: 160
-  saoEmail:
+  SAOEmail:
     type: string
     pattern: "^.+[@].+[.].+$"
     minLength: 1

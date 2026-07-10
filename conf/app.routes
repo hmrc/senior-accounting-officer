@@ -144,12 +144,12 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #            missingRequiredField:
 #              summary: A required field is missing
 #              value:
-#                - path: "saoEmail"
+#                - path: "SAOEmail"
 #                  reason: "MISSING_REQUIRED_FIELD"
 #            saoEmailIsInvalidType:
 #              summary: Field has unexpected JSON type
 #              value:
-#                - path: "saoEmail"
+#                - path: "SAOEmail"
 #                  reason: "INVALID_DATA_TYPE"
 #            invalidFormat:
 #              summary: Date field provided in wrong format
@@ -169,7 +169,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #            emailFormatInvalid:
 #              summary: Invalid email format for SAO
 #              value:
-#                - path: "saoEmail"
+#                - path: "SAOEmail"
 #                  reason: "INVALID_FORMAT"
 #            lengthOutOfBounds:
 #              summary: Additional info text exceeds max length
@@ -208,7 +208,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #          examples:
 #            invalidSaoName:
 #              value:
-#                path: "saoName"
+#                path: "SAOName"
 #                reason: "LENGTH_OUT_OF_BOUNDS"
 #            invalidAccPeriodEnd:
 #              value:
