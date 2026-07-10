@@ -12,8 +12,8 @@ http:
       {
         "subscriptionId": "123",
         "submitterName": "Submittername",
-        "saoName": "SubmitterTestName",
-        "saoEmail": "test@email.com",
+        "SAOName": "SubmitterTestName",
+        "SAOEmail": "test@email.com",
         "companies": [
           {
             "crn": "12435678",
