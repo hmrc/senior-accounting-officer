@@ -29,8 +29,8 @@ class SubscriptionsIntegrationSpec extends ISpecBase {
   private val appConfig = app.injector.instanceOf[AppConfig]
 
   override def additionalConfigs: Map[String, Any] = Map(
-    "microservice.services.senior-accounting-officer-stubs.host" -> wireMockHost,
-    "microservice.services.senior-accounting-officer-stubs.port" -> wireMockPort
+    "microservice.services.hip.host" -> wireMockHost,
+    "microservice.services.hip.port" -> wireMockPort
   )
 
   private val subscriptionId = "123"

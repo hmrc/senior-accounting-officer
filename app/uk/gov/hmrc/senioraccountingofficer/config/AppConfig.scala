@@ -26,7 +26,7 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
 
   val appName: String = config.get[String]("appName")
 
-  val stubsBaseUrl: String = servicesConfig.baseUrl("senior-accounting-officer-stubs")
+  val hipHost: String = servicesConfig.baseUrl("hip")
 
   private val hipClientId: String     = config.get[String]("hip.clientId")
   private val hipClientSecret: String = config.get[String]("hip.clientSecret")

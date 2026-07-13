@@ -28,7 +28,7 @@ class ObligationConnector @Inject() (appConfig: AppConfig, httpClient: HttpClien
   def getObligation(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] =
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .get(url"${appConfig.stubsBaseUrl}/obligation/$saoSubscriptionId")
+      .get(url"${appConfig.hipHost}/obligation/$saoSubscriptionId")
       .setHeader(("Authorization", appConfig.hipAuthorisationCredentials))
       .execute[HttpResponse]
 }

@@ -30,7 +30,7 @@ class ContactDetailsConnector @Inject() (appConfig: AppConfig, httpClient: HttpC
   def getContactDetails(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] = {
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .get(url"${appConfig.stubsBaseUrl}/contact-details/$saoSubscriptionId")
+      .get(url"${appConfig.hipHost}/contact-details/$saoSubscriptionId")
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .execute[HttpResponse]
   }
@@ -38,7 +38,7 @@ class ContactDetailsConnector @Inject() (appConfig: AppConfig, httpClient: HttpC
   def putContactDetails(saoSubscriptionId: String, body: String)(using HeaderCarrier): Future[HttpResponse] = {
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .put(url"${appConfig.stubsBaseUrl}/contact-details/$saoSubscriptionId")
+      .put(url"${appConfig.hipHost}/contact-details/$saoSubscriptionId")
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .setHeader("Content-Type" -> MimeTypes.JSON)
       .withBody(body)

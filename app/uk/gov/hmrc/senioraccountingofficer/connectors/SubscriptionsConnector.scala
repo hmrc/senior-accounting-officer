@@ -33,7 +33,7 @@ class SubscriptionsConnector @Inject() (httpClient: HttpClientV2, appConfig: App
 
   def putSubscription(saoSubscriptionId: String, body: String)(using HeaderCarrier): Future[HttpResponse] =
     httpClient
-      .put(url"${appConfig.stubsBaseUrl}/subscriptions/$saoSubscriptionId")
+      .put(url"${appConfig.hipHost}/subscriptions/$saoSubscriptionId")
       .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
       .setHeader("Content-Type" -> MimeTypes.JSON)
       .withBody(body)
