@@ -33,9 +33,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
     submitterName = Some(submitterName),
     saoName = saoName,
     saoEmail = email,
+    staffPid = None,
+    customerId = None,
     companies = List(
       CertificateCompany(
-        crn = Some(crn),
+        crn = crn,
         utr = utr,
         name = companyName,
         accPeriodEnd = accPeriodEnd,
@@ -50,7 +52,8 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         isPetroleumRevenueTaxQualified = false,
         isCustomsDutiesQualified = false,
         isExciseDutiesQualified = false,
-        isBankLevyQualified = false
+        isBankLevyQualified = false,
+        qualificationStatement = Some(qualificationStatement)
       )
     ),
     remarks = Some(remarks)
@@ -61,9 +64,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
     submitterName = None,
     saoName = saoName,
     saoEmail = email,
+    staffPid = None,
+    customerId = None,
     companies = List(
       CertificateCompany(
-        crn = Some(crn),
+        crn = crn,
         utr = utr,
         name = companyName,
         accPeriodEnd = accPeriodEnd,
@@ -78,10 +83,73 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         isPetroleumRevenueTaxQualified = false,
         isCustomsDutiesQualified = false,
         isExciseDutiesQualified = false,
-        isBankLevyQualified = false
+        isBankLevyQualified = false,
+        qualificationStatement = Some(qualificationStatement)
       )
     ),
     remarks = Some(remarks)
+  )
+
+  val certificateRequestWithOptionalProperties: CertificateRequest = CertificateRequest(
+    subscriptionId = subscriptionId,
+    submitterName = Some(submitterName),
+    saoName = saoName,
+    saoEmail = email,
+    staffPid = Some(staffPid),
+    customerId = Some(customerId),
+    companies = List(
+      CertificateCompany(
+        crn = crn,
+        utr = utr,
+        name = companyName,
+        accPeriodEnd = accPeriodEnd,
+        status = status,
+        `type` = companyType,
+        isCorporationTaxQualified = true,
+        isVatQualified = true,
+        isPayeQualified = false,
+        isInsurancePremiumTaxQualified = false,
+        isStampDutyLandTaxQualified = false,
+        isStampDutyReserveTaxQualified = false,
+        isPetroleumRevenueTaxQualified = false,
+        isCustomsDutiesQualified = false,
+        isExciseDutiesQualified = false,
+        isBankLevyQualified = false,
+        qualificationStatement = Some(qualificationStatement)
+      )
+    ),
+    remarks = Some(remarks)
+  )
+
+  val certificateRequestWithoutOptionalProperties: CertificateRequest = CertificateRequest(
+    subscriptionId = subscriptionId,
+    submitterName = None,
+    saoName = saoName,
+    saoEmail = email,
+    staffPid = None,
+    customerId = None,
+    companies = List(
+      CertificateCompany(
+        crn = crn,
+        utr = utr,
+        name = companyName,
+        accPeriodEnd = accPeriodEnd,
+        status = status,
+        `type` = companyType,
+        isCorporationTaxQualified = true,
+        isVatQualified = true,
+        isPayeQualified = false,
+        isInsurancePremiumTaxQualified = false,
+        isStampDutyLandTaxQualified = false,
+        isStampDutyReserveTaxQualified = false,
+        isPetroleumRevenueTaxQualified = false,
+        isCustomsDutiesQualified = false,
+        isExciseDutiesQualified = false,
+        isBankLevyQualified = false,
+        qualificationStatement = None
+      )
+    ),
+    remarks = None
   )
 
   "toCertificateDpsRequest" should {
@@ -92,9 +160,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         submitterName = submitterName,
         saoName = saoName,
         saoEmail = email,
+        staffPid = None,
+        customerId = None,
         companies = List(
           CertificateDpsCompany(
-            crn = Some(crn),
+            crn = crn,
             utr = utr,
             name = companyName,
             accPeriodEnd = accPeriodEnd,
@@ -109,11 +179,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
             isPetroleumRevenueTaxQualified = false,
             isCustomsDutiesQualified = false,
             isExciseDutiesQualified = false,
-            isBankLevyQualified = false
+            isBankLevyQualified = false,
+            qualificationStatement = Some(qualificationStatement)
           )
         ),
-        remarks = Some(remarks),
-        staffPID = None
+        remarks = Some(remarks)
       )
 
       sut.toCertificateDpsRequest shouldBe expected
@@ -126,9 +196,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         submitterName = saoName,
         saoName = saoName,
         saoEmail = email,
+        staffPid = None,
+        customerId = None,
         companies = List(
           CertificateDpsCompany(
-            crn = Some(crn),
+            crn = crn,
             utr = utr,
             name = companyName,
             accPeriodEnd = accPeriodEnd,
@@ -143,11 +215,83 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
             isPetroleumRevenueTaxQualified = false,
             isCustomsDutiesQualified = false,
             isExciseDutiesQualified = false,
-            isBankLevyQualified = false
+            isBankLevyQualified = false,
+            qualificationStatement = Some(qualificationStatement)
           )
         ),
-        remarks = Some(remarks),
-        staffPID = None
+        remarks = Some(remarks)
+      )
+
+      sut.toCertificateDpsRequest shouldBe expected
+    }
+
+    "map from CertificateRequest to CertificateDpsRequest when all optional properties are not given, the SAO name should be mapped" in {
+      val sut = certificateRequestWithoutOptionalProperties
+
+      val expected = CertificateDpsRequest(
+        submitterName = saoName,
+        saoName = saoName,
+        saoEmail = email,
+        staffPid = None,
+        customerId = None,
+        companies = List(
+          CertificateDpsCompany(
+            crn = crn,
+            utr = utr,
+            name = companyName,
+            accPeriodEnd = accPeriodEnd,
+            status = status,
+            `type` = companyType,
+            isCorporationTaxQualified = true,
+            isVatQualified = true,
+            isPayeQualified = false,
+            isInsurancePremiumTaxQualified = false,
+            isStampDutyLandTaxQualified = false,
+            isStampDutyReserveTaxQualified = false,
+            isPetroleumRevenueTaxQualified = false,
+            isCustomsDutiesQualified = false,
+            isExciseDutiesQualified = false,
+            isBankLevyQualified = false,
+            qualificationStatement = None
+          )
+        ),
+        remarks = None
+      )
+
+      sut.toCertificateDpsRequest shouldBe expected
+    }
+
+    "map from CertificateRequest to CertificateDpsRequest when all optional properties are given" in {
+      val sut = certificateRequestWithOptionalProperties
+
+      val expected = CertificateDpsRequest(
+        submitterName = submitterName,
+        saoName = saoName,
+        saoEmail = email,
+        staffPid = Some(staffPid),
+        customerId = Some(customerId),
+        companies = List(
+          CertificateDpsCompany(
+            crn = crn,
+            utr = utr,
+            name = companyName,
+            accPeriodEnd = accPeriodEnd,
+            status = status,
+            `type` = companyType,
+            isCorporationTaxQualified = true,
+            isVatQualified = true,
+            isPayeQualified = false,
+            isInsurancePremiumTaxQualified = false,
+            isStampDutyLandTaxQualified = false,
+            isStampDutyReserveTaxQualified = false,
+            isPetroleumRevenueTaxQualified = false,
+            isCustomsDutiesQualified = false,
+            isExciseDutiesQualified = false,
+            isBankLevyQualified = false,
+            qualificationStatement = Some(qualificationStatement)
+          )
+        ),
+        remarks = Some(remarks)
       )
 
       sut.toCertificateDpsRequest shouldBe expected
@@ -156,9 +300,12 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
 }
 
 object CertificateRequestSpec {
-  val subscriptionId = "example subscription id"
-  val submitterName  = "example submitter name"
-  val remarks        = "example additional information"
+  val subscriptionId         = "example subscription id"
+  val submitterName          = "example submitter name"
+  val remarks                = "example additional information"
+  val qualificationStatement = "example qualification statement"
+  val staffPid               = "example staff pid"
+  val customerId             = "example customer id"
 
   val crn          = "example crn"
   val utr          = "example utr"

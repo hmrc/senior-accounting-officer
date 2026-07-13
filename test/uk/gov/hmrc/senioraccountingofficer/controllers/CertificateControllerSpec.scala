@@ -245,7 +245,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 object CertificateControllerSpec {
   val downstreamBody: String =
     """[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},
-      |{"path":"SAOName","reason":"INVALID_DATA_TYPE"},
+      |{"path":"saoName","reason":"INVALID_DATA_TYPE"},
       |{"path":"companies[0].crn","reason":"INVALID_FORMAT"},
       |{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},
       |{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},

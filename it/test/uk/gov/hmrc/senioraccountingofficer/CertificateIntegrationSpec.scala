@@ -44,9 +44,11 @@ class CertificateIntegrationSpec extends ISpecBase {
                                 |  "submitterName": "Jane Smith",
                                 |  "saoName": "Jane Smith",
                                 |  "saoEmail": "jane.smith@example.com",
+                                |  "staffPid": "non-empty string",
+                                |  "customerId": "non-empty string",
                                 |  "companies": [
                                 |    {
-                                |      "crn": "1234567890",
+                                |      "crn": "12345678",
                                 |      "utr": "AB123456",
                                 |      "name": "Example Subsidiary Ltd",
                                 |      "accPeriodEnd": "2025-03-31",
@@ -61,7 +63,8 @@ class CertificateIntegrationSpec extends ISpecBase {
                                 |      "isPetroleumRevenueTaxQualified": false,
                                 |      "isCustomsDutiesQualified": false,
                                 |      "isExciseDutiesQualified": false,
-                                |      "isBankLevyQualified": false
+                                |      "isBankLevyQualified": false,
+                                |      "qualificationStatement": "non-empty string"
                                 |    }
                                 |  ],
                                 |  "remarks": "non-empty string"

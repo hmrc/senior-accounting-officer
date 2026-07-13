@@ -24,9 +24,9 @@ import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
 
 class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  val certificateCompanyWithCrn: CertificateCompany =
+  val certificateCompanyWithQualificationStatement: CertificateCompany =
     CertificateCompany(
-      crn = Some(crn),
+      crn = crn,
       utr = utr,
       name = companyName,
       accPeriodEnd = accPeriodEnd,
@@ -41,12 +41,13 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       isPetroleumRevenueTaxQualified = false,
       isCustomsDutiesQualified = false,
       isExciseDutiesQualified = false,
-      isBankLevyQualified = false
+      isBankLevyQualified = false,
+      qualificationStatement = Some(qualificationStatement)
     )
 
-  val certificateCompanyWithoutCrn: CertificateCompany =
+  val certificateCompanyWithoutQualificationStatement: CertificateCompany =
     CertificateCompany(
-      crn = None,
+      crn = crn,
       utr = utr,
       name = companyName,
       accPeriodEnd = accPeriodEnd,
@@ -61,16 +62,17 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       isPetroleumRevenueTaxQualified = false,
       isCustomsDutiesQualified = false,
       isExciseDutiesQualified = false,
-      isBankLevyQualified = false
+      isBankLevyQualified = false,
+      qualificationStatement = None
     )
 
   "toCertificateDpsCompany" should {
-    "map from CertificateCompany to CertificateDpsCompany mapped with crn" in {
-      val sut = certificateCompanyWithCrn
+    "map from CertificateCompany to CertificateDpsCompany mapped with qualification statement" in {
+      val sut = certificateCompanyWithQualificationStatement
 
       val expected =
         CertificateDpsCompany(
-          crn = Some(crn),
+          crn = crn,
           utr = utr,
           name = companyName,
           accPeriodEnd = accPeriodEnd,
@@ -85,18 +87,19 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
           isPetroleumRevenueTaxQualified = false,
           isCustomsDutiesQualified = false,
           isExciseDutiesQualified = false,
-          isBankLevyQualified = false
+          isBankLevyQualified = false,
+          qualificationStatement = Some(qualificationStatement)
         )
 
       sut.toDpsCertificateCompany shouldBe expected
     }
 
-    "map from CertificateCompany to CertificateDpsCompany mapped without crn" in {
-      val sut = certificateCompanyWithoutCrn
+    "map from CertificateCompany to CertificateDpsCompany mapped without qualification statement" in {
+      val sut = certificateCompanyWithoutQualificationStatement
 
       val expected =
         CertificateDpsCompany(
-          crn = None,
+          crn = crn,
           utr = utr,
           name = companyName,
           accPeriodEnd = accPeriodEnd,
@@ -111,7 +114,8 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
           isPetroleumRevenueTaxQualified = false,
           isCustomsDutiesQualified = false,
           isExciseDutiesQualified = false,
-          isBankLevyQualified = false
+          isBankLevyQualified = false,
+          qualificationStatement = None
         )
 
       sut.toDpsCertificateCompany shouldBe expected
@@ -120,10 +124,12 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
 }
 
 object CertificateDpsRequestSpec {
-  val crn          = "example crn"
-  val utr          = "example utr"
-  val companyName  = "example company name"
-  val accPeriodEnd = "example accPeriodEnd"
-  val status       = "example status"
-  val companyType  = "example type"
+  val crn                    = "example crn"
+  val utr                    = "example utr"
+  val companyName            = "example company name"
+  val accPeriodEnd           = "example accPeriodEnd"
+  val status                 = "example status"
+  val companyType            = "example type"
+  val qualificationStatement = "example qualification statement"
+
 }

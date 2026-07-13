@@ -25,7 +25,8 @@ final case class CertificateDpsRequest(
     saoEmail: String,
     companies: List[CertificateCompany],
     remarks: Option[String] = None,
-    staffPID: Option[String] = None
+    staffPid: Option[String] = None,
+    customerId: Option[String] = None
 )
 
 object CertificateDpsRequest {

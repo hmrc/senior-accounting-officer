@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsCompany
 
 final case class CertificateCompany(
-    crn: Option[String],
+    crn: String,
     utr: String,
     name: String,
     accPeriodEnd: String,
@@ -35,7 +35,8 @@ final case class CertificateCompany(
     isPetroleumRevenueTaxQualified: Boolean,
     isCustomsDutiesQualified: Boolean,
     isExciseDutiesQualified: Boolean,
-    isBankLevyQualified: Boolean
+    isBankLevyQualified: Boolean,
+    qualificationStatement: Option[String]
 )
 
 object CertificateCompany {
@@ -59,7 +60,8 @@ object CertificateCompany {
         isPetroleumRevenueTaxQualified = certificateCompany.isPetroleumRevenueTaxQualified,
         isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
         isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
-        isBankLevyQualified = certificateCompany.isBankLevyQualified
+        isBankLevyQualified = certificateCompany.isBankLevyQualified,
+        qualificationStatement = certificateCompany.qualificationStatement
       )
     }
 
@@ -80,7 +82,8 @@ object CertificateCompany {
         isPetroleumRevenueTaxQualified = certificateCompany.isPetroleumRevenueTaxQualified,
         isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
         isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
-        isBankLevyQualified = certificateCompany.isBankLevyQualified
+        isBankLevyQualified = certificateCompany.isBankLevyQualified,
+        qualificationStatement = certificateCompany.qualificationStatement
       )
     }
   }
