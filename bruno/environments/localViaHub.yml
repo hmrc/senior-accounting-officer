@@ -1,7 +1,7 @@
-name: local
+name: localViaHub
 variables:
   - name: baseUrl
-    value: http://localhost:10060/senior-accounting-officer
+    value: http://localhost:10056/senior-accounting-officer/test-only/protected-proxy/senior-accounting-officer
   - name: authHost
     value: http://localhost:9949
   - name: hubBaseUrl
