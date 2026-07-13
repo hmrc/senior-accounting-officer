@@ -1,0 +1,10 @@
+name: qa
+variables:
+  - name: baseUrl
+    value: https://www.qa.tax.service.gov.uk/senior-accounting-officer/test-only/protected-proxy/senior-accounting-officer
+  - name: authHost
+    value: https://www.qa.tax.service.gov.uk
+  - name: hubBaseUrl
+    value: https://www.qa.tax.service.gov.uk/senior-accounting-officer
+  - secret: true
+    name: authroization

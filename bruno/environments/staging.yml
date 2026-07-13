@@ -1,0 +1,10 @@
+name: staging
+variables:
+  - name: baseUrl
+    value: https://www.staging.tax.service.gov.uk/senior-accounting-officer/test-only/protected-proxy/senior-accounting-officer
+  - name: authHost
+    value: https://www.staging.tax.service.gov.uk
+  - name: hubBaseUrl
+    value: https://www.staging.tax.service.gov.uk/senior-accounting-officer
+  - secret: true
+    name: authroization
