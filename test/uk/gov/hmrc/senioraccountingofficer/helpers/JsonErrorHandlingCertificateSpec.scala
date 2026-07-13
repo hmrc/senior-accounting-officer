@@ -39,6 +39,11 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
     SaUtrGenerator(seed).nextSaUtr
   }
 
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%08d"
+  }
+
   private val validCertificate = Json
     .obj(
       "subscriptionId" -> saoSubscriptionId,
@@ -46,6 +51,7 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
       "saoEmail"       -> "Firstname.Lastname@example.com",
       "companies"      -> Json.arr(
         Json.obj(
+          "crn"                            -> generateCrn,
           "utr"                            -> generateUtr,
           "name"                           -> "Example Subsidiary Ltd",
           "accPeriodEnd"                   -> "2025-03-31",

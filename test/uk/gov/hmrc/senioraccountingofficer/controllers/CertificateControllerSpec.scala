@@ -57,6 +57,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     "saoEmail"       -> "Firstname.Lastname@example.com",
     "companies"      -> Json.arr(
       Json.obj(
+        "crn"                            -> generateCrn,
         "utr"                            -> generateUtr,
         "name"                           -> "Example Subsidiary Ltd",
         "accPeriodEnd"                   -> "2025-03-31",
@@ -75,6 +76,11 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     )
   )
+
+  private def generateCrn = {
+    val num = Random.nextInt(1000000)
+    f"$num%08d"
+  }
 
   private def generateUtr = {
     val seed = Random.nextInt(1000000)
@@ -189,6 +195,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val invalidPayload = validPayload ++ Json.obj(
         "companies" -> Json.arr(
           Json.obj(
+            "crn"                            -> generateCrn,
             "utr"                            -> generateUtr,
             "name"                           -> "Example Subsidiary Ltd",
             "accPeriodEnd"                   -> "2025-03-31",
