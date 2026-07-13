@@ -22,9 +22,9 @@ import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.ws.{BodyWritable, InMemoryBody}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.senioraccountingofficer.testOnly.StubProxyIntegrationSpec.*
+import uk.gov.hmrc.senioraccountingofficer.testOnly.HipProxyIntegrationSpec.*
 
-class StubProxyIntegrationSpec extends ISpecBase {
+class HipProxyIntegrationSpec extends ISpecBase {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -34,7 +34,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
     "application.router"             -> "testOnlyDoNotUseInAppConf.Routes"
   )
 
-  "GET /test-only/stub-proxy/*path" must {
+  "GET /test-only/hip-proxy/*path" must {
     "proxy a GET request to our stubs" in {
       val targetPath           = "/test/url/path"
       val authHeader           = "testToken"
@@ -53,7 +53,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       )
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .withHttpHeaders(
           HeaderNames.AUTHORIZATION -> authHeader,
           "correlationId"           -> correlationId,
@@ -90,7 +90,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       )
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .get()
         .futureValue
 
@@ -106,7 +106,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
 
   }
 
-  "POST /test-only/stub-proxy/*path" must {
+  "POST /test-only/hip-proxy/*path" must {
     "proxy a POST request to our stubs" in {
       val targetPath           = "/test/url/path"
       val requestBodyRaw       = "{}"
@@ -131,7 +131,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .withHttpHeaders(        
           HeaderNames.AUTHORIZATION -> authHeader,
           "correlationId"           -> correlationId,
@@ -176,7 +176,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .post(requestBodyRaw)
         .futureValue
 
@@ -210,7 +210,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .withHttpHeaders(HeaderNames.CONTENT_TYPE -> requestContentType)
         .post(requestBodyRaw)
         .futureValue
@@ -243,7 +243,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .post(requestBodyRaw)
         .futureValue
 
@@ -274,7 +274,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter("")
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .post(requestBodyRaw)
         .futureValue
 
@@ -289,7 +289,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
 
   }
 
-  "PUT /test-only/stub-proxy/*path" must {
+  "PUT /test-only/hip-proxy/*path" must {
     "proxy a PUT request to our stubs" in {
       val targetPath           = "/test/url/path"
       val requestBodyRaw       = "{}"
@@ -314,7 +314,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .withHttpHeaders(
           HeaderNames.AUTHORIZATION -> authHeader,
           "correlationId"           -> correlationId,
@@ -359,7 +359,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .put(requestBodyRaw)
         .futureValue
 
@@ -393,7 +393,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .withHttpHeaders(HeaderNames.CONTENT_TYPE -> requestContentType)
         .put(requestBodyRaw)
         .futureValue
@@ -426,7 +426,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter(requestContentType)
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .put(requestBodyRaw)
         .futureValue
 
@@ -457,7 +457,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
       given BodyWritable[String] = rawStringWriter("")
 
       val result = wsClient
-        .url(s"$baseUrl/test-only/stub-proxy$targetPath")
+        .url(s"$baseUrl/test-only/hip-proxy$targetPath")
         .put(requestBodyRaw)
         .futureValue
 
@@ -474,7 +474,7 @@ class StubProxyIntegrationSpec extends ISpecBase {
 
 }
 
-object StubProxyIntegrationSpec {
+object HipProxyIntegrationSpec {
 
   def rawStringWriter(contentType: String): BodyWritable[String] =
     BodyWritable(

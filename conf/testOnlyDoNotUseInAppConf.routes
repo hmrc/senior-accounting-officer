@@ -12,6 +12,6 @@
 # Add all the application routes to the prod.routes file
 ->         /                                prod.Routes
 
-GET        /test-only/stub-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.StubsProxyController.proxy(path)
-POST       /test-only/stub-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.StubsProxyController.proxy(path)
-PUT        /test-only/stub-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.StubsProxyController.proxy(path)
+GET        /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)
+POST       /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)
+PUT        /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)

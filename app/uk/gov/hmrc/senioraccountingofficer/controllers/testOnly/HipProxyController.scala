@@ -32,7 +32,7 @@ import java.net.{URL, URLDecoder}
 import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 
-class StubsProxyController @Inject() (
+class HipProxyController @Inject() (
     cc: ControllerComponents,
     httpClient: HttpClientV2,
     appConfig: AppConfig
@@ -74,7 +74,7 @@ class StubsProxyController @Inject() (
     http(url"$targetUrl")
       .execute[HttpResponse]
       .map(response =>
-        Status(response.status)(response.body).as(response.header(CONTENT_TYPE).fold(MimeTypes.TEXT)(identity))
+        Status(response.status)(response.body).as(response.header(CONTENT_TYPE).fold(MimeTypes.BINARY)(identity))
       )
   }
 
