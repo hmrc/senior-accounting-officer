@@ -10,16 +10,22 @@ properties:
   submitterName:
     type: string
     minLength: 1
-    maxLength: 160
+    maxLength: 254
   saoName:
     type: string
     minLength: 1
-    maxLength: 160
+    maxLength: 254
   saoEmail:
     type: string
     pattern: "^.+[@].+[.].+$"
     minLength: 1
     maxLength: 254
+  staffPid:
+    type: string
+    maxLength: 30
+  customerId:
+    type: string
+    maxLength: 30
   subscriptionId:
     type: string
   companies:
@@ -88,4 +94,4 @@ properties:
   remarks:
     type: string
     minLength: 1
-    maxLength: 5000
+    maxLength: 32767
