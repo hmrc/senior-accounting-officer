@@ -7,4 +7,4 @@ variables:
   - name: hubBaseUrl
     value: http://localhost:10056/senior-accounting-officer
   - secret: true
-    name: authroization
+    name: authorization
