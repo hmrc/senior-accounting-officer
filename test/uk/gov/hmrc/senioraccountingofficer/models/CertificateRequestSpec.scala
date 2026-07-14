@@ -37,7 +37,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
     customerId = None,
     companies = List(
       CertificateCompany(
-        crn = crn,
+        crn = Some(crn),
         utr = utr,
         name = companyName,
         accPeriodEnd = accPeriodEnd,
@@ -68,7 +68,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
     customerId = None,
     companies = List(
       CertificateCompany(
-        crn = crn,
+        crn = Some(crn),
         utr = utr,
         name = companyName,
         accPeriodEnd = accPeriodEnd,
@@ -99,7 +99,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
     customerId = Some(customerId),
     companies = List(
       CertificateCompany(
-        crn = crn,
+        crn = Some(crn),
         utr = utr,
         name = companyName,
         accPeriodEnd = accPeriodEnd,
@@ -130,7 +130,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
     customerId = None,
     companies = List(
       CertificateCompany(
-        crn = crn,
+        crn = Some(crn),
         utr = utr,
         name = companyName,
         accPeriodEnd = accPeriodEnd,
@@ -164,7 +164,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         customerId = None,
         companies = List(
           CertificateDpsCompany(
-            crn = crn,
+            crn = Some(crn),
             utr = utr,
             name = companyName,
             accPeriodEnd = accPeriodEnd,
@@ -200,7 +200,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         customerId = None,
         companies = List(
           CertificateDpsCompany(
-            crn = crn,
+            crn = Some(crn),
             utr = utr,
             name = companyName,
             accPeriodEnd = accPeriodEnd,
@@ -236,7 +236,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         customerId = None,
         companies = List(
           CertificateDpsCompany(
-            crn = crn,
+            crn = Some(crn),
             utr = utr,
             name = companyName,
             accPeriodEnd = accPeriodEnd,
@@ -272,7 +272,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
         customerId = Some(customerId),
         companies = List(
           CertificateDpsCompany(
-            crn = crn,
+            crn = Some(crn),
             utr = utr,
             name = companyName,
             accPeriodEnd = accPeriodEnd,

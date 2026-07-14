@@ -24,9 +24,9 @@ import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
 
 class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  val certificateCompanyWithQualificationStatement: CertificateCompany =
+  val certificateCompanyWithOptionalFields: CertificateCompany =
     CertificateCompany(
-      crn = crn,
+      crn = Some(crn),
       utr = utr,
       name = companyName,
       accPeriodEnd = accPeriodEnd,
@@ -45,9 +45,9 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       qualificationStatement = Some(qualificationStatement)
     )
 
-  val certificateCompanyWithoutQualificationStatement: CertificateCompany =
+  val certificateCompanyWithoutOptionalFields: CertificateCompany =
     CertificateCompany(
-      crn = crn,
+      crn = None,
       utr = utr,
       name = companyName,
       accPeriodEnd = accPeriodEnd,
@@ -67,12 +67,12 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
     )
 
   "toCertificateDpsCompany" should {
-    "map from CertificateCompany to CertificateDpsCompany mapped with qualification statement" in {
-      val sut = certificateCompanyWithQualificationStatement
+    "map from CertificateCompany to CertificateDpsCompany mapped with optional fields" in {
+      val sut = certificateCompanyWithOptionalFields
 
       val expected =
         CertificateDpsCompany(
-          crn = crn,
+          crn = Some(crn),
           utr = utr,
           name = companyName,
           accPeriodEnd = accPeriodEnd,
@@ -94,12 +94,12 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       sut.toDpsCertificateCompany shouldBe expected
     }
 
-    "map from CertificateCompany to CertificateDpsCompany mapped without qualification statement" in {
-      val sut = certificateCompanyWithoutQualificationStatement
+    "map from CertificateCompany to CertificateDpsCompany mapped without optional fields" in {
+      val sut = certificateCompanyWithoutOptionalFields
 
       val expected =
         CertificateDpsCompany(
-          crn = crn,
+          crn = None,
           utr = utr,
           name = companyName,
           accPeriodEnd = accPeriodEnd,

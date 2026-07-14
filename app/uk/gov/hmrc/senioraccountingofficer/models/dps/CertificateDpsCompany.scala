@@ -19,7 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 import play.api.libs.json.{Json, OFormat}
 
 final case class CertificateDpsCompany(
-    crn: String,
+    crn: Option[String],
     utr: String,
     name: String,
     accPeriodEnd: String,
