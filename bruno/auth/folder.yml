@@ -19,10 +19,10 @@ request:
 
         const $ = cheerio.load(response.data);
 
-        const cstfToken = $('input[name=csrfToken]').attr("value")
+        const csrfToken = $('input[name=csrfToken]').attr("value")
 
-        console.log(cstfToken);
-        bru.setVar('cstfToken', cstfToken);
+        console.log(csrfToken);
+        bru.setVar('csrfToken', csrfToken);
     - type: after-response
       code: |-
         const axios = require('axios');
@@ -39,4 +39,4 @@ request:
         const getAuthTokenResponse = await axios.get(`${baseUrl}/test-only/authorization`, { 'headers': { Cookie : mdtp } });
 
         console.log(getAuthTokenResponse.data)
-        bru.setEnvVar('authroization', getAuthTokenResponse.data.authorization);
+        bru.setEnvVar('authorization', getAuthTokenResponse.data.authorization);

@@ -13,7 +13,7 @@ http:
     type: form-urlencoded
     data:
       - name: csrfToken
-        value: "{{cstfToken}}"
+        value: "{{csrfToken}}"
       - name: authorityId
         value: ""
       - name: redirectionUrl

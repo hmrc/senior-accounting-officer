@@ -7,4 +7,4 @@ variables:
   - name: hubBaseUrl
     value: https://www.staging.tax.service.gov.uk/senior-accounting-officer
   - secret: true
-    name: authroization
+    name: authorization
