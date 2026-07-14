@@ -25,14 +25,12 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCertificateCrn, generateUtr}
 
-
 class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def certificateErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateCertificate(Json.parse(json))
 
   private val saoSubscriptionId = "123"
-
 
   private val validCertificate = Json
     .obj(
