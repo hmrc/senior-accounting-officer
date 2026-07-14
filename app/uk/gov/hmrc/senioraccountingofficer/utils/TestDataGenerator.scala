@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models.dps
+package uk.gov.hmrc.senioraccountingofficer.utils
 
-import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
+import uk.gov.hmrc.domain.{SaUtr, SaUtrGenerator}
 
-final case class CertificateDpsRequest(
-    submitterName: String,
-    saoName: String,
-    saoEmail: String,
-    companies: List[CertificateCompany],
-    remarks: Option[String] = None,
-    staffPid: Option[String] = None,
-    customerId: Option[String] = None
-)
+import scala.util.Random
 
-object CertificateDpsRequest {
-  given OFormat[CertificateDpsRequest] = Json.format[CertificateDpsRequest]
+object TestDataGenerator {
+  def generateCrn: String = {
+    val num = Random.nextInt(1000000)
+    f"$num%010d"
+  }
+
+  def generateCertificateCrn: String = {
+    val num = Random.nextInt(1000000)
+    f"$num%08d"
+  }
+
+  def generateUtr: SaUtr = {
+    val seed = Random.nextInt
+    SaUtrGenerator(seed).nextSaUtr
+  }
 }

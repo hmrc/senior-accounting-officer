@@ -21,11 +21,9 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-
-import scala.util.Random
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCertificateCrn, generateUtr}
 
 class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with OptionValues {
 
@@ -34,18 +32,14 @@ class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with Op
 
   private val saoSubscriptionId = "123"
 
-  private def generateUtr = {
-    val seed = Random.nextInt(1000000)
-    SaUtrGenerator(seed).nextSaUtr
-  }
-
   private val validCertificate = Json
     .obj(
       "subscriptionId" -> saoSubscriptionId,
-      "saoName"        -> "Jane Smith",
+      "saoName"        -> "Firstname Lastname",
       "saoEmail"       -> "Firstname.Lastname@example.com",
       "companies"      -> Json.arr(
         Json.obj(
+          "crn"                            -> generateCertificateCrn,
           "utr"                            -> generateUtr,
           "name"                           -> "Example Subsidiary Ltd",
           "accPeriodEnd"                   -> "2025-03-31",

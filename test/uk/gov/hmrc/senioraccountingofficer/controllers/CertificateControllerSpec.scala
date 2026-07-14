@@ -30,13 +30,12 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec.*
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
-import scala.util.Random
 
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
@@ -53,10 +52,11 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private val validPayload: JsObject = Json.obj(
     "subscriptionId" -> saoSubscriptionId,
-    "saoName"        -> "Jane Smith",
+    "saoName"        -> "Firstname Lastname",
     "saoEmail"       -> "Firstname.Lastname@example.com",
     "companies"      -> Json.arr(
       Json.obj(
+        "crn"                            -> generateCertificateCrn,
         "utr"                            -> generateUtr,
         "name"                           -> "Example Subsidiary Ltd",
         "accPeriodEnd"                   -> "2025-03-31",
@@ -75,11 +75,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     )
   )
-
-  private def generateUtr = {
-    val seed = Random.nextInt(1000000)
-    SaUtrGenerator(seed).nextSaUtr
-  }
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
@@ -189,6 +184,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val invalidPayload = validPayload ++ Json.obj(
         "companies" -> Json.arr(
           Json.obj(
+            "crn"                            -> generateCertificateCrn,
             "utr"                            -> generateUtr,
             "name"                           -> "Example Subsidiary Ltd",
             "accPeriodEnd"                   -> "2025-03-31",
@@ -238,7 +234,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 object CertificateControllerSpec {
   val downstreamBody: String =
     """[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},
-      |{"path":"SAOName","reason":"INVALID_DATA_TYPE"},
+      |{"path":"saoName","reason":"INVALID_DATA_TYPE"},
       |{"path":"companies[0].crn","reason":"INVALID_FORMAT"},
       |{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},
       |{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},

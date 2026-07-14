@@ -24,7 +24,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
 
 class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionValues {
 
-  val certificateCompanyWithCrn: CertificateCompany =
+  val certificateCompanyWithOptionalFields: CertificateCompany =
     CertificateCompany(
       crn = Some(crn),
       utr = utr,
@@ -41,10 +41,11 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       isPetroleumRevenueTaxQualified = false,
       isCustomsDutiesQualified = false,
       isExciseDutiesQualified = false,
-      isBankLevyQualified = false
+      isBankLevyQualified = false,
+      qualificationStatement = Some(qualificationStatement)
     )
 
-  val certificateCompanyWithoutCrn: CertificateCompany =
+  val certificateCompanyWithoutOptionalFields: CertificateCompany =
     CertificateCompany(
       crn = None,
       utr = utr,
@@ -61,12 +62,13 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       isPetroleumRevenueTaxQualified = false,
       isCustomsDutiesQualified = false,
       isExciseDutiesQualified = false,
-      isBankLevyQualified = false
+      isBankLevyQualified = false,
+      qualificationStatement = None
     )
 
   "toCertificateDpsCompany" should {
-    "map from CertificateCompany to CertificateDpsCompany mapped with crn" in {
-      val sut = certificateCompanyWithCrn
+    "map from CertificateCompany to CertificateDpsCompany mapped with optional fields" in {
+      val sut = certificateCompanyWithOptionalFields
 
       val expected =
         CertificateDpsCompany(
@@ -85,14 +87,15 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
           isPetroleumRevenueTaxQualified = false,
           isCustomsDutiesQualified = false,
           isExciseDutiesQualified = false,
-          isBankLevyQualified = false
+          isBankLevyQualified = false,
+          qualificationStatement = Some(qualificationStatement)
         )
 
       sut.toDpsCertificateCompany shouldBe expected
     }
 
-    "map from CertificateCompany to CertificateDpsCompany mapped without crn" in {
-      val sut = certificateCompanyWithoutCrn
+    "map from CertificateCompany to CertificateDpsCompany mapped without optional fields" in {
+      val sut = certificateCompanyWithoutOptionalFields
 
       val expected =
         CertificateDpsCompany(
@@ -111,7 +114,8 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
           isPetroleumRevenueTaxQualified = false,
           isCustomsDutiesQualified = false,
           isExciseDutiesQualified = false,
-          isBankLevyQualified = false
+          isBankLevyQualified = false,
+          qualificationStatement = None
         )
 
       sut.toDpsCertificateCompany shouldBe expected
@@ -120,10 +124,12 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
 }
 
 object CertificateDpsRequestSpec {
-  val crn          = "example crn"
-  val utr          = "example utr"
-  val companyName  = "example company name"
-  val accPeriodEnd = "example accPeriodEnd"
-  val status       = "example status"
-  val companyType  = "example type"
+  val crn                    = "example crn"
+  val utr                    = "example utr"
+  val companyName            = "example company name"
+  val accPeriodEnd           = "example accPeriodEnd"
+  val status                 = "example status"
+  val companyType            = "example type"
+  val qualificationStatement = "example qualification statement"
+
 }

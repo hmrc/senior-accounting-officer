@@ -10,18 +10,25 @@ properties:
   submitterName:
     type: string
     minLength: 1
-    maxLength: 160
+    maxLength: 254
   saoName:
     type: string
     minLength: 1
-    maxLength: 160
+    maxLength: 254
   saoEmail:
     type: string
     pattern: "^.+[@].+[.].+$"
     minLength: 1
     maxLength: 254
+  staffPid:
+    type: string
+    maxLength: 30
+  customerId:
+    type: string
+    maxLength: 30
   subscriptionId:
     type: string
+    maxLength: 15
   companies:
     type: array
     minItems: 1
@@ -48,9 +55,11 @@ properties:
         crn:
           type: string
           pattern: "^([0-9]{8}|[A-Z]{2}[0-9]{6})$"
+          maxLength: 8
         utr:
           type: string
           pattern: "^[0-9]{10}$"
+          maxLength: 13
         name:
           type: string
           minLength: 1
@@ -60,8 +69,10 @@ properties:
           format: date
         status:
           type: string
+          maxLength: 20
         type:
           type: string
+          maxLength: 10
           enum:
             - PLC
             - LTD
@@ -85,7 +96,10 @@ properties:
           type: boolean
         isBankLevyQualified:
           type: boolean
+        qualificationStatement:
+          type: string
+          maxLength: 32767
   remarks:
     type: string
     minLength: 1
-    maxLength: 5000
+    maxLength: 32767

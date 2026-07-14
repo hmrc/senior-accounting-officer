@@ -18,13 +18,11 @@ package uk.gov.hmrc.senioraccountingofficer
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.{HeaderNames, MimeTypes, Status}
-import play.api.libs.json.Json
-import play.api.libs.ws.readableAsString
-import play.api.libs.ws.writeableOf_JsValue
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 class CertificateIntegrationSpec extends ISpecBase {
 
@@ -40,14 +38,16 @@ class CertificateIntegrationSpec extends ISpecBase {
     "microservice.services.hip.port" -> wireMockPort
   )
 
-  private val validPayload = """{
-                                |  "submitterName": "Jane Smith",
-                                |  "saoName": "Jane Smith",
-                                |  "saoEmail": "jane.smith@example.com",
+  private val validPayload = s"""{
+                                |  "submitterName": "Firstname Lastname",
+                                |  "saoName": "Firstname Lastname",
+                                |  "saoEmail": "firstname.lastname@example.com",
+                                |  "staffPid": "non-empty string",
+                                |  "customerId": "non-empty string",
                                 |  "companies": [
                                 |    {
-                                |      "crn": "1234567890",
-                                |      "utr": "AB123456",
+                                |      "crn": "$generateCertificateCrn",
+                                |      "utr": "$generateUtr",
                                 |      "name": "Example Subsidiary Ltd",
                                 |      "accPeriodEnd": "2025-03-31",
                                 |      "status": "COMPLIANT",
@@ -61,7 +61,8 @@ class CertificateIntegrationSpec extends ISpecBase {
                                 |      "isPetroleumRevenueTaxQualified": false,
                                 |      "isCustomsDutiesQualified": false,
                                 |      "isExciseDutiesQualified": false,
-                                |      "isBankLevyQualified": false
+                                |      "isBankLevyQualified": false,
+                                |      "qualificationStatement": "non-empty string"
                                 |    }
                                 |  ],
                                 |  "remarks": "non-empty string"

@@ -34,7 +34,8 @@ final case class CertificateDpsCompany(
     isPetroleumRevenueTaxQualified: Boolean,
     isCustomsDutiesQualified: Boolean,
     isExciseDutiesQualified: Boolean,
-    isBankLevyQualified: Boolean
+    isBankLevyQualified: Boolean,
+    qualificationStatement: Option[String]
 )
 
 object CertificateDpsCompany {
