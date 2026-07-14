@@ -34,6 +34,7 @@ import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec.*
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCertificateCrn, generateUtr}
 
 import scala.concurrent.Future
 import scala.util.Random
@@ -53,11 +54,11 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private val validPayload: JsObject = Json.obj(
     "subscriptionId" -> saoSubscriptionId,
-    "saoName"        -> "Jane Smith",
+    "saoName"        -> "Firstname Lastname",
     "saoEmail"       -> "Firstname.Lastname@example.com",
     "companies"      -> Json.arr(
       Json.obj(
-        "crn"                            -> generateCrn,
+        "crn"                            -> generateCertificateCrn,
         "utr"                            -> generateUtr,
         "name"                           -> "Example Subsidiary Ltd",
         "accPeriodEnd"                   -> "2025-03-31",
@@ -76,16 +77,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     )
   )
-
-  private def generateCrn = {
-    val num = Random.nextInt(1000000)
-    f"$num%08d"
-  }
-
-  private def generateUtr = {
-    val seed = Random.nextInt(1000000)
-    SaUtrGenerator(seed).nextSaUtr
-  }
+  
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
@@ -195,7 +187,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val invalidPayload = validPayload ++ Json.obj(
         "companies" -> Json.arr(
           Json.obj(
-            "crn"                            -> generateCrn,
+            "crn"                            -> generateCertificateCrn,
             "utr"                            -> generateUtr,
             "name"                           -> "Example Subsidiary Ltd",
             "accPeriodEnd"                   -> "2025-03-31",

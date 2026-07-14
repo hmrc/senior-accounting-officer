@@ -36,7 +36,6 @@ properties:
       type: object
       additionalProperties: false
       required:
-        - crn
         - utr
         - name
         - accPeriodEnd
