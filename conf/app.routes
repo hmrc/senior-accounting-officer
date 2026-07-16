@@ -216,6 +216,81 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 ###
 POST        /certificate       uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate()
 
+###
+#  summary: Get current user subscription
+#  responses:
+#    "200":
+#      description: Success
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse"
+#
+#    "400":
+#      description: missing correlationId header
+#      content:
+#        application/json:
+#          schema:
+#            type: array
+#            items:
+#              $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            NO_ENROLMENT:
+#              value:
+#                - reason: "NO_ENROLMENT"
+#    "401":
+#      description: Unauthorized request
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            UNAUTHENTICATED:
+#              value:
+#                reason: "UNAUTHENTICATED"
+#    "403":
+#      description: No HMRC-DSAO-ORG Enrolment
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            NO_ENROLMENT:
+#              value:
+#                reason: "NO_ENROLMENT"
+#    "500":
+#      description: Internal server error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            SERVICE_MISCONFIGURATION:
+#              value:
+#                reason: "SERVICE_MISCONFIGURATION"
+#    "502":
+#      description: Downstream server error
+#      content:
+#        application/json:
+#          schema:
+#            $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.ApiError"
+#          examples:
+#            DOWNSTREAM_SERVICE_MISALIGNMENT:
+#              value:
+#                reason: "DOWNSTREAM_SERVICE_MISALIGNMENT"
+#            SUBSCRIPTION_NOT_FOUND:
+#              value:
+#                reason: "SUBSCRIPTION_NOT_FOUND"
+#            DOWNSTREAM_SERVICE_ERROR:
+#              value:
+#                reason: "DOWNSTREAM_SERVICE_ERROR"
+#            DOWNSTREAM_SERVICE_UNAVAILABLE:
+#              value:
+#                reason: "DOWNSTREAM_SERVICE_UNAVAILABLE"
+###
+GET         /subscription        uk.gov.hmrc.senioraccountingofficer.controllers.GetSubscriptionController.getSubscription()
+
+
 ### NoDocs ###
 GET         /obligation/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)
 
