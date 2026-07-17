@@ -39,11 +39,6 @@ import java.time.Instant
 
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.Md5Hash
-import java.time.Instant
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
