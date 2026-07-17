@@ -23,28 +23,29 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Md5Hash
+import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import java.time.Instant
+
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.Md5Hash
-import java.time.Instant
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
 
-  val mockConnector: NotificationConnector = mock[NotificationConnector]
-  val mockObjectStoreClient                = mock[PlayObjectStoreClient]
-  val service                              = new NotificationService(mockConnector, mockObjectStoreClient)
+  val mockConnector: NotificationConnector         = mock[NotificationConnector]
+  val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
+  val service                                      = new NotificationService(mockConnector, mockObjectStoreClient)
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
