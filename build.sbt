@@ -12,11 +12,15 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s",
     PlayKeys.playDefaultPort := 10060,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "src/main/resources",
-    Compile / unmanagedResourceDirectories += baseDirectory.value / "target/swagger"
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "target/swagger",
+    resolvers += MavenRepository( // needed for object-store-client
+      "HMRC-open-artefacts-maven2",
+      "https://open.artefacts.tax.service.gov.uk/maven2"
+    )
   )
-  .settings(CodeCoverageSettings.settings *)
-  .settings(scalafixSettings *)
-  .settings(playSwaggerSettings *)
+  .settings(CodeCoverageSettings.settings*)
+  .settings(scalafixSettings*)
+  .settings(playSwaggerSettings*)
 
 lazy val it = project
   .enablePlugins(PlayScala)

@@ -31,6 +31,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.Md5Hash
+import java.time.Instant
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -38,12 +43,16 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
   given HeaderCarrier    = HeaderCarrier()
 
   val mockConnector: NotificationConnector = mock[NotificationConnector]
-  val service                              = new NotificationService(mockConnector)
+  val mockObjectStoreClient                = mock[PlayObjectStoreClient]
+  val service                              = new NotificationService(mockConnector, mockObjectStoreClient)
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+
+      when(mockObjectStoreClient.putObject(any(), any(), any(), any(), any(), any())(using any(), any()))
+        .thenReturn(Future.successful(ObjectSummaryWithMd5(Path.File("dummy"), 0, Md5Hash("hash"), Instant.now)))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
