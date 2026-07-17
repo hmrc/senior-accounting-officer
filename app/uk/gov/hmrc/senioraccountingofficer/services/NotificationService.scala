@@ -28,12 +28,16 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, N
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 
 import javax.inject.Inject
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.Implicits.*
+import scala.util.control.NonFatal
 
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector,

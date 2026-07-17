@@ -18,9 +18,9 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
       "https://open.artefacts.tax.service.gov.uk/maven2"
     )
   )
-  .settings(CodeCoverageSettings.settings *)
-  .settings(scalafixSettings *)
-  .settings(playSwaggerSettings *)
+  .settings(CodeCoverageSettings.settings*)
+  .settings(scalafixSettings*)
+  .settings(playSwaggerSettings*)
 
 lazy val it = project
   .enablePlugins(PlayScala)
