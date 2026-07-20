@@ -30,23 +30,23 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
-import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec.*
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
-  private val mockCertificateConnector = mock[CertificateConnector]
-  private val saoSubscriptionId        = "123"
-  private def certificateUrl           = routes.CertificateController.postCertificate().url
+  private val mockCertificateService = mock[CertificateService]
+  private val saoSubscriptionId      = "123"
+  private def certificateUrl         = routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .overrides(
-        bind[CertificateConnector].toInstance(mockCertificateConnector)
+        bind[CertificateService].toInstance(mockCertificateService)
       )
       .build()
 
@@ -88,55 +88,89 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       .withTextBody(payload)
 
   private def assertValidationError(payload: String, expectedError: play.api.libs.json.JsValue): Unit = {
-    reset(mockCertificateConnector)
+    reset(mockCertificateService)
 
     val result = routeResult(certificateRequest(payload))
 
     status(result) shouldBe Status.BAD_REQUEST
     contentAsJson(result) shouldBe Json.arr(expectedError)
-    verify(mockCertificateConnector, never()).postCertificate(any(), any())(using any())
+    verify(mockCertificateService, never()).postCertificate(any(), any())(using any())
   }
 
   "POST /certificate" should {
-    "return 201 when the downstream connector succeeds with a body" in {
-      reset(mockCertificateConnector)
-      when(mockCertificateConnector.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.CREATED)))
+    "return 201 with the certificateRef when the service returns Success" in {
+      reset(mockCertificateService)
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(Success("CRT0001234567")))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
       status(result) shouldBe Status.CREATED
+      contentAsJson(result) shouldBe Json.obj("certificateRef" -> "CRT0001234567")
     }
 
-    "return the status and body from the downstream service for 5xx" in {
-      val mockResponse = HttpResponse(Status.INTERNAL_SERVER_ERROR, bodyError)
-      when(mockCertificateConnector.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
+    "return 502 when the service returns MalformedResponse" in {
+      reset(mockCertificateService)
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(MalformedResponse(DPS)))
+
+      val result = routeResult(certificateRequest(validPayload.toString()))
+
+      status(result) shouldBe Status.BAD_GATEWAY
+      contentAsString(result) should include("DOWNSTREAM_SERVICE_MISALIGNMENT")
+    }
+
+    "return 500 when the service returns BadRequestFailure" in {
+      reset(mockCertificateService)
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(BadRequestFailure(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
       status(result) shouldBe Status.INTERNAL_SERVER_ERROR
-      contentAsString(result) shouldBe "some raw error body"
+      contentAsString(result) should include("DOWNSTREAM_SERVICE_MISALIGNMENT")
     }
 
-    "return the downstream JSON body for validation errors" in {
-      reset(mockCertificateConnector)
-      when(mockCertificateConnector.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(status = Status.BAD_REQUEST, body = downstreamBody)))
+    "return 502 when the service returns InternalServerFailure" in {
+      reset(mockCertificateService)
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(InternalServerFailure(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
-      status(result) shouldBe Status.BAD_REQUEST
-      contentAsString(result) shouldBe downstreamBody
+      status(result) shouldBe Status.BAD_GATEWAY
+      contentAsString(result) should include("DOWNSTREAM_SERVICE_ERROR")
     }
 
-    "return 400 with MISSING_REQUIRED_FIELD for schema-invalid JSON without calling the connector" in {
+    "return 502 when the service returns ServiceUnavailableFailure" in {
+      reset(mockCertificateService)
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(ServiceUnavailableFailure(DPS)))
+
+      val result = routeResult(certificateRequest(validPayload.toString()))
+
+      status(result) shouldBe Status.BAD_GATEWAY
+      contentAsString(result) should include("DOWNSTREAM_SERVICE_UNAVAILABLE")
+    }
+
+    "return 502 when the service returns UnknownFailure" in {
+      reset(mockCertificateService)
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(UnknownFailure(DPS, 1)))
+
+      val result = routeResult(certificateRequest(validPayload.toString()))
+
+      status(result) shouldBe Status.BAD_GATEWAY
+      contentAsString(result) should include("DOWNSTREAM_SERVICE_MISALIGNMENT")
+    }
+
+    "return 400 with MISSING_REQUIRED_FIELD for schema-invalid JSON without calling the service" in {
       assertValidationError(
         (validPayload - "companies").toString(),
         Json.obj("path" -> "companies", "reason" -> "MISSING_REQUIRED_FIELD")
       )
     }
 
-    "return 400 with CANNOT_BE_EMPTY for an empty SAO name without calling the connector" in {
+    "return 400 with CANNOT_BE_EMPTY for an empty SAO name without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj(
         "saoName" -> ""
       )
@@ -147,7 +181,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with INVALID_DATA_TYPE for a non-string SAO name without calling the connector" in {
+    "return 400 with INVALID_DATA_TYPE for a non-string SAO name without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj(
         "saoName" -> 123
       )
@@ -158,7 +192,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with INVALID_DATA_TYPE for additional properties without calling the connector" in {
+    "return 400 with INVALID_DATA_TYPE for additional properties without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj(
         "unexpectedField" -> "value"
       )
@@ -169,7 +203,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with INVALID_FORMAT for an invalid sao email without calling the connector" in {
+    "return 400 with INVALID_FORMAT for an invalid sao email without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj(
         "saoEmail" -> "not-an-email"
       )
@@ -180,7 +214,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with INVALID_ENUM_VALUE for an unsupported company type without calling the connector" in {
+    "return 400 with INVALID_ENUM_VALUE for an unsupported company type without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj(
         "companies" -> Json.arr(
           Json.obj(
@@ -210,7 +244,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 400 with ARRAY_MIN_ITEMS_NOT_MET for empty companies without calling the connector" in {
+    "return 400 with ARRAY_MIN_ITEMS_NOT_MET for empty companies without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj("companies" -> Json.arr())
 
       assertValidationError(
@@ -220,6 +254,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return BAD_REQUEST when the payload is not valid JSON" in {
+      reset(mockCertificateService)
       val request =
         FakeRequest("POST", certificateUrl)
           .withTextBody("this is not json")
@@ -227,18 +262,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val result = routeResult(request)
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) should include("MALFORMED_REQUEST")
+      verify(mockCertificateService, never()).postCertificate(any(), any())(using any())
     }
   }
-}
-
-object CertificateControllerSpec {
-  val downstreamBody: String =
-    """[{"path":"saoEmail","reason":"INVALID_DATA_TYPE"},
-      |{"path":"saoName","reason":"INVALID_DATA_TYPE"},
-      |{"path":"companies[0].crn","reason":"INVALID_FORMAT"},
-      |{"path":"companies[0].isCorporationTaxQualified","reason":"MISSING_REQUIRED_FIELD"},
-      |{"path":"saoEmail","reason":"MISSING_REQUIRED_FIELD"},
-      |{"path":"saoName","reason":"MISSING_REQUIRED_FIELD"}]""".stripMargin
-
-  val bodyError: String = "some raw error body"
 }
