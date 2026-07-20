@@ -23,11 +23,17 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Md5Hash
+import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 
 import scala.concurrent.{ExecutionContext, Future}
+
+import java.time.Instant
 
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
@@ -37,13 +43,17 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
 
-  val mockConnector: NotificationConnector = mock[NotificationConnector]
-  val service                              = new NotificationService(mockConnector)
+  val mockConnector: NotificationConnector         = mock[NotificationConnector]
+  val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
+  val service                                      = new NotificationService(mockConnector, mockObjectStoreClient)
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+
+      when(mockObjectStoreClient.putObject(any(), any(), any(), any(), any(), any())(using any(), any()))
+        .thenReturn(Future.successful(ObjectSummaryWithMd5(Path.File("dummy"), 0, Md5Hash("hash"), Instant.now)))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
