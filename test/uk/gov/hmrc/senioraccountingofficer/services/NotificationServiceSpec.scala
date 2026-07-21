@@ -17,6 +17,8 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq as meq
+import org.mockito.ArgumentMatchers.isNull
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
@@ -52,12 +54,27 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
 
-      when(mockObjectStoreClient.putObject(any(), any(), any(), any(), any(), any())(using any(), any()))
-        .thenReturn(Future.successful(ObjectSummaryWithMd5(Path.File("dummy"), 0, Md5Hash("hash"), Instant.now)))
+      when(
+        mockObjectStoreClient.putObject(
+          path = meq(
+            Path
+              .Directory(objectStorePath)
+              .file(objectStoreFilename)
+          ),
+          content = meq(objectStoreFileContent),
+          retentionPeriod = isNull,
+          contentType = isNull,
+          contentMd5 = isNull,
+          owner = meq(objectStoreOwner)
+        )(using any(), any())
+      )
+        .thenReturn(
+          Future.successful(ObjectSummaryWithMd5(Path.File(objectStoreFilename), 0, Md5Hash("hash"), Instant.now))
+        )
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
-      result mustBe Success(notificationId, true)
+      result mustBe Success(notificationReference, true)
     }
 
     "return MalformedResponse(DPS) for a malformed 201 response from DPS" in {
@@ -124,6 +141,10 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
 object NotificationServiceSpec {
   val requestId                           = "123"
   val testRequest: NotificationDpsRequest = NotificationDpsRequest(List.empty, List.empty)
-  val notificationId                      = "notificationId"
-  val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationId"}"""
+  val notificationReference               = "NOT0123456789"
+  val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationReference"}"""
+  val objectStorePath: String             = s"/senior-accounting-officer/${notificationReference}/"
+  val objectStoreFilename: String         = s"${notificationReference}_SAO_notification.pdf"
+  val objectStoreOwner                    = "senior-accounting-officer"
+  val objectStoreFileContent              = "dummy file content"
 }
