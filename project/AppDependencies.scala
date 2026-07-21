@@ -16,7 +16,8 @@ object AppDependencies {
       .exclude("com.fasterxml.jackson.core", "jackson-core")
       .exclude("com.fasterxml.jackson.core", "jackson-annotations")
       .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
-    "org.typelevel" %% "cats-core" % "2.13.0"
+    "org.typelevel"          %% "cats-core"            % "2.13.0",
+    "io.github.openhtmltopdf" % "openhtmltopdf-pdfbox" % "1.1.37"
   )
 
   val test: Seq[ModuleID] = Seq(
