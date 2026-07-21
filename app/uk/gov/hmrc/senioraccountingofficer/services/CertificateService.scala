@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
-import scala.util.control.NonFatal
-
 import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.Implicits.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, CertificateDpsResponse}
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
@@ -30,11 +31,9 @@ import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCerti
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 import javax.inject.Inject
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.play.Implicits.*
 
 class CertificateService @Inject() (
     certificateConnector: CertificateConnector,

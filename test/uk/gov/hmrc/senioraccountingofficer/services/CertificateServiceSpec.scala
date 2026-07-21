@@ -23,19 +23,20 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Md5Hash
+import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import java.time.Instant
+
 import CertificateService.PostCertificateResponse.*
 import CertificateServiceSpec.*
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import java.time.Instant
-import uk.gov.hmrc.objectstore.client.Md5Hash
 
 class CertificateServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
