@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as meq, isNull}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
@@ -31,19 +31,43 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import CertificateService.PostCertificateResponse.*
 import CertificateServiceSpec.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
+import java.time.Instant
+import uk.gov.hmrc.objectstore.client.Md5Hash
 
 class CertificateServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
 
-  val mockConnector: CertificateConnector = mock[CertificateConnector]
-  val service                             = new CertificateService(mockConnector)
+  val mockConnector: CertificateConnector          = mock[CertificateConnector]
+  val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
+  val service                                      = new CertificateService(mockConnector, mockObjectStoreClient)
 
   "postCertificate" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+
+      when(
+        mockObjectStoreClient.putObject(
+          path = meq(
+            Path
+              .Directory(objectStorePath)
+              .file(objectStoreFilename)
+          ),
+          content = meq(objectStoreFileContent),
+          retentionPeriod = isNull,
+          contentType = isNull,
+          contentMd5 = isNull,
+          owner = meq(objectStoreOwner)
+        )(using any(), any())
+      )
+        .thenReturn(
+          Future.successful(ObjectSummaryWithMd5(Path.File(objectStoreFilename), 0, Md5Hash("hash"), Instant.now))
+        )
 
       val result = service.postCertificate(requestId, testRequest).futureValue
 
@@ -121,4 +145,8 @@ object CertificateServiceSpec {
     )
   val certificateRef               = "CRT0001234567"
   val validDpsResponseBody: String = s"""{"certificateRef":"$certificateRef"}"""
+  val objectStorePath: String      = s"/senior-accounting-officer/${certificateRef}/"
+  val objectStoreFilename: String  = s"${certificateRef}_SAO_Certificate.pdf"
+  val objectStoreOwner             = "senior-accounting-officer"
+  val objectStoreFileContent       = "dummy file content"
 }
