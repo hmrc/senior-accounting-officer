@@ -144,7 +144,7 @@ object NotificationServiceSpec {
   val notificationReference               = "NOT0123456789"
   val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationReference"}"""
   val objectStorePath: String             = s"/senior-accounting-officer/${notificationReference}/"
-  val objectStoreFilename: String         = s"${notificationReference}_SAO_notification.pdf"
+  val objectStoreFilename: String         = s"${notificationReference}_SAO_Notification.pdf"
   val objectStoreOwner                    = "senior-accounting-officer"
   val objectStoreFileContent              = "dummy file content"
 }

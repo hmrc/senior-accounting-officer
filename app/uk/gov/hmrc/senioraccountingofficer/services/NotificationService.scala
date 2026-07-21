@@ -72,7 +72,7 @@ class NotificationService @Inject() (
         .putObject(
           path = Path
             .Directory(s"/senior-accounting-officer/$notificationReference/")
-            .file(s"${notificationReference}_SAO_notification.pdf"),
+            .file(s"${notificationReference}_SAO_Notification.pdf"),
           content = "dummy file content",
           owner = "senior-accounting-officer"
         )
