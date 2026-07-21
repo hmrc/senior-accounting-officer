@@ -70,7 +70,9 @@ class NotificationService @Inject() (
     EitherT.right(
       objectStoreClient
         .putObject(
-          path = Path.Directory(s"/senior-accounting-officer/$notificationReference/").file("dummy.txt"),
+          path = Path
+            .Directory(s"/senior-accounting-officer/$notificationReference/")
+            .file(s"${notificationReference}_SAO_notification.pdf"),
           content = "dummy file content",
           owner = "senior-accounting-officer"
         )
