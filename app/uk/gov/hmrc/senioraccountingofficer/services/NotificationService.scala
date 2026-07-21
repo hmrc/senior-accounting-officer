@@ -20,6 +20,9 @@ import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.Implicits.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
@@ -28,19 +31,21 @@ import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNoti
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 import javax.inject.Inject
 
 class NotificationService @Inject() (
-    notificationConnector: NotificationConnector
+    notificationConnector: NotificationConnector,
+    objectStoreClient: PlayObjectStoreClient
 )(using ExecutionContext) {
 
   def postNotification(subscriptionId: String, request: NotificationDpsRequest)(using
       HeaderCarrier
   ): Future[PostNotificationResponse] = {
     for {
-      dpsResult <- postNotificationDps(subscriptionId, request)
-      isPdfAvailable = true // TODO placeholder value for the result of generate PDF
+      dpsResult      <- postNotificationDps(subscriptionId, request)
+      isPdfAvailable <- generateAndUploadPdf(dpsResult.notificationRef)
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = isPdfAvailable)
   }.merge
 
@@ -56,6 +61,24 @@ class NotificationService @Inject() (
       case HttpResponse(SERVICE_UNAVAILABLE, body, _)   => Left(ServiceUnavailableFailure(DPS))
       case HttpResponse(status, body, _)                => Left(UnknownFailure(DPS, status))
     })
+  }
+
+  // TODO proper pdf generation
+  private def generateAndUploadPdf(notificationReference: String)(using
+      HeaderCarrier
+  ): EitherT[Future, PostNotificationResponse with Failure, Boolean] = {
+    EitherT.right(
+      objectStoreClient
+        .putObject(
+          path = Path
+            .Directory(s"/senior-accounting-officer/$notificationReference/")
+            .file(s"${notificationReference}_SAO_Notification.pdf"),
+          content = "dummy file content",
+          owner = "senior-accounting-officer"
+        )
+        .map { _ => true }
+        .recover { case NonFatal(_) => false }
+    )
   }
 }
 
