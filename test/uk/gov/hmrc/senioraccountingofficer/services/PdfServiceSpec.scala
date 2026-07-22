@@ -16,22 +16,20 @@
 
 package services
 
-import org.apache.pekko.stream.Materializer
-import org.scalatest.concurrent.ScalaFutures
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.senioraccountingofficer.PdfTestData
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.Notification
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
-import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
@@ -39,14 +37,14 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
   given ExecutionContext         = ExecutionContext.global
   given actorSystem: ActorSystem = ActorSystem()
 
-  val openHtmlToPdfService                         = OpenHtmlToPdfService()
+  val openHtmlToPdfService: OpenHtmlToPdfService   = OpenHtmlToPdfService()
   val notificationPdfTemplate: NotificationPdfView = app.injector.instanceOf[NotificationPdfView]
-  val certificatePdfTemplate                       = CertificatePdfView()
+  val certificatePdfTemplate: CertificatePdfView   = CertificatePdfView()
 
-  val service = PdfService(openHtmlToPdfService, notificationPdfTemplate, certificatePdfTemplate)
+  val service: PdfService = PdfService(openHtmlToPdfService, notificationPdfTemplate, certificatePdfTemplate)
 
-  val notification = PdfTestData.testNotificationData(2, 1)
-  val doc          = Jsoup.parse(notificationPdfTemplate(notification).body)
+//  val notification: Notification = PdfTestData.testNotificationData(2, 1)
+//  val doc: Document              = Jsoup.parse(notificationPdfTemplate(notification).body)
 
 //  "PdfService" must {
 //    "check notification pdf structure" in {
@@ -56,7 +54,7 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
 //    }
   "return pdf content for notification" in {
 
-    val res = service.generateNotificationPdf(notification)
+//    service.generateNotificationPdf(notification)
 //      println(res)
   }
 

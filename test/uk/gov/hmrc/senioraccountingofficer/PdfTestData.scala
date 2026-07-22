@@ -342,12 +342,10 @@ object PdfTestData {
     genSeq(total, getTestCompany)
   }
 
-  def testNotificationData(rows: Int, additionalInformationRepeat: Int)(using
+  def testNotificationData(rows: Int, additionalInformation: Option[String])(using
       Materializer,
       ExecutionContext
   ): Notification = {
-    val additionalInformation =
-      AdditionalInformationGenerator.generate(totalBytes = 32767L, additionalInformationRepeat)
     Notification(
       companyName = "Test ABC Limited",
       financialYearEndDate = "21 December 2024",
@@ -358,20 +356,19 @@ object PdfTestData {
         SaoTenure(name = "Fake Ashley Ross", startDate = Some("01 January 2024"), endDate = Some("31 May 20204"))
       ),
       companies = genNotificationTestCompanies(rows),
-      additionalInformation = Some(additionalInformation)
+      additionalInformation = additionalInformation
     )
   }
 
-  def testCertificateData(rows: Int)(using Materializer, ExecutionContext): Certificate = {
-    val additionalInformation = AdditionalInformationGenerator.generate(totalBytes = 32767L, 1)
+  def testCertificateData(rows: Int, additionalInfo: Option[String])(using Materializer, ExecutionContext): Certificate = {
     Certificate(
       saoName = "Test Jackson Brown",
       saoEmail = "jbrown@test.co.uk",
       submitterName = "Firstname Lastname",
       submissionDate = "12 May 2025",
       submissionId = "XMPLR0123456789",
-      companies = genCertificateTestCompanies(rows, Some(additionalInformation)),
-      additionalInformation = Some(additionalInformation)
+      companies = genCertificateTestCompanies(rows, additionalInfo),
+      additionalInformation = additionalInfo
     )
   }
 

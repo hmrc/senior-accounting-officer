@@ -42,7 +42,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.TwirlHelperImports.twirlJavaCollectionToScala
-import uk.gov.hmrc.senioraccountingofficer.PdfTestData
+import uk.gov.hmrc.senioraccountingofficer.{AdditionalInformationGenerator, PdfTestData}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.Notification
 import uk.gov.hmrc.senioraccountingofficer.views.html.NotificationPdfView
 import views.NotificationPdfTemplateViewSpec.*
@@ -54,38 +54,24 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
   given ExecutionContext         = ExecutionContext.global
   given actorSystem: ActorSystem = ActorSystem()
 
-  val notificationData: Notification               = PdfTestData.testNotificationData(3, 1)
+  val notificationData: Notification               = PdfTestData.testNotificationData(3, Option(AdditionalInformationGenerator.generate(totalBytes = 32767L, 1)))
   val notificationPdfTemplate: NotificationPdfView = app.injector.instanceOf[NotificationPdfView]
   val doc: Document                                = Jsoup.parse(notificationPdfTemplate(notificationData).body)
 
   "NotificationPdfView" must {
-    "check notification pdf structure" in {
+    "display the logo container section of the pdf view" in {
       // image path to do
-
+    }
+    "displays the 'bookmarks' section of the pdf view" in {
+      // to do
+    }
+    "display 'notification submission record' section of the pdf" in {
       doc.heading.size() mustBe 1
       doc.heading.text() mustBe notificationHeader
-
       doc.paragraph1.text() mustBe paragraph1
-      doc.subheading1.text() mustBe subheadings(0)
-
-      doc.saoDetailSubheading.text() mustBe subheadings(1)
-
-      saoDetailsTableHeaders.zip(doc.saoDetailTableHeaders.eachText()).foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
-      val expectedSaoDetailsData = notificationData.saoHistory
-
-      println(doc.saoDetailTableData)
-      println("")
-      println(doc.saoDetailTableData.select("td"))
-      expectedSaoDetailsData.zip(doc.saoDetailTableData).foreach((expectedRow, actualRow) => {
-
-        val tds = actualRow.select("td").eachText().
-        expectedRow.name mustBe tds(0)
-        expectedRow.startDate mustBe tds(1)
-        expectedRow.endDate mustBe tds(2)
-      })
-
-
-
+    }
+    "display the 'company details' section of the pdf view" in {
+      doc.submissionDetailsSubheading.text() mustBe subheadings(0)
       companyDetailsHeaders
         .zip(doc.companyDetailsTableHeaders.eachText())
         .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
@@ -101,7 +87,52 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         .zip(doc.companyDetailsTableData.eachText())
         .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
       actualCompanyDetails.size mustBe 4
+    }
+    "display the 'contact details' section of the pdf view" in {
+      doc.saoDetailSubheading.text() mustBe subheadings(1)
 
+      saoDetailsTableHeaders
+        .zip(doc.saoDetailTableHeaders.eachText())
+        .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
+
+      val expectedSaoDetailsData = notificationData.saoHistory
+      expectedSaoDetailsData
+        .zip(doc.saoDetailTableData)
+        .foreach((expectedRow, actualRow) => {
+          val expectedStartDate = expectedRow.startDate.getOrElse("")
+          val expectedEndDate = expectedRow.endDate.getOrElse("")
+          val colVals = actualRow.select("td").eachText()
+          colVals.get(0) mustBe expectedRow.name
+          colVals.get(1) mustBe expectedStartDate
+          colVals.get(2) mustBe expectedEndDate
+        })
+
+    }
+    "display the 'additional information' section of the pdf view when there is additional information" in {
+      val expectedAddInfo = notificationData.additionalInformation.getOrElse("").split("\n")
+      val actualAddInfo = doc.addInfo.eachText()
+
+      doc.addInfoSubheading.text mustBe subheadings(2)
+
+      expectedAddInfo
+        .zip(actualAddInfo)
+        .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph.stripTrailing())
+    }
+    "not display the 'additional information' section when additional information is not given" in {
+      val notification = PdfTestData.testNotificationData(3, None)
+      val doc: Document = Jsoup.parse(notificationPdfTemplate(notification).body)
+      val expectedAddInfo = notification.additionalInformation.getOrElse("").split("\n")
+      val actualAddInfo = doc.addInfo.eachText()
+
+      doc.addInfoSubheading.text mustBe ""
+
+      expectedAddInfo
+        .zip(actualAddInfo)
+        .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph)
+
+    }
+    "display the 'companies-list' section of the pdf view" in {
+      doc.companiesSubheading.text mustBe subheadings(3)
       companiesTableHeaders
         .zip(doc.companiesTableHeaders.eachText())
         .foreach((expectedHeader, actualHeader) => expectedHeader mustBe actualHeader)
@@ -124,7 +155,6 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         })
 
       doc.companiesTableData.size() mustBe notificationData.companies.size
-
     }
   }
 }
@@ -132,16 +162,20 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
 object NotificationPdfTemplateViewSpec {
 
   extension (doc: Document) {
-    def heading: Elements                    = doc.select("h1")
-    def paragraph1: Elements                 = doc.select("h1 + p")
-    def subheading1: Elements                = doc.select("h1 + p + h2")
-    def companyDetailsTableHeaders: Elements = doc.select("h1 + p + h2 + table").select("thead").select("th")
-    def companyDetailsTableData: Elements    = doc.select("h1 + p + h2 + table").select("tbody > tr > td")
+    def heading: Elements                     = doc.select("h1")
+    def paragraph1: Elements                  = doc.select("h1 + p")
+    def submissionDetailsSubheading: Elements = doc.select("h1 + p + h2")
+    def companyDetailsTableHeaders: Elements  = doc.select("h1 + p + h2 + table").select("thead").select("th")
+    def companyDetailsTableData: Elements     = doc.select("h1 + p + h2 + table").select("tbody > tr > td")
 
-    def saoDetailSubheading: Elements = doc.select("#contact-details")
+    def saoDetailSubheading: Elements   = doc.select("#contact-details")
     def saoDetailTableHeaders: Elements = doc.select("#contact-details + table > thead > tr > th")
-    def saoDetailTableData: Elements = doc.select("#contact-details + table > tbody > tr")
+    def saoDetailTableData: Elements    = doc.select("#contact-details + table > tbody > tr")
 
+    def addInfoSubheading: Elements     = doc.select("#additional-information")
+    def addInfoParagraph1: Elements     = doc.select("#additional-information+p")
+    def addInfo: Elements               = doc.select("#additional-information + p ~ p")
+    def companiesSubheading = doc.select("#companies-list")
     def companiesTableHeaders: Elements = doc.select("tables-page > h2 + table > thead > tr > th")
     def companiesTableData: Elements    = doc.select("tables-page > h2 + table > tbody > tr")
 
@@ -157,7 +191,8 @@ object NotificationPdfTemplateViewSpec {
   val companyDetailsHeaders: Seq[String] =
     Seq("Company name", "Financial year end date", "Submission date", "Reference number")
 
-  val saoDetailsTableHeaders = Seq("Full name","Role start date", "Role end date")
+  val addInfoParagraph1                   = "Information about your notification"
+  val saoDetailsTableHeaders: Seq[String] = Seq("Full name", "Role start date", "Role end date")
 
   val companiesTableHeaders: Seq[String] = Seq("Company name", "CRN", "UTR", "Type", "Status", "Financial year end")
 }
