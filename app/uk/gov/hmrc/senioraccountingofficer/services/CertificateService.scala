@@ -63,7 +63,7 @@ class CertificateService @Inject() (
     })
   }
 
-  // TODO proper pdf generation
+  // TODO proper pdf generation in SAOD-833
   private def generateAndUploadPdf(certificateReference: String)(using
       HeaderCarrier
   ): EitherT[Future, PostCertificateResponse with Failure, Boolean] = {
