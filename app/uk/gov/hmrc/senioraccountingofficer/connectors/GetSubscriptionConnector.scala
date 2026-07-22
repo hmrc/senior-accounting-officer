@@ -28,7 +28,7 @@ class GetSubscriptionConnector @Inject() (appConfig: AppConfig, httpClient: Http
   def getSubscription(saoSubscriptionId: String)(using HeaderCarrier): Future[HttpResponse] =
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
     httpClient
-      .get(url"${appConfig.hipHost}/views/iv_subscriptions/$saoSubscriptionId")
+      .get(url"${appConfig.hipHost}/iv_subscriptions/$saoSubscriptionId")
       .setHeader(("Authorization", appConfig.hipAuthorisationCredentials))
       .execute[HttpResponse]
 }

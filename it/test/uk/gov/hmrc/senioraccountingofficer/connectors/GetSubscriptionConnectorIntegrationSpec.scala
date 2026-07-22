@@ -39,7 +39,7 @@ class GetSubscriptionConnectorIntegrationSpec extends ISpecBase {
     Seq(200, 204, 400, 401, 403, 500, 503).foreach { expectedStatus =>
       s"return a Future.successful(HttpResponse) for a $expectedStatus response from HIP" in {
         stubFor(
-          get(urlEqualTo(s"/views/iv_subscriptions/$testSaoSubscriptionId"))
+          get(urlEqualTo(s"/iv_subscriptions/$testSaoSubscriptionId"))
             .willReturn(
               aResponse()
                 .withStatus(expectedStatus)
@@ -55,7 +55,7 @@ class GetSubscriptionConnectorIntegrationSpec extends ISpecBase {
 
         verify(
           1,
-          getRequestedFor(urlEqualTo(s"/views/iv_subscriptions/$testSaoSubscriptionId"))
+          getRequestedFor(urlEqualTo(s"/iv_subscriptions/$testSaoSubscriptionId"))
             .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
         )
       }
