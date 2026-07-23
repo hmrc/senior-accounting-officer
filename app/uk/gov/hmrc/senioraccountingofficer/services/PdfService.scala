@@ -55,7 +55,7 @@ object PdfService {
   final case class Certificate(
       saoName: String,
       saoEmail: String,
-      submitterName: String,
+      submitterName: Option[String],
       submissionDate: String,
       submissionId: String,
       companies: Seq[Certificate.Row],

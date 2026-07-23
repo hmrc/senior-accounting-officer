@@ -17,16 +17,11 @@
 package services
 
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.Materializer
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.senioraccountingofficer.PdfTestData
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService.Notification
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 

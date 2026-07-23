@@ -42,9 +42,9 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.TwirlHelperImports.twirlJavaCollectionToScala
-import uk.gov.hmrc.senioraccountingofficer.{AdditionalInformationGenerator, PdfTestData}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.Notification
 import uk.gov.hmrc.senioraccountingofficer.views.html.NotificationPdfView
+import uk.gov.hmrc.senioraccountingofficer.{AdditionalInformationGenerator, PdfTestData}
 import views.NotificationPdfTemplateViewSpec.*
 
 import scala.concurrent.ExecutionContext
@@ -54,16 +54,43 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
   given ExecutionContext         = ExecutionContext.global
   given actorSystem: ActorSystem = ActorSystem()
 
-  val notificationData: Notification               = PdfTestData.testNotificationData(3, Option(AdditionalInformationGenerator.generate(totalBytes = 32767L, 1)))
+  val notificationData: Notification =
+    PdfTestData.testNotificationData(3, Option(AdditionalInformationGenerator.generate(totalBytes = 32767L, 1)))
   val notificationPdfTemplate: NotificationPdfView = app.injector.instanceOf[NotificationPdfView]
   val doc: Document                                = Jsoup.parse(notificationPdfTemplate(notificationData).body)
 
   "NotificationPdfView" must {
     "display the logo container section of the pdf view" in {
-      // image path to do
+      doc.logoText.text mustBe logoText
+      doc.logo.eachAttr("src").get(0) mustBe imgPath
+      doc.logo.eachAttr("src").size mustBe 1
+
+      doc.logo.eachAttr("alt").get(0) mustBe logoAltText
+      doc.logo.eachAttr("alt").size mustBe 1
     }
-    "displays the 'bookmarks' section of the pdf view" in {
-      // to do
+    "check the 'bookmarks' section of the pdf view, when 'additional information' notification attribute exist" in {
+      doc.bookmarks.select("bookmark").size mustBe 4
+      bookmarkNames
+        .zip(doc.bookmarks.select("bookmark").eachAttr("name"))
+        .foreach((expectedName, actualName) => actualName mustBe expectedName)
+      bookmarkHrefs
+        .zip(doc.bookmarks.select("bookmark").eachAttr("href"))
+        .foreach((expectedHref, actualHref) => actualHref mustBe expectedHref)
+    }
+
+    "check the 'bookmarks' section of the pdf view, when the 'additional Information' notification attribute does not exist" in {
+      val notification  = PdfTestData.testNotificationData(3, None).copy(companies = Seq())
+      val doc: Document = Jsoup.parse(notificationPdfTemplate(notification).body)
+      val bookmark      = doc.bookmarks.select("bookmark")
+      bookmark.size mustBe 3
+      bookmark.eachAttr("name").size mustBe 3
+      bookmark.eachAttr("href").size mustBe 3
+      bookmark.eachAttr("name").get(0) mustBe "Nominated company details"
+      bookmark.eachAttr("href").get(0) mustBe "#company-details"
+      bookmark.eachAttr("name").get(1) mustBe "Contact details"
+      bookmark.eachAttr("href").get(1) mustBe "#contact-details"
+      bookmark.eachAttr("name").get(2) mustBe "List of companies"
+      bookmark.eachAttr("href").get(2) mustBe "#companies-list"
     }
     "display 'notification submission record' section of the pdf" in {
       doc.heading.size() mustBe 1
@@ -100,17 +127,17 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         .zip(doc.saoDetailTableData)
         .foreach((expectedRow, actualRow) => {
           val expectedStartDate = expectedRow.startDate.getOrElse("")
-          val expectedEndDate = expectedRow.endDate.getOrElse("")
-          val colVals = actualRow.select("td").eachText()
+          val expectedEndDate   = expectedRow.endDate.getOrElse("")
+          val colVals           = actualRow.select("td").eachText()
           colVals.get(0) mustBe expectedRow.name
           colVals.get(1) mustBe expectedStartDate
-          colVals.get(2) mustBe expectedEndDate
+          if (colVals.size == 3) colVals.get(2) mustBe expectedEndDate
         })
 
     }
     "display the 'additional information' section of the pdf view when there is additional information" in {
       val expectedAddInfo = notificationData.additionalInformation.getOrElse("").split("\n")
-      val actualAddInfo = doc.addInfo.eachText()
+      val actualAddInfo   = doc.addInfo.eachText()
 
       doc.addInfoSubheading.text mustBe subheadings(2)
 
@@ -119,10 +146,10 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph.stripTrailing())
     }
     "not display the 'additional information' section when additional information is not given" in {
-      val notification = PdfTestData.testNotificationData(3, None)
-      val doc: Document = Jsoup.parse(notificationPdfTemplate(notification).body)
+      val notification    = PdfTestData.testNotificationData(3, None)
+      val doc: Document   = Jsoup.parse(notificationPdfTemplate(notification).body)
       val expectedAddInfo = notification.additionalInformation.getOrElse("").split("\n")
-      val actualAddInfo = doc.addInfo.eachText()
+      val actualAddInfo   = doc.addInfo.eachText()
 
       doc.addInfoSubheading.text mustBe ""
 
@@ -162,6 +189,10 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
 object NotificationPdfTemplateViewSpec {
 
   extension (doc: Document) {
+    def logo: Elements      = doc.select(".logo")
+    def logoText: Elements  = doc.select(".logo-text")
+    def bookmarks: Elements = doc.select("bookmarks")
+
     def heading: Elements                     = doc.select("h1")
     def paragraph1: Elements                  = doc.select("h1 + p")
     def submissionDetailsSubheading: Elements = doc.select("h1 + p + h2")
@@ -175,14 +206,21 @@ object NotificationPdfTemplateViewSpec {
     def addInfoSubheading: Elements     = doc.select("#additional-information")
     def addInfoParagraph1: Elements     = doc.select("#additional-information+p")
     def addInfo: Elements               = doc.select("#additional-information + p ~ p")
-    def companiesSubheading = doc.select("#companies-list")
+    def companiesSubheading             = doc.select("#companies-list")
     def companiesTableHeaders: Elements = doc.select("tables-page > h2 + table > thead > tr > th")
     def companiesTableData: Elements    = doc.select("tables-page > h2 + table > tbody > tr")
 
   }
 
-  val imgPath            = "src/gov-uk-logo.png/"
-  val logoText           = "Senior Accounting Officer notification and certificate"
+  val imgPath     = "gov-uk-logo.png"
+  val logoAltText = "GOV.UK"
+  val logoText    = "Senior Accounting Officer notification and certificate"
+
+  val bookmarkNames: List[String] =
+    List("Nominated company details", "Contact details", "Additional information", "List of companies")
+  val bookmarkHrefs: List[String] =
+    List("#company-details", "#contact-details", "#additional-information", "#companies-list")
+
   val notificationHeader = "Notification submission record"
   val paragraph1         =
     "This document is a record of the information submitted to HMRC through the Digital SAO service at the time of submission. It includes the SAO's name, the dates they held the role during the notification period, contact details recorded for service updates and compliance purposes, and the information uploaded in the submission template for the notification."

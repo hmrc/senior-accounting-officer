@@ -360,11 +360,14 @@ object PdfTestData {
     )
   }
 
-  def testCertificateData(rows: Int, additionalInfo: Option[String])(using Materializer, ExecutionContext): Certificate = {
+  def testCertificateData(rows: Int, submitterName: Option[String], additionalInfo: Option[String])(using
+      Materializer,
+      ExecutionContext
+  ): Certificate = {
     Certificate(
       saoName = "Test Jackson Brown",
       saoEmail = "jbrown@test.co.uk",
-      submitterName = "Firstname Lastname",
+      submitterName = submitterName,
       submissionDate = "12 May 2025",
       submissionId = "XMPLR0123456789",
       companies = genCertificateTestCompanies(rows, additionalInfo),

@@ -181,7 +181,7 @@
                             <h2 id="qualified-certificates">Companies with qualified certificates</h2>
                             <p>In accordance with paragraph 2 of Schedule 46 to the Finance Act 2009, I
                                 @{if (certificate.submitterName.nonEmpty)
-                                    s"${certificate.submitterName}, on the behalf of, ${certificate.saoName}"
+                                    s"${certificate.submitterName.get}, on the behalf of, ${certificate.saoName}"
                                 else
                                     certificate.saoName
                                 }
@@ -201,7 +201,7 @@
                                             <td>@company.companyName</td>
                                             <td>@company.utr</td>
                                             <td>@company.qualifiedRegimesAsText</td>
-                                            <td>@Html(company.additionalInformation.get.split("\n").mkString("<br/>"))</td>
+                                            <td>@Html(company.additionalInformation.getOrElse("").split("\n").mkString("<br/>"))</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -214,7 +214,7 @@
                             <h2 id="unqualified-certificates">Companies with unqualified certificates</h2>
                             <p>In accordance with Paragraph 2 Schedule 46 Finance Act 2009, I
                                 @{if (certificate.submitterName.nonEmpty)
-                                    s"${certificate.submitterName}, on the behalf of, ${certificate.saoName}"
+                                    s"${certificate.submitterName.get}, on the behalf of, ${certificate.saoName}"
                                 else
                                     certificate.saoName
                                 }
