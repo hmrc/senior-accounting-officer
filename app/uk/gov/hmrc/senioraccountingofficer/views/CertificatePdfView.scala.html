@@ -161,7 +161,7 @@
                         <tr>
                             <td>@certificate.saoName</td>
                             <td>@certificate.saoEmail</td>
-                            @{if (certificate.submitterName.nonEmpty) <td>{certificate.submitterName}</td> else ""}
+                            @{if (certificate.submitterName.nonEmpty) <td>{certificate.submitterName.get}</td> else ""}
                             <td>@certificate.submissionDate</td>
                             <td>@certificate.submissionId</td>
                         </tr>

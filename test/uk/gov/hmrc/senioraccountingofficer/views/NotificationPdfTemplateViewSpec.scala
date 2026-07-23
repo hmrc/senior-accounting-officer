@@ -131,7 +131,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
           val colVals           = actualRow.select("td").eachText()
           colVals.get(0) mustBe expectedRow.name
           colVals.get(1) mustBe expectedStartDate
-          if (colVals.size == 3) colVals.get(2) mustBe expectedEndDate
+          if colVals.size == 3 then colVals.get(2) mustBe expectedEndDate
         })
 
     }
