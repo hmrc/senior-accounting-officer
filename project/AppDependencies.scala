@@ -17,6 +17,7 @@ object AppDependencies {
       .exclude("com.fasterxml.jackson.core", "jackson-annotations")
       .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
     "org.typelevel"           %% "cats-core"                   % "2.13.0",
+    "io.github.openhtmltopdf"  % "openhtmltopdf-pdfbox"        % "1.1.37",
     "uk.gov.hmrc.objectstore" %% "object-store-client-play-30" % "2.6.0"
   )
 
