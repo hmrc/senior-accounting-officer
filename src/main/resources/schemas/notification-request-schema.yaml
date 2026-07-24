@@ -4,10 +4,7 @@ additionalProperties: false
 required:
   - companies
   - saos
-  - subscriptionId
 properties:
-  subscriptionId:
-    type: string
   companies:
     type: array
     minItems: 1

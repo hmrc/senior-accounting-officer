@@ -14,29 +14,27 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer
+package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.{HeaderNames, MimeTypes, Status}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
-class CertificateIntegrationSpec extends ISpecBase {
+class CertificateConnectorIntegrationSpec extends ISpecBase {
 
-  private val appConfig         = app.injector.instanceOf[AppConfig]
+  private val appConfig = app.injector.instanceOf[AppConfig]
   private val connector = app.injector.instanceOf[CertificateConnector]
-  private val saoSubscriptionId = "123"
 
   given HeaderCarrier = HeaderCarrier()
-
 
   override def additionalConfigs: Map[String, Any] = Map(
     "microservice.services.hip.host" -> wireMockHost,
     "microservice.services.hip.port" -> wireMockPort
   )
+
+  val testSubscriptionId = "testSubscriptionId"
 
   private val validPayload = s"""{
                                 |  "submitterName": "Firstname Lastname",
@@ -46,8 +44,8 @@ class CertificateIntegrationSpec extends ISpecBase {
                                 |  "customerId": "non-empty string",
                                 |  "companies": [
                                 |    {
-                                |      "crn": "$generateCertificateCrn",
-                                |      "utr": "$generateUtr",
+                                |      "crn": "crn",
+                                |      "utr": "utr",
                                 |      "name": "Example Subsidiary Ltd",
                                 |      "accPeriodEnd": "2025-03-31",
                                 |      "status": "COMPLIANT",
@@ -68,24 +66,23 @@ class CertificateIntegrationSpec extends ISpecBase {
                                 |  "remarks": "non-empty string"
                                 |}""".stripMargin
 
-
   "POST /certificate" must {
     "pass through a successful downstream response" in {
       stubFor(
-        post(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
+        post(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
           .willReturn(
             aResponse()
               .withStatus(Status.CREATED)
           )
       )
 
-      val result = connector.postCertificate("123", validPayload).futureValue
+      val result = connector.postCertificate(testSubscriptionId, validPayload).futureValue
 
       result.status mustBe Status.CREATED
 
       verify(
         1,
-        postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
+        postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
@@ -96,7 +93,7 @@ class CertificateIntegrationSpec extends ISpecBase {
       val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        post(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
+        post(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
           .willReturn(
             aResponse()
               .withStatus(Status.BAD_REQUEST)
@@ -104,14 +101,14 @@ class CertificateIntegrationSpec extends ISpecBase {
           )
       )
 
-      val result = connector.postCertificate("123", validPayload).futureValue
+      val result = connector.postCertificate(testSubscriptionId, validPayload).futureValue
 
       result.status mustBe Status.BAD_REQUEST
       result.body mustBe downstreamBody
 
       verify(
         1,
-        postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
+        postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))

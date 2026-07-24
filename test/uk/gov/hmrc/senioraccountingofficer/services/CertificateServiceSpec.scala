@@ -139,7 +139,7 @@ object CertificateServiceSpec {
   val requestId                          = "123"
   val testRequest: CertificateDpsRequest =
     CertificateDpsRequest(
-      submitterName = "Firstname Lastname",
+      submitterName = Some("Firstname Lastname"),
       saoName = "Firstname Lastname",
       saoEmail = "firstname.lastname@example.com",
       companies = List.empty

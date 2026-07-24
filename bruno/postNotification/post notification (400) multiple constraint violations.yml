@@ -1,11 +1,16 @@
 info:
   name: post notification (400) multiple constraint violations
   type: http
-  seq: 20
+  seq: 5
 
 http:
   method: POST
   url: "{{baseUrl}}/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-

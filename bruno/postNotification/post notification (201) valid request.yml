@@ -1,16 +1,20 @@
 info:
-  name: post notification (404) invalid subscriptionID
+  name: post notification (201) valid request
   type: http
-  seq: 16
+  seq: 1
 
 http:
   method: POST
   url: "{{baseUrl}}/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
       {
-        "subscriptionId": "456",
         "companies": [
           {
             "crn": "65476489",
@@ -24,12 +28,12 @@ http:
         "saos": [
           {
             "name": "Testname",
-            "fromDate": "2021-03-01",
-            "email": "testname@email.com",
-            "toDate": "2020-03-10"
+            "fromDate": "2020-03-10",
+            "email": "testname@mail.com",
+            "toDate": "2021-03-10"
           }
         ],
-        "remarks": "testremarks"
+        "remarks":"testremarks"
       }
 
 settings:

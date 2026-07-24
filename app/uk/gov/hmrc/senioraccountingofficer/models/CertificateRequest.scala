@@ -20,7 +20,6 @@ import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 
 final case class CertificateRequest(
-    subscriptionId: String,
     submitterName: Option[String],
     saoName: String,
     saoEmail: String,
@@ -36,7 +35,7 @@ object CertificateRequest {
   extension (certificateRequest: CertificateRequest) {
     def toCertificateDpsRequest: CertificateDpsRequest = {
       CertificateDpsRequest(
-        submitterName = certificateRequest.submitterName.fold(certificateRequest.saoName)(name => name),
+        submitterName = certificateRequest.submitterName,
         saoName = certificateRequest.saoName,
         saoEmail = certificateRequest.saoEmail,
         companies = certificateRequest.companies.map(_.toCertificateCompany),

@@ -16,20 +16,25 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.Status
+import play.api.http.{MimeTypes, Status}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
+import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
+import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
+import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
@@ -37,44 +42,27 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
-class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
+import java.util.UUID
+
+import CertificateControllerSpec.*
+
+class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with BeforeAndAfterEach {
 
   private val mockCertificateService = mock[CertificateService]
-  private val saoSubscriptionId      = "123"
   private def certificateUrl         = routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .overrides(
-        bind[CertificateService].toInstance(mockCertificateService)
+        bind[CertificateService].toInstance(mockCertificateService),
+        bind[IdentifierAction].to[FakeIdentifierAction]
       )
       .build()
 
-  private val validPayload: JsObject = Json.obj(
-    "subscriptionId" -> saoSubscriptionId,
-    "saoName"        -> "Firstname Lastname",
-    "saoEmail"       -> "Firstname.Lastname@example.com",
-    "companies"      -> Json.arr(
-      Json.obj(
-        "crn"                            -> generateCertificateCrn,
-        "utr"                            -> generateUtr,
-        "name"                           -> "Example Subsidiary Ltd",
-        "accPeriodEnd"                   -> "2025-03-31",
-        "status"                         -> "COMPLIANT",
-        "type"                           -> "LTD",
-        "isCorporationTaxQualified"      -> true,
-        "isVatQualified"                 -> true,
-        "isPayeQualified"                -> true,
-        "isInsurancePremiumTaxQualified" -> false,
-        "isStampDutyLandTaxQualified"    -> false,
-        "isStampDutyReserveTaxQualified" -> false,
-        "isPetroleumRevenueTaxQualified" -> false,
-        "isCustomsDutiesQualified"       -> false,
-        "isExciseDutiesQualified"        -> false,
-        "isBankLevyQualified"            -> false
-      )
-    )
-  )
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockCertificateService)
+  }
 
   private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
     route(app, request) match {
@@ -84,11 +72,13 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   private def certificateRequest(payload: String): FakeRequest[AnyContentAsText] =
     FakeRequest("POST", certificateUrl)
-      .withHeaders("Content-Type" -> "text/plain")
+      .withHeaders(
+        "Content-Type"  -> MimeTypes.JSON,
+        "correlationId" -> UUID.randomUUID().toString
+      )
       .withTextBody(payload)
 
   private def assertValidationError(payload: String, expectedError: play.api.libs.json.JsValue): Unit = {
-    reset(mockCertificateService)
 
     val result = routeResult(certificateRequest(payload))
 
@@ -99,17 +89,50 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
   "POST /certificate" should {
     "return 201 with the certificateRef when the service returns Success" in {
-      reset(mockCertificateService)
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(Success("CRT0001234567")))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
       status(result) shouldBe Status.CREATED
       contentAsJson(result) shouldBe Json.obj("certificateRef" -> "CRT0001234567")
+
+      val expectedDpsRequest =
+        CertificateDpsRequest(
+          submitterName = Some("submitterName"),
+          saoName = "saoName",
+          saoEmail = "Firstname.Lastname@example.com",
+          companies = List(
+            CertificateCompany(
+              crn = Some(crn),
+              utr = utr,
+              name = "Example Subsidiary Ltd",
+              accPeriodEnd = "2025-03-31",
+              status = "COMPLIANT",
+              `type` = "LTD",
+              isCorporationTaxQualified = true,
+              isVatQualified = true,
+              isPayeQualified = true,
+              isInsurancePremiumTaxQualified = false,
+              isStampDutyLandTaxQualified = false,
+              isStampDutyReserveTaxQualified = false,
+              isPetroleumRevenueTaxQualified = false,
+              isCustomsDutiesQualified = false,
+              isExciseDutiesQualified = false,
+              isBankLevyQualified = false,
+              qualificationStatement = None
+            )
+          ),
+          remarks = None,
+          staffPid = None,
+          customerId = None
+        )
+
+      verify(mockCertificateService, times(1)).postCertificate(meq(testSaoSubscriptionId), meq(expectedDpsRequest))(
+        using any()
+      )
     }
 
     "return 502 when the service returns MalformedResponse" in {
-      reset(mockCertificateService)
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(MalformedResponse(DPS)))
 
@@ -120,7 +143,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 500 when the service returns BadRequestFailure" in {
-      reset(mockCertificateService)
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(BadRequestFailure(DPS)))
 
@@ -131,7 +153,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 502 when the service returns InternalServerFailure" in {
-      reset(mockCertificateService)
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(InternalServerFailure(DPS)))
 
@@ -142,7 +163,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 502 when the service returns ServiceUnavailableFailure" in {
-      reset(mockCertificateService)
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(ServiceUnavailableFailure(DPS)))
 
@@ -153,7 +173,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 502 when the service returns UnknownFailure" in {
-      reset(mockCertificateService)
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(UnknownFailure(DPS, 1)))
 
@@ -218,8 +237,8 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val invalidPayload = validPayload ++ Json.obj(
         "companies" -> Json.arr(
           Json.obj(
-            "crn"                            -> generateCertificateCrn,
-            "utr"                            -> generateUtr,
+            "crn"                            -> crn,
+            "utr"                            -> utr,
             "name"                           -> "Example Subsidiary Ltd",
             "accPeriodEnd"                   -> "2025-03-31",
             "status"                         -> "COMPLIANT",
@@ -254,15 +273,47 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return BAD_REQUEST when the payload is not valid JSON" in {
-      reset(mockCertificateService)
       val request =
         FakeRequest("POST", certificateUrl)
           .withTextBody("this is not json")
-          .withHeaders("Content-Type" -> "text/plain")
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
       val result = routeResult(request)
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) should include("MALFORMED_REQUEST")
       verify(mockCertificateService, never()).postCertificate(any(), any())(using any())
     }
   }
+}
+
+object CertificateControllerSpec {
+  private val crn                    = generateCrn
+  private val utr                    = generateUtr
+  private val validPayload: JsObject = Json.obj(
+    "submitterName" -> "submitterName",
+    "saoName"       -> "saoName",
+    "saoEmail"      -> "Firstname.Lastname@example.com",
+    "companies"     -> Json.arr(
+      Json.obj(
+        "crn"                            -> crn,
+        "utr"                            -> utr,
+        "name"                           -> "Example Subsidiary Ltd",
+        "accPeriodEnd"                   -> "2025-03-31",
+        "status"                         -> "COMPLIANT",
+        "type"                           -> "LTD",
+        "isCorporationTaxQualified"      -> true,
+        "isVatQualified"                 -> true,
+        "isPayeQualified"                -> true,
+        "isInsurancePremiumTaxQualified" -> false,
+        "isStampDutyLandTaxQualified"    -> false,
+        "isStampDutyReserveTaxQualified" -> false,
+        "isPetroleumRevenueTaxQualified" -> false,
+        "isCustomsDutiesQualified"       -> false,
+        "isExciseDutiesQualified"        -> false,
+        "isBankLevyQualified"            -> false
+      )
+    )
+  )
 }

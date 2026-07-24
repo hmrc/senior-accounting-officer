@@ -16,47 +16,221 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.Mockito.*
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.Status
+import play.api.http.{MimeTypes, Status}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.domain.SaUtrGenerator
+import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerSpec.*
+import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
+import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
+import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
-import scala.util.Random
+
+import java.util.UUID
 
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockNotificationService: NotificationService = mock[NotificationService]
-  val subscriptionId                               = "123"
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .overrides(
-        bind[NotificationService].toInstance(mockNotificationService)
+        bind[NotificationService].toInstance(mockNotificationService),
+        bind[IdentifierAction].to[FakeIdentifierAction]
       )
       .build()
 
+  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
+    route(app, request) match {
+      case Some(value) => value
+      case None        => fail("Expected route to be defined")
+    }
+
+  "POST /notification" when {
+
+    "the payload is not valid JSON return 400" in {
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody("this is not json")
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.BAD_REQUEST
+      contentAsString(result) must include("MALFORMED_REQUEST")
+
+      verify(mockNotificationService, never()).postNotification(any(), any())(using any())
+    }
+
+    "NotificationService returns Success must return 200" in {
+      val mockResponse = Success("ID", true)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+//      status(result) mustBe Status.OK
+      contentAsJson(result) mustBe Json.parse("""{"notificationRef":"ID","isPdfAvailable":true}""")
+
+      val expectedDpsRequest =
+        NotificationDpsRequest(
+          companies = List(Company(Some(crn), utr, "Example Ltd", "2024-12-31", "COMPLIANT", "LTD")),
+          saos = List(
+            Sao("Firstname Lastname", Some("2024-04-01"), Some("Firstname.Lastname@example.com"), Some("2025-03-31"))
+          ),
+          remarks = Some("non-empty string"),
+          staffPID = None
+        )
+
+      verify(mockNotificationService, times(1))
+        .postNotification(meq(testSaoSubscriptionId), meq(expectedDpsRequest))(using any())
+    }
+
+    "NotificationService returns MalformedResponse must return 502" in {
+      val mockResponse = MalformedResponse(DPS)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.BAD_GATEWAY
+    }
+
+    "NotificationService returns BadRequestFailure must return 502" in {
+      val mockResponse = BadRequestFailure(DPS)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.INTERNAL_SERVER_ERROR
+    }
+
+    "NotificationService returns InternalServerFailure must return 502" in {
+      val mockResponse = InternalServerFailure(DPS)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.BAD_GATEWAY
+    }
+
+    "NotificationService returns ServiceUnavailableFailure must return 502" in {
+      val mockResponse = ServiceUnavailableFailure(DPS)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.BAD_GATEWAY
+    }
+
+    "NotificationService returns UnknownFailure must return 502" in {
+      val mockResponse = UnknownFailure(DPS, 1)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.BAD_GATEWAY
+    }
+
+    "return BAD_REQUEST when the payload does not match the schema" in {
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(invalidPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.BAD_REQUEST
+      contentAsString(result) must include("MISSING_REQUIRED_FIELD")
+    }
+
+  }
+
+}
+
+object NotificationControllerSpec {
+  private val crn = generateCrn
+  private val utr = generateUtr
+
   private val validPayload: JsObject = Json.obj(
-    "subscriptionId" -> subscriptionId,
-    "companies"      -> Json.arr(
+    "companies" -> Json.arr(
       Json.obj(
         "name"         -> "Example Ltd",
-        "utr"          -> generateUtr,
-        "crn"          -> generateCrn,
+        "utr"          -> utr,
+        "crn"          -> crn,
         "type"         -> "LTD",
         "accPeriodEnd" -> "2024-12-31",
         "status"       -> "COMPLIANT"
@@ -76,140 +250,4 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
   private val invalidPayload: JsObject = Json.obj(
     "any" -> "body"
   )
-
-  private def generateCrn = {
-    val num = Random.nextInt(1000000)
-    f"$num%08d"
-  }
-
-  private def generateUtr = {
-    val seed = Random.nextInt(1000000)
-    SaUtrGenerator(seed).nextSaUtr
-  }
-
-  private def routeResult(request: FakeRequest[AnyContentAsText]): Future[Result] =
-    route(app, request) match {
-      case Some(value) => value
-      case None        => fail("Expected route to be defined")
-    }
-
-  "POST /notification" when {
-
-    "the payload is not valid JSON return 400" in {
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody("this is not json")
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.BAD_REQUEST
-      contentAsString(result) must include("MALFORMED_REQUEST")
-    }
-
-    "NotificationService returns Success must return 200" in {
-      val mockResponse = Success("ID", true)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.OK
-      contentAsJson(result) mustBe Json.parse("""{"notificationRef":"ID","isPdfAvailable":true}""")
-    }
-
-    "NotificationService returns MalformedResponse must return 502" in {
-      val mockResponse = MalformedResponse(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.BAD_GATEWAY
-    }
-
-    "NotificationService returns BadRequestFailure must return 502" in {
-      val mockResponse = BadRequestFailure(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.INTERNAL_SERVER_ERROR
-    }
-
-    "NotificationService returns InternalServerFailure must return 502" in {
-      val mockResponse = InternalServerFailure(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.BAD_GATEWAY
-    }
-
-    "NotificationService returns ServiceUnavailableFailure must return 502" in {
-      val mockResponse = ServiceUnavailableFailure(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.BAD_GATEWAY
-    }
-
-    "NotificationService returns UnknownFailure must return 502" in {
-      val mockResponse = UnknownFailure(DPS, 1)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.BAD_GATEWAY
-    }
-
-    "return BAD_REQUEST when the payload does not match the schema" in {
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(invalidPayload.toString())
-          .withHeaders("Content-Type" -> "text/plain")
-      val result = routeResult(request)
-
-      status(result) mustBe Status.BAD_REQUEST
-      contentAsString(result) must include("MISSING_REQUIRED_FIELD")
-    }
-
-  }
-
 }

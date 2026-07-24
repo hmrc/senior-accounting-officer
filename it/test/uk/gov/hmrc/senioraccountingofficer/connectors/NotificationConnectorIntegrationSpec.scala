@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer
+package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.{HeaderNames, MimeTypes}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company, NotificationDpsRequest, Sao}
 
-class NotificationIntegrationSpec extends ISpecBase {
+class NotificationConnectorIntegrationSpec extends ISpecBase {
 
   private val appConfig = app.injector.instanceOf[AppConfig]
   private val connector = app.injector.instanceOf[NotificationConnector]
