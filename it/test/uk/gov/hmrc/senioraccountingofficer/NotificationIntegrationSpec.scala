@@ -85,7 +85,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
     "pass through a successful downstream response" in {
       stubFor(
-        post(urlEqualTo("/subscriptions/123/notifications"))
+        post(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -98,7 +98,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
+        postRequestedFor(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(requestJson))
@@ -109,7 +109,7 @@ class NotificationIntegrationSpec extends ISpecBase {
       val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        post(urlEqualTo("/subscriptions/123/notifications"))
+        post(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .willReturn(
             aResponse()
               .withStatus(400)
@@ -124,7 +124,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
+        postRequestedFor(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(requestJson))
