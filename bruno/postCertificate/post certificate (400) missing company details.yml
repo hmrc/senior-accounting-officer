@@ -1,16 +1,20 @@
 info:
   name: post certificate (400) missing company details
   type: http
-  seq: 6
+  seq: 4
 
 http:
   method: POST
   url: "{{baseUrl}}/certificate"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
       {
-        "subscriptionId": " ",
         "submitterName": "Subname",
         "saoName": "SubmitterTestName",
         "saoEmail": "test@email.com",

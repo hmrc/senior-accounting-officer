@@ -1,16 +1,20 @@
 info:
   name: post notification (201) valid multiple companies and saos details
   type: http
-  seq: 15
+  seq: 2
 
 http:
   method: POST
   url: "{{baseUrl}}/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
       {
-        "subscriptionId": "123",
         "companies": [
           {
             "crn": "11223344",

@@ -1,7 +1,7 @@
 info:
   name: put contact details (404) Invalid Id
   type: http
-  seq: 11
+  seq: 4
 
 http:
   method: PUT

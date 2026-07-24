@@ -20,7 +20,7 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 
 final case class CertificateDpsRequest(
-    submitterName: String,
+    submitterName: Option[String],
     saoName: String,
     saoEmail: String,
     companies: List[CertificateCompany],

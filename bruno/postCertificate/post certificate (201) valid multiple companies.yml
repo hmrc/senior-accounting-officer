@@ -1,16 +1,20 @@
 info:
   name: post certificate (201) valid multiple companies
   type: http
-  seq: 2
+  seq: 1
 
 http:
   method: POST
   url: "{{baseUrl}}/certificate"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
       {
-        "subscriptionId": "123",
         "submitterName": "Submittername",
         "saoName": "SubmitterTestName",
         "saoEmail": "test@email.com",
