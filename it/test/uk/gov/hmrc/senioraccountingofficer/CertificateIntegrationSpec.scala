@@ -72,7 +72,7 @@ class CertificateIntegrationSpec extends ISpecBase {
   "POST /certificate" must {
     "pass through a successful downstream response" in {
       stubFor(
-        post(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
+        post(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
           .willReturn(
             aResponse()
               .withStatus(Status.CREATED)
@@ -85,7 +85,7 @@ class CertificateIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
+        postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
@@ -96,7 +96,7 @@ class CertificateIntegrationSpec extends ISpecBase {
       val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        post(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
+        post(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
           .willReturn(
             aResponse()
               .withStatus(Status.BAD_REQUEST)
@@ -111,7 +111,7 @@ class CertificateIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo(s"/subscriptions/$saoSubscriptionId/certificates"))
+        postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$saoSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(validPayload))
