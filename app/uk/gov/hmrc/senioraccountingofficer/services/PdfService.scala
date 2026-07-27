@@ -41,7 +41,7 @@ class PdfService @Inject() (
     openHtmlToPdfService.builderFor(html).asSource
   }
 
-  def generateCertificatePdf(certificate: Certificate): Unit = {
+  def generateCertificatePdf(certificate: Certificate): Source[ByteString, ?] = {
     val html = certificatePdfTemplate(certificate).toString
     openHtmlToPdfService.builderFor(html).asSource
   }
