@@ -21,7 +21,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.{Certificate, TaxRegimes}
 
 final case class CertificateDpsRequest(
-    submitterName: String,
+    submitterName: Option[String],
     saoName: String,
     saoEmail: String,
     companies: List[CertificateCompany],

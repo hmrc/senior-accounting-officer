@@ -26,10 +26,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 import java.time.LocalDate
 
 class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues {
-  val subscriptionId = "example subscription id"
 
   val certificateRequestWithSubmitterName: CertificateRequest = CertificateRequest(
-    subscriptionId = subscriptionId,
     submitterName = Some(submitterName),
     saoName = saoName,
     saoEmail = email,
@@ -60,7 +58,6 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
   )
 
   val certificateRequestWithoutSubmitterName: CertificateRequest = CertificateRequest(
-    subscriptionId = subscriptionId,
     submitterName = None,
     saoName = saoName,
     saoEmail = email,
@@ -91,7 +88,6 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
   )
 
   val certificateRequestWithOptionalProperties: CertificateRequest = CertificateRequest(
-    subscriptionId = subscriptionId,
     submitterName = Some(submitterName),
     saoName = saoName,
     saoEmail = email,
@@ -122,7 +118,6 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
   )
 
   val certificateRequestWithoutOptionalProperties: CertificateRequest = CertificateRequest(
-    subscriptionId = subscriptionId,
     submitterName = None,
     saoName = saoName,
     saoEmail = email,
@@ -157,7 +152,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
       val sut = certificateRequestWithSubmitterName
 
       val expected = CertificateDpsRequest(
-        submitterName = submitterName,
+        submitterName = Some(submitterName),
         saoName = saoName,
         saoEmail = email,
         staffPid = None,
@@ -189,11 +184,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
       sut.toCertificateDpsRequest shouldBe expected
     }
 
-    "map from CertificateRequest to CertificateDpsRequest when there is not a submitterName given, the SAO name should be mapped" in {
+    "map from CertificateRequest to CertificateDpsRequest when there is not a submitterName given" in {
       val sut = certificateRequestWithoutSubmitterName
 
       val expected = CertificateDpsRequest(
-        submitterName = saoName,
+        submitterName = None,
         saoName = saoName,
         saoEmail = email,
         staffPid = None,
@@ -225,11 +220,11 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
       sut.toCertificateDpsRequest shouldBe expected
     }
 
-    "map from CertificateRequest to CertificateDpsRequest when all optional properties are not given, the SAO name should be mapped" in {
+    "map from CertificateRequest to CertificateDpsRequest when all optional properties are not given" in {
       val sut = certificateRequestWithoutOptionalProperties
 
       val expected = CertificateDpsRequest(
-        submitterName = saoName,
+        submitterName = None,
         saoName = saoName,
         saoEmail = email,
         staffPid = None,
@@ -265,7 +260,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
       val sut = certificateRequestWithOptionalProperties
 
       val expected = CertificateDpsRequest(
-        submitterName = submitterName,
+        submitterName = Some(submitterName),
         saoName = saoName,
         saoEmail = email,
         staffPid = Some(staffPid),
@@ -300,7 +295,6 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers with OptionValues
 }
 
 object CertificateRequestSpec {
-  val subscriptionId         = "example subscription id"
   val submitterName          = "example submitter name"
   val remarks                = "example additional information"
   val qualificationStatement = "example qualification statement"

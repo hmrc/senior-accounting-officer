@@ -21,12 +21,9 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import play.api.libs.json.{Json, __}
-import uk.gov.hmrc.domain.SaUtrGenerator
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-
-import scala.util.Random
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with OptionValues {
 
@@ -35,7 +32,6 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
 
   private val validNotification =
     s"""{
-      | "subscriptionId": "123",
       |  "companies": [
       |    {
       |      "name": "Example Ltd",
@@ -56,16 +52,6 @@ class JsonErrorHandlingNotificationSpec extends AnyWordSpec with Matchers with O
       |    ],
       |  "remarks": "non-empty string"
       |}""".stripMargin
-
-  private def generateCrn = {
-    val num = Random.nextInt(1000000)
-    f"$num%08d"
-  }
-
-  private def generateUtr = {
-    val seed = Random.nextInt(1000000)
-    SaUtrGenerator(seed).nextSaUtr
-  }
 
   "Notification validation" when {
 

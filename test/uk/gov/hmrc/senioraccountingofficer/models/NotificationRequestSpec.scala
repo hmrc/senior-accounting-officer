@@ -25,11 +25,9 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, No
 import java.time.LocalDate
 
 class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValues {
-  val subscriptionId = "example subscription id"
   "toNotificationDpsRequest" should {
     "map from NotificationRequest to NotificationDpsRequest" in {
       val sut = NotificationRequest(
-        subscriptionId = subscriptionId,
         companies = List(
           Company(
             crn = Some(crn),

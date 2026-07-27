@@ -23,23 +23,20 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCertificateCrn, generateUtr}
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn, generateUtr}
 
 class JsonErrorHandlingCertificateSpec extends AnyWordSpec with Matchers with OptionValues {
 
   private def certificateErrors(json: String): Seq[ApiError] =
     JsonErrorHandling.Validators.validateCertificate(Json.parse(json))
 
-  private val saoSubscriptionId = "123"
-
   private val validCertificate = Json
     .obj(
-      "subscriptionId" -> saoSubscriptionId,
-      "saoName"        -> "Firstname Lastname",
-      "saoEmail"       -> "Firstname.Lastname@example.com",
-      "companies"      -> Json.arr(
+      "saoName"   -> "Firstname Lastname",
+      "saoEmail"  -> "Firstname.Lastname@example.com",
+      "companies" -> Json.arr(
         Json.obj(
-          "crn"                            -> generateCertificateCrn,
+          "crn"                            -> generateCrn,
           "utr"                            -> generateUtr,
           "name"                           -> "Example Subsidiary Ltd",
           "accPeriodEnd"                   -> "2025-03-31",

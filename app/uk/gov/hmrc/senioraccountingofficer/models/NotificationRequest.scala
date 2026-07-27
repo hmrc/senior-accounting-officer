@@ -20,7 +20,6 @@ import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 
 final case class NotificationRequest(
-    subscriptionId: String,
     companies: List[Company],
     saos: List[Sao],
     remarks: Option[String]

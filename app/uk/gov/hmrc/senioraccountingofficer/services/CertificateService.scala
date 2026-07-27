@@ -20,6 +20,9 @@ import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Path
+import uk.gov.hmrc.objectstore.client.play.Implicits.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, CertificateDpsResponse}
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
@@ -28,11 +31,13 @@ import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCerti
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 import javax.inject.Inject
 
 class CertificateService @Inject() (
-    certificateConnector: CertificateConnector
+    certificateConnector: CertificateConnector,
+    objectStoreClient: PlayObjectStoreClient
 )(using ExecutionContext) {
 
   def postCertificate(subscriptionId: String, request: CertificateDpsRequest)(using
@@ -40,6 +45,7 @@ class CertificateService @Inject() (
   ): Future[PostCertificateResponse] = {
     for {
       dpsResult <- postCertificateDps(subscriptionId, request)
+      _         <- generateAndUploadPdf(dpsResult.certificateRef)
     } yield Success(certificateRef = dpsResult.certificateRef)
   }.merge
 
@@ -55,6 +61,24 @@ class CertificateService @Inject() (
       case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(ServiceUnavailableFailure(DPS))
       case HttpResponse(status, _, _)                => Left(UnknownFailure(DPS, status))
     })
+  }
+
+  // TODO proper pdf generation in SAOD-833
+  private def generateAndUploadPdf(certificateReference: String)(using
+      HeaderCarrier
+  ): EitherT[Future, PostCertificateResponse with Failure, Boolean] = {
+    EitherT.right(
+      objectStoreClient
+        .putObject(
+          path = Path
+            .Directory(s"/senior-accounting-officer/$certificateReference/")
+            .file(s"${certificateReference}_SAO_Certificate.pdf"),
+          content = "dummy file content",
+          owner = "senior-accounting-officer"
+        )
+        .map { _ => true }
+        .recover { case NonFatal(_) => false }
+    )
   }
 }
 

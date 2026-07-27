@@ -22,6 +22,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
@@ -36,47 +37,49 @@ import javax.inject.Inject
 
 class CertificateController @Inject() (
     cc: ControllerComponents,
-    certificateService: CertificateService
+    certificateService: CertificateService,
+    identify: IdentifierAction,
+    ensureCorrelationId: EnsureCorrelationIdAction
 )(using ExecutionContext)
     extends BackendController(cc)
     with Logging {
 
-  def postCertificate(): Action[String] = Action.async(parse.tolerantText) { implicit request =>
-    given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  def postCertificate(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
+    implicit request =>
+      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-    JsonErrorHandling.parseJson(request.body) match {
-      case Right(json) =>
-        val errors = JsonErrorHandling.Validators.validateCertificate(json)
-        if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
-        else {
-          val subscriptionId     = (json \ "subscriptionId").as[String]
-          val certificateRequest = json.as[CertificateRequest]
-          val dpsRequest         = certificateRequest.toCertificateDpsRequest
+      JsonErrorHandling.parseJson(request.body) match {
+        case Right(json) =>
+          val errors = JsonErrorHandling.Validators.validateCertificate(json)
+          if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
+          else {
+            val certificateRequest = json.as[CertificateRequest]
+            val dpsRequest         = certificateRequest.toCertificateDpsRequest
 
-          certificateService
-            .postCertificate(subscriptionId, dpsRequest)
-            .map {
-              case Success(certificateRef) =>
-                Created(Json.toJson(CertificateResponse(certificateRef)))
-              case MalformedResponse(downstreamService) =>
-                logger.warn(s"[Certificate][$downstreamService][MalformedResponse]")
-                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-              case BadRequestFailure(downstreamService) =>
-                logger.warn(s"[Certificate][$downstreamService][BAD_REQUEST]")
-                InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-              case InternalServerFailure(downstreamService) =>
-                logger.warn(s"[Certificate][$downstreamService][INTERNAL_SERVER_ERROR]")
-                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
-              case ServiceUnavailableFailure(downstreamService) =>
-                logger.warn(s"[Certificate][$downstreamService][SERVICE_UNAVAILABLE]")
-                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
-              case UnknownFailure(downstreamService, status) =>
-                logger.warn(s"[Certificate][$downstreamService][Unknown]status=$status")
-                BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-            }
-        }
-      case Left(errorResult) =>
-        Future.successful(errorResult)
-    }
+            certificateService
+              .postCertificate(request.saoSubscriptionId, dpsRequest)
+              .map {
+                case Success(certificateRef) =>
+                  Created(Json.toJson(CertificateResponse(certificateRef)))
+                case MalformedResponse(downstreamService) =>
+                  logger.warn(s"[Certificate][$downstreamService][MalformedResponse]")
+                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+                case BadRequestFailure(downstreamService) =>
+                  logger.warn(s"[Certificate][$downstreamService][BAD_REQUEST]")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+                case InternalServerFailure(downstreamService) =>
+                  logger.warn(s"[Certificate][$downstreamService][INTERNAL_SERVER_ERROR]")
+                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
+                case ServiceUnavailableFailure(downstreamService) =>
+                  logger.warn(s"[Certificate][$downstreamService][SERVICE_UNAVAILABLE]")
+                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
+                case UnknownFailure(downstreamService, status) =>
+                  logger.warn(s"[Certificate][$downstreamService][Unknown]status=$status")
+                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+              }
+          }
+        case Left(errorResult) =>
+          Future.successful(errorResult)
+      }
   }
 }

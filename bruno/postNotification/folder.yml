@@ -1,7 +1,7 @@
 info:
-  name: getSubscription
+  name: postNotification
   type: folder
-  seq: 14
+  seq: 16
 
 request:
   auth: inherit

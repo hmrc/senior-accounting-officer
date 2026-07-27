@@ -1,19 +1,23 @@
 info:
   name: post notification (400) missing company and sao details
   type: http
-  seq: 19
+  seq: 4
 
 http:
   method: POST
   url: "{{baseUrl}}/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
       {
-        "subscriptionId": "123",
         "companies": [],
         "saos": [],
-      "remarks": "testremarks"
+        "remarks": "testremarks"
       }
 
 settings:

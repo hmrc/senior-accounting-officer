@@ -1,7 +1,7 @@
 info:
   name: put subscriptions (400) multiple constraint violations
   type: http
-  seq: 26
+  seq: 12
 
 http:
   method: PUT

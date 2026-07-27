@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer
+package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.{HeaderNames, MimeTypes}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company, NotificationDpsRequest, Sao}
 
-class NotificationIntegrationSpec extends ISpecBase {
+class NotificationConnectorIntegrationSpec extends ISpecBase {
 
   private val appConfig = app.injector.instanceOf[AppConfig]
   private val connector = app.injector.instanceOf[NotificationConnector]
@@ -85,7 +84,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
     "pass through a successful downstream response" in {
       stubFor(
-        post(urlEqualTo("/subscriptions/123/notifications"))
+        post(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -98,7 +97,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
+        postRequestedFor(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(requestJson))
@@ -109,7 +108,7 @@ class NotificationIntegrationSpec extends ISpecBase {
       val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
       stubFor(
-        post(urlEqualTo("/subscriptions/123/notifications"))
+        post(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .willReturn(
             aResponse()
               .withStatus(400)
@@ -124,7 +123,7 @@ class NotificationIntegrationSpec extends ISpecBase {
 
       verify(
         1,
-        postRequestedFor(urlEqualTo("/subscriptions/123/notifications"))
+        postRequestedFor(urlEqualTo("/dapm/subscriptions/123/notifications"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
           .withRequestBody(equalToJson(requestJson))
