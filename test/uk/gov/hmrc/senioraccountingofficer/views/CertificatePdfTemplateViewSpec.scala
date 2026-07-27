@@ -108,7 +108,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       val expectedSaoDetailsData = List(
         certificateData.saoName,
         certificateData.saoEmail,
-        certificateData.submitterName,
+        certificateData.submitterName.get,
         certificateData.submissionDate,
         certificateData.submissionId
       )

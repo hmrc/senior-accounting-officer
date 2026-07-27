@@ -16,12 +16,23 @@
 
 package services
 
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
+import org.apache.pdfbox.rendering.PDFRenderer
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{times, verify, when}
+import org.mockito.internal.matchers.Any
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.twirl.api.{Html, HtmlFormat}
+import uk.gov.hmrc.senioraccountingofficer.PdfTestData
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.{Notification, asSource}
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
@@ -32,25 +43,31 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
   given ExecutionContext         = ExecutionContext.global
   given actorSystem: ActorSystem = ActorSystem()
 
-  val openHtmlToPdfService: OpenHtmlToPdfService   = OpenHtmlToPdfService()
-  val notificationPdfTemplate: NotificationPdfView = app.injector.instanceOf[NotificationPdfView]
-  val certificatePdfTemplate: CertificatePdfView   = CertificatePdfView()
+  val mockOpenHtmlToPdfService: OpenHtmlToPdfService   = mock[OpenHtmlToPdfService]
+  val mockNotificationPdfTemplate: NotificationPdfView = mock[NotificationPdfView]
+  val mockCertificatePdfTemplate: CertificatePdfView   = mock[CertificatePdfView]
+  val abcv: PdfRendererBuilder = mock[PdfRendererBuilder]
 
-  val service: PdfService = PdfService(openHtmlToPdfService, notificationPdfTemplate, certificatePdfTemplate)
+  val service: PdfService = PdfService(mockOpenHtmlToPdfService, mockNotificationPdfTemplate, mockCertificatePdfTemplate)
 
-//  val notification: Notification = PdfTestData.testNotificationData(2, 1)
-//  val doc: Document              = Jsoup.parse(notificationPdfTemplate(notification).body)
 
-//  "PdfService" must {
-//    "check notification pdf structure" in {
-//      doc.select("h1").size() mustBe 1
-//      doc.select("h1").text() mustBe notificationHeader
-//
-//    }
-  "return pdf content for notification" in {
 
-//    service.generateNotificationPdf(notification)
-//      println(res)
-  }
+
+  "PdfService" must {
+    "return Source object after NotificationPdf generation" in {
+      val notification = PdfTestData.testNotificationData(3, None)
+//      val a: Source[ByteString, ?] = Source[ByteString, ?]
+      when(mockNotificationPdfTemplate.apply(any())).thenReturn(Html("<p>a</p>"))
+      when(mockNotificationPdfTemplate.toString).thenReturn("a")
+      when(mockOpenHtmlToPdfService.builderFor(any())).thenReturn(any[PdfRendererBuilder])
+      when(abcv.asSource).thenReturn(any[Source[ByteString, ?]])
+      
+      val res = service.generateNotificationPdf(notification)
+
+      verify(mockOpenHtmlToPdfService, times(1)).builderFor(any())
+      res mustBe Source[ByteString, ?]
+
+    }
+    }
 
 }

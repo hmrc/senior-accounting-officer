@@ -25,20 +25,18 @@ import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
+import java.io.{PipedInputStream, PipedOutputStream}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
+import javax.inject.Inject
 
-import java.io.*
-import javax.inject.{Inject, Singleton}
-
-@Singleton
 class PdfService @Inject() (
     openHtmlToPdfService: OpenHtmlToPdfService,
     notificationPdfTemplate: NotificationPdfView,
     certificatePdfTemplate: CertificatePdfView
 )(implicit val ec: ExecutionContext, actorSystem: ActorSystem) {
 
-  def generateNotificationPdf(notification: Notification): Unit = {
+  def generateNotificationPdf(notification: Notification): Source[ByteString, ?] = {
     val html = notificationPdfTemplate(notification).toString
     openHtmlToPdfService.builderFor(html).asSource
   }
@@ -73,6 +71,7 @@ object PdfService {
         qualifiedRegimes: TaxRegimes = TaxRegimes(),
         additionalInformation: Option[String] = None
     )
+
     object Row {
       extension (row: Row) {
         def qualifiedRegimesAsText: String = {

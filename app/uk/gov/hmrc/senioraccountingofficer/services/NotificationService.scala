@@ -17,6 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import cats.data.EitherT
+import org.apache.pekko.actor.ActorSystem
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -32,20 +33,20 @@ import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNoti
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
-
 import javax.inject.Inject
 
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector,
-    objectStoreClient: PlayObjectStoreClient
-)(using ExecutionContext) {
+    objectStoreClient: PlayObjectStoreClient,
+    pdfService: PdfService
+)(using ExecutionContext, ActorSystem) {
 
   def postNotification(subscriptionId: String, request: NotificationDpsRequest)(using
       HeaderCarrier
   ): Future[PostNotificationResponse] = {
     for {
       dpsResult      <- postNotificationDps(subscriptionId, request)
-      isPdfAvailable <- generateAndUploadPdf(dpsResult.notificationRef)
+      isPdfAvailable <- generateAndUploadPdf(dpsResult.notificationRef, request)
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = isPdfAvailable)
   }.merge
 
@@ -64,7 +65,7 @@ class NotificationService @Inject() (
   }
 
   // TODO proper pdf generation
-  private def generateAndUploadPdf(notificationReference: String)(using
+  private def generateAndUploadPdf(notificationReference: String, request: NotificationDpsRequest)(using
       HeaderCarrier
   ): EitherT[Future, PostNotificationResponse with Failure, Boolean] = {
     EitherT.right(
@@ -73,7 +74,7 @@ class NotificationService @Inject() (
           path = Path
             .Directory(s"/senior-accounting-officer/$notificationReference/")
             .file(s"${notificationReference}_SAO_Notification.pdf"),
-          content = "dummy file content",
+          content = pdfService.generateNotificationPdf(NotificationDpsRequest.toNotification(request)),
           owner = "senior-accounting-officer"
         )
         .map { _ => true }

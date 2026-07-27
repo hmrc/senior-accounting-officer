@@ -17,6 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.{Notification, SaoTenure}
 
 final case class NotificationDpsRequest(
     companies: List[Company],
@@ -43,6 +44,37 @@ final case class Sao(
 
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
+  
+  def toNotification(request: NotificationDpsRequest): Notification = {
+    val companies = request.companies.map(company => {
+
+      val `type`: "Plc" | "Ltd" = company.`type` match {
+        case "Plc" => "Plc"
+        case "Ltd" => "Ltd"
+        case _ => throw Exception(s"could not parse company type into 'Plc' or 'Ltd', found ${company.`type`}")
+      }
+      val status: "Active" | "Dormant" | "Administration" | "Liquidation" = company.status match {
+        case "Active" => "Active"
+        case "Dormant" => "Dormant"
+        case "Administration" => "Administration"
+        case "Liquidation" => "Liquidation"
+        case _ => throw Exception(s"could not parse company status into 'Active', 'Dormant', 'Administration', or 'Liquidation, found ${company.status}")
+      }
+      
+      Notification.Row(
+        companyName = company.name, utr = company.utr, crn = company.crn.getOrElse(""), companyType = `type`, status = status, financialYearEndDate = company.accPeriodEnd)
+    })
+    val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
+    Notification(
+     companyName = "test company",
+      financialYearEndDate = "test date",
+      submissionDate = "sub date",
+      submissionId = "request.staffPID",
+      saoHistory = saos,
+      companies = companies,
+      additionalInformation = request.remarks
+    )
+  }
 }
 
 object Company {

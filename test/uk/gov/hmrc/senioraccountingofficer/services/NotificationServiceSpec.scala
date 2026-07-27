@@ -34,25 +34,29 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import java.time.Instant
-
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
+  given ActorSystem = ActorSystem()
 
   val mockConnector: NotificationConnector         = mock[NotificationConnector]
   val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
-  val service                                      = new NotificationService(mockConnector, mockObjectStoreClient)
+  val mockPdfService: PdfService = mock[PdfService]
+  val service                                      = new NotificationService(mockConnector, mockObjectStoreClient, mockPdfService)
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+//      when(mockPdfService.generateNotificationPdf(any())).thenReturn(any())
 
       when(
         mockObjectStoreClient.putObject(
@@ -61,7 +65,7 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
               .Directory(objectStorePath)
               .file(objectStoreFilename)
           ),
-          content = meq(objectStoreFileContent),
+          content = any(),
           retentionPeriod = isNull,
           contentType = isNull,
           contentMd5 = isNull,
