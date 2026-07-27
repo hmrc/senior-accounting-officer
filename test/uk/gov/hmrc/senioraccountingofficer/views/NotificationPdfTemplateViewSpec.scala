@@ -52,7 +52,6 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
     "check meta tags contains content" in {
       metaTags.foreach((name, expectedContent) => {
         val metaTag = doc.selectFirst(s"""meta[name="$name"]""")
-        metaTag mustNot be(null)
         metaTag.attr("content") mustBe expectedContent
       })
     }
@@ -218,14 +217,14 @@ object NotificationPdfTemplateViewSpec {
   val bookmarkHrefs: List[String] =
     List("#company-details", "#contact-details", "#additional-information", "#companies-list")
 
-  val notificationHeader = "Notification submission record"
-  val pageTitle = "Senior Accounting Officer Notification submission record"
+  val notificationHeader              = "Notification submission record"
+  val pageTitle                       = "Senior Accounting Officer Notification submission record"
   val metaTags: Seq[(String, String)] = Seq(
     ("author", "HMRC forms service"),
     ("subject", "SAO notification submission record"),
     ("Creator", "HMRC forms service")
   )
-  val paragraph1         =
+  val paragraph1 =
     "This document is a record of the information submitted to HMRC through the Digital SAO service at the time of submission. It includes the SAO's name, the dates they held the role during the notification period, contact details recorded for service updates and compliance purposes, and the information uploaded in the submission template for the notification."
   val subheadings: Seq[String] =
     Seq("Submission details", "Senior Accounting Officer details", "Additional information", "List of companies")

@@ -72,7 +72,6 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
     "check meta tags contains content" in {
       metaTags.foreach((name, expectedContent) => {
         val metaTag = doc.selectFirst(s"""meta[name="$name"]""")
-        metaTag mustNot be(null)
         metaTag.attr("content") mustBe expectedContent
       })
     }
@@ -363,14 +362,14 @@ object CertificatePdfTemplateViewSpec {
   val bookmarkHrefs: List[String] =
     List("#submission-details", "#additional-information", "#qualified-certificates", "#unqualified-certificates")
 
-  val certificateHeader = "Certificate submission record"
-  val pageTitle = "Senior Accounting Officer Certificate submission record"
+  val certificateHeader               = "Certificate submission record"
+  val pageTitle                       = "Senior Accounting Officer Certificate submission record"
   val metaTags: Seq[(String, String)] = Seq(
     ("author", "HMRC forms service"),
     ("subject", "SAO notification submission record"),
     ("Creator", "HMRC forms service")
   )
-  val paragraph1        =
+  val paragraph1 =
     "This document records the information submitted to HMRC through the Digital SAO service at the time of submission, including the SAO's name as it appears on the certificate, the declaration made by the SAO or their authorised representative, the certificate type (unqualified or qualified), and the group's tax accounting arrangements."
   val subheadings: Seq[String] =
     Seq(
