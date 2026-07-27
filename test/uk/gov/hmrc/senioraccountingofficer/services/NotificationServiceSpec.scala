@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
@@ -42,7 +43,6 @@ import java.time.Instant
 
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
-import org.apache.pekko.NotUsed
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 

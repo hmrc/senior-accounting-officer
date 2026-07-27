@@ -65,7 +65,6 @@ class NotificationService @Inject() (
     })
   }
 
-  // TODO proper pdf generation
   private def generateAndUploadPdf(notificationReference: String, request: NotificationDpsRequest)(using
       HeaderCarrier
   ): EitherT[Future, PostNotificationResponse with Failure, Boolean] = {
