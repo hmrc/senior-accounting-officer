@@ -77,7 +77,7 @@ object CertificateDpsRequest {
     Certificate(
       saoName = request.saoName,
       saoEmail = request.saoEmail,
-      submitterName = Some(request.submitterName),
+      submitterName = Some(request.submitterName.getOrElse("")),
       submissionDate = "date",
       submissionId = request.staffPid.getOrElse(""),
       companies = companies,

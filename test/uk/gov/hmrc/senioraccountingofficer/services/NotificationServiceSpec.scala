@@ -38,8 +38,6 @@ import java.time.Instant
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.scaladsl.Source
-import org.apache.pekko.util.ByteString
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
@@ -56,7 +54,7 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-//      when(mockPdfService.generateNotificationPdf(any())).thenReturn(any())
+      when(mockPdfService.generateNotificationPdf(any())).thenReturn(any())
 
       when(
         mockObjectStoreClient.putObject(
