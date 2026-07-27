@@ -44,6 +44,19 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
   val doc: Document                                = Jsoup.parse(notificationPdfTemplate(notificationData).body)
 
   "NotificationPdfView" must {
+
+    "must generate a pdf with the correct title" in {
+      doc.title mustBe pageTitle
+    }
+
+    "check meta tags contains content" in {
+      metaTags.foreach((name, expectedContent) => {
+        val metaTag = doc.selectFirst(s"""meta[name="$name"]""")
+        metaTag mustNot be(null)
+        metaTag.attr("content") mustBe expectedContent
+      })
+    }
+
     "display the logo container section of the pdf view" in {
       doc.logoText.text mustBe logoText
       doc.logo.eachAttr("src").get(0) mustBe imgPath
@@ -206,6 +219,12 @@ object NotificationPdfTemplateViewSpec {
     List("#company-details", "#contact-details", "#additional-information", "#companies-list")
 
   val notificationHeader = "Notification submission record"
+  val pageTitle = "Senior Accounting Officer Notification submission record"
+  val metaTags: Seq[(String, String)] = Seq(
+    ("author", "HMRC forms service"),
+    ("subject", "SAO notification submission record"),
+    ("Creator", "HMRC forms service")
+  )
   val paragraph1         =
     "This document is a record of the information submitted to HMRC through the Digital SAO service at the time of submission. It includes the SAO's name, the dates they held the role during the notification period, contact details recorded for service updates and compliance purposes, and the information uploaded in the submission template for the notification."
   val subheadings: Seq[String] =
