@@ -33,6 +33,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNoti
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
+
 import javax.inject.Inject
 
 class NotificationService @Inject() (

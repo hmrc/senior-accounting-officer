@@ -43,15 +43,16 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
   val mockOpenHtmlToPdfService: OpenHtmlToPdfService   = mock[OpenHtmlToPdfService]
   val mockNotificationPdfTemplate: NotificationPdfView = mock[NotificationPdfView]
   val mockCertificatePdfTemplate: CertificatePdfView   = mock[CertificatePdfView]
-  val mockPdfRendererBuilder: PdfRendererBuilder = mock[PdfRendererBuilder]
+  val mockPdfRendererBuilder: PdfRendererBuilder       = mock[PdfRendererBuilder]
 
-  val service: PdfService = PdfService(mockOpenHtmlToPdfService, mockNotificationPdfTemplate, mockCertificatePdfTemplate)
+  val service: PdfService =
+    PdfService(mockOpenHtmlToPdfService, mockNotificationPdfTemplate, mockCertificatePdfTemplate)
 
   "PdfService" must {
     "return Source object after Notification Pdf generation" in {
       val notification = PdfTestData.testNotificationData(3, None)
-      val txt = "notification"
-      val html = s"<p>$txt</p>"
+      val txt          = "notification"
+      val html         = s"<p>$txt</p>"
       when(mockNotificationPdfTemplate.apply(any())).thenReturn(Html(html))
       when(mockNotificationPdfTemplate.toString).thenReturn(txt)
       when(mockOpenHtmlToPdfService.builderFor(txt)).thenReturn(mockPdfRendererBuilder)
@@ -63,8 +64,8 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
 
     "return Source object after Certificate Pdf generation" in {
       val certificate = PdfTestData.testCertificateData(3, None, None)
-      val txt = "certificate"
-      val html = s"<p>$txt</p>"
+      val txt         = "certificate"
+      val html        = s"<p>$txt</p>"
       when(mockCertificatePdfTemplate.apply(any())).thenReturn(Html(html))
       when(mockCertificatePdfTemplate.toString).thenReturn(txt)
       when(mockOpenHtmlToPdfService.builderFor(txt)).thenReturn(mockPdfRendererBuilder)

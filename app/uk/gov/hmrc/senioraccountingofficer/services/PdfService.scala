@@ -25,9 +25,10 @@ import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
-import java.io.{PipedInputStream, PipedOutputStream}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
+
+import java.io.{PipedInputStream, PipedOutputStream}
 import javax.inject.Inject
 
 class PdfService @Inject() (
