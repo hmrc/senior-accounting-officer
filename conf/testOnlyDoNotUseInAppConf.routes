@@ -15,3 +15,5 @@
 GET        /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)
 POST       /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)
 PUT        /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)
+
+GET        /test-only/documentum-package/:submissionId/:fileName      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.DocumentumPackageController.download(submissionId, fileName)

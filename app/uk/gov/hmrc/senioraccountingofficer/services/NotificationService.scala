@@ -17,42 +17,35 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import cats.data.EitherT
-import org.apache.pekko.actor.ActorSystem
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.play.Implicits.*
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.control.NonFatal
 
 import javax.inject.Inject
 
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector,
-    objectStoreClient: PlayObjectStoreClient,
+    documentumPackageService: DocumentumPackageService,
     pdfService: PdfService
-)(using ExecutionContext, ActorSystem) {
+)(using ExecutionContext) {
 
   def postNotification(subscriptionId: String, request: NotificationDpsRequest)(using
       HeaderCarrier
   ): Future[PostNotificationResponse] = {
     for {
-      dpsResult      <- postNotificationDps(subscriptionId, request)
-      isPdfAvailable <- generateAndUploadPdf(
-        dpsResult.notificationRef,
-        request,
-        "company Name"
-      ) // TO-DO: "company name" must be replaced by the response of the subscription API
-    } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = isPdfAvailable)
+      dpsResult       <- postNotificationDps(subscriptionId, request)
+      documentPackage <- packageAndSubmitDocumentumFile(subscriptionId, dpsResult.notificationRef, request)
+    } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
   }.merge
 
   private def postNotificationDps(subscriptionId: String, request: NotificationDpsRequest)(using
@@ -69,24 +62,21 @@ class NotificationService @Inject() (
     })
   }
 
-  private def generateAndUploadPdf(notificationReference: String, request: NotificationDpsRequest, companyName: String)(
-      using HeaderCarrier
-  ): EitherT[Future, PostNotificationResponse with Failure, Boolean] = {
-    EitherT.right(
-      objectStoreClient
-        .putObject(
-          path = Path
-            .Directory(s"/senior-accounting-officer/$notificationReference/")
-            .file(s"${notificationReference}_SAO_Notification.pdf"),
-          content = pdfService.generateNotificationPdf(
-            NotificationDpsRequest.toNotification(notificationReference, request, companyName)
-          ),
-          owner = "senior-accounting-officer"
+  private def packageAndSubmitDocumentumFile(
+      subscriptionId: String,
+      notificationReference: String,
+      request: NotificationDpsRequest
+  )(using
+      HeaderCarrier
+  ) =
+    EitherT.right[PostNotificationResponse with Failure](
+      documentumPackageService.packageAndSubmit(
+        DocumentumPackageContext.notification(notificationReference, subscriptionId, request),
+        pdfService.generateNotificationPdf(
+          NotificationDpsRequest.toNotification(notificationReference, request, "company Name")
         )
-        .map { _ => true }
-        .recover { case NonFatal(_) => false }
+      )
     )
-  }
 }
 
 object NotificationService {

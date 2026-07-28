@@ -17,37 +17,34 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import cats.data.EitherT
-import org.apache.pekko.actor.ActorSystem
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.play.Implicits.*
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, CertificateDpsResponse}
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.control.NonFatal
 
 import javax.inject.Inject
 
 class CertificateService @Inject() (
     certificateConnector: CertificateConnector,
-    objectStoreClient: PlayObjectStoreClient,
+    documentumPackageService: DocumentumPackageService,
     pdfService: PdfService
-)(using ExecutionContext, ActorSystem) {
+)(using ExecutionContext) {
 
   def postCertificate(subscriptionId: String, request: CertificateDpsRequest)(using
       HeaderCarrier
   ): Future[PostCertificateResponse] = {
     for {
       dpsResult <- postCertificateDps(subscriptionId, request)
-      _         <- generateAndUploadPdf(dpsResult.certificateRef, request)
+      _         <- packageAndSubmitDocumentumFile(subscriptionId, dpsResult.certificateRef, request)
     } yield Success(certificateRef = dpsResult.certificateRef)
   }.merge
 
@@ -65,22 +62,19 @@ class CertificateService @Inject() (
     })
   }
 
-  private def generateAndUploadPdf(certificateReference: String, request: CertificateDpsRequest)(using
+  private def packageAndSubmitDocumentumFile(
+      subscriptionId: String,
+      certificateReference: String,
+      request: CertificateDpsRequest
+  )(using
       HeaderCarrier
-  ): EitherT[Future, PostCertificateResponse with Failure, Boolean] = {
-    EitherT.right(
-      objectStoreClient
-        .putObject(
-          path = Path
-            .Directory(s"/senior-accounting-officer/$certificateReference/")
-            .file(s"${certificateReference}_SAO_Certificate.pdf"),
-          content = pdfService.generateCertificatePdf(CertificateDpsRequest.toCertificate(request)),
-          owner = "senior-accounting-officer"
-        )
-        .map { _ => true }
-        .recover { case NonFatal(_) => false }
+  ) =
+    EitherT.right[PostCertificateResponse with Failure](
+      documentumPackageService.packageAndSubmit(
+        DocumentumPackageContext.certificate(certificateReference, subscriptionId, request),
+        pdfService.generateCertificatePdf(CertificateDpsRequest.toCertificate(request))
+      )
     )
-  }
 }
 
 object CertificateService {
