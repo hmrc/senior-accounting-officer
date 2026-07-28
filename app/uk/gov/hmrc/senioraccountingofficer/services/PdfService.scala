@@ -51,6 +51,33 @@ class PdfService @Inject() (
 
 object PdfService {
 
+  enum Status:
+    case Active, Dormant, Administration, Liquidation
+
+  def toStatus(status: String): Status = {
+    status match {
+      case "Active"         => Status.Active
+      case "Dormant"        => Status.Dormant
+      case "Administration" => Status.Administration
+      case "Liquidation"    => Status.Liquidation
+      case other            =>
+        throw Exception(
+          s"could not parse company status into 'Active', 'Dormant', 'Administration', or 'Liquidation, found ${other}"
+        )
+    }
+  }
+
+  enum CompanyType:
+    case Plc, Ltd
+
+  def toCompanyType(`type`: String): CompanyType = {
+    `type` match {
+      case "Plc"         => CompanyType.Plc
+      case "Ltd"         => CompanyType.Ltd
+      case other: String => throw Exception(s"could not parse company type into 'Plc' or 'Ltd', found ${other}")
+    }
+  }
+
   final case class Certificate(
       saoName: String,
       saoEmail: String,
@@ -66,8 +93,8 @@ object PdfService {
         companyName: String,
         utr: String,
         crn: String,
-        companyType: "Plc" | "Ltd",
-        status: "Active" | "Dormant" | "Administration" | "Liquidation",
+        companyType: CompanyType,
+        status: Status,
         financialYearEndDate: String,
         qualifiedRegimes: TaxRegimes = TaxRegimes(),
         additionalInformation: Option[String] = None
@@ -131,8 +158,8 @@ object PdfService {
         companyName: String,
         utr: String,
         crn: String,
-        companyType: "Plc" | "Ltd",
-        status: "Active" | "Dormant" | "Administration" | "Liquidation",
+        companyType: CompanyType,
+        status: Status,
         financialYearEndDate: String
     )
 

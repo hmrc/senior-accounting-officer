@@ -18,7 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService.{Certificate, TaxRegimes}
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
 final case class CertificateDpsRequest(
     submitterName: Option[String],
@@ -49,27 +49,12 @@ object CertificateDpsRequest {
         bankLevy = company.isBankLevyQualified
       )
 
-      val `type`: "Plc" | "Ltd" = company.`type` match {
-        case "Plc" => "Plc"
-        case "Ltd" => "Ltd"
-        case _     => throw Exception(s"could not parse company type into 'Plc' or 'Ltd', found ${company.`type`}")
-      }
-      val status: "Active" | "Dormant" | "Administration" | "Liquidation" = company.status match {
-        case "Active"         => "Active"
-        case "Dormant"        => "Dormant"
-        case "Administration" => "Administration"
-        case "Liquidation"    => "Liquidation"
-        case _                =>
-          throw Exception(
-            s"could not parse company status into 'Active', 'Dormant', 'Administration', or 'Liquidation, found ${company.status}"
-          )
-      }
       Certificate.Row(
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.getOrElse(""),
-        companyType = `type`,
-        status = status,
+        companyType = toCompanyType(company.`type`),
+        status = toStatus(company.status),
         financialYearEndDate = company.accPeriodEnd,
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement

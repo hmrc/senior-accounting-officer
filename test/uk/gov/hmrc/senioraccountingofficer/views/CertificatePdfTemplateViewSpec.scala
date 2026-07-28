@@ -271,8 +271,8 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           cols.get(0) mustBe expectedUnqualRow.companyName
           cols.get(1) mustBe expectedUnqualRow.crn
           cols.get(2) mustBe expectedUnqualRow.utr
-          cols.get(3) mustBe expectedUnqualRow.companyType
-          cols.get(4) mustBe expectedUnqualRow.status
+          cols.get(3) mustBe expectedUnqualRow.companyType.toString
+          cols.get(4) mustBe expectedUnqualRow.status.toString
           cols.get(5) mustBe expectedUnqualRow.financialYearEndDate
         })
       doc.unqualCertTableData.size() mustBe certificateData.unqualified.size
@@ -301,8 +301,8 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           cols.get(0) mustBe expectedUnqualRow.companyName
           cols.get(1) mustBe expectedUnqualRow.crn
           cols.get(2) mustBe expectedUnqualRow.utr
-          cols.get(3) mustBe expectedUnqualRow.companyType
-          cols.get(4) mustBe expectedUnqualRow.status
+          cols.get(3) mustBe expectedUnqualRow.companyType.toString
+          cols.get(4) mustBe expectedUnqualRow.status.toString
           cols.get(5) mustBe expectedUnqualRow.financialYearEndDate
         })
       doc.unqualCertTableData.size() mustBe certificateData.unqualified.size

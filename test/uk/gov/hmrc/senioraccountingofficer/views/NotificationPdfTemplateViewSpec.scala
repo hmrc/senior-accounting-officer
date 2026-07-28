@@ -168,8 +168,8 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
             expectedRow.companyName,
             expectedRow.crn,
             expectedRow.utr,
-            expectedRow.companyType,
-            expectedRow.status,
+            expectedRow.companyType.toString,
+            expectedRow.status.toString,
             expectedRow.financialYearEndDate
           )
           flattened
