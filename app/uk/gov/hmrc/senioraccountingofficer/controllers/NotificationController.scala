@@ -19,15 +19,12 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
+import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.notification.*
-import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, toNotificationDpsRequest}
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 
@@ -41,36 +38,38 @@ class NotificationController @Inject() (
     ensureCorrelationId: EnsureCorrelationIdAction,
     notificationService: NotificationService
 )(implicit ec: ExecutionContext)
-    extends BackendController(cc)
+    extends BaseController(cc)
     with Logging {
 
   def postNotification(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
     implicit request =>
-      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
       JsonErrorHandling.parseJson(request.body) match {
         case Right(json) =>
           val errors = JsonErrorHandling.Validators.validateNotification(json)
           if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
           else {
             val notificationRequest = json.as[NotificationRequest]
-            val dpsRequest          = notificationRequest.toNotificationDpsRequest
-
             notificationService
-              .postNotification(request.saoSubscriptionId, dpsRequest)
+              .postNotification(request.saoSubscriptionId, notificationRequest)
               .map {
                 case Success(notificationId, isPdfAvailable) =>
                   Ok(Json.toJson(NotificationResponse(notificationId, isPdfAvailable)))
+                case Misalignment(downstreamService) =>
+                  logger.warn(s"[Notification][$downstreamService][MISALIGNMENT]")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
                 case MalformedResponse(downstreamService) =>
                   logger.warn(s"[Notification][$downstreamService][MalformedResponse]")
-                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-                case BadRequestFailure(downstreamService) =>
-                  logger.warn(s"[Notification][$downstreamService][BAD_REQUEST]")
                   InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-                case InternalServerFailure(downstreamService) =>
+                case Misconfiguration(downstreamService, status) =>
+                  logger.warn(s"[Notification][$downstreamService][MISCONFIGURATION]status=$status")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+                case NotFoundFailure(downstreamService) =>
+                  logger.warn(s"[Notification][$downstreamService][NOT_FOUND]")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))
+                case DownstreamServiceError(downstreamService) =>
                   logger.warn(s"[Notification][$downstreamService][INTERNAL_SERVER_ERROR]")
                   BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
-                case ServiceUnavailableFailure(downstreamService) =>
+                case DownstreamServiceUnavailable(downstreamService) =>
                   logger.warn(s"[Notification][$downstreamService][SERVICE_UNAVAILABLE]")
                   BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
                 case UnknownFailure(downstreamService, status) =>

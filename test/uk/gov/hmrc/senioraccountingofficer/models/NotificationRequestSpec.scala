@@ -53,12 +53,13 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
             `type` = companyType
           )
         ),
+        customerId = None,
         saos = List(DpsSao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
         remarks = Some(remarks),
         staffPID = None
       )
 
-      sut.toNotificationDpsRequest shouldBe expected
+      sut.toNotificationDpsRequest() shouldBe expected
     }
   }
 }
