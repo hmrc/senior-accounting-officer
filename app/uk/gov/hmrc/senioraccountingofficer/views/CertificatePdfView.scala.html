@@ -15,6 +15,7 @@
  *@
 
 @import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+@import play.twirl.api.HtmlFormat
 
 @this()
 @(certificate: Certificate)
@@ -27,7 +28,8 @@
         <meta name="author" content="HMRC forms service"/>
         <meta name="subject" content="SAO notification submission record"/>
         <meta name="Creator" content="HMRC forms service"/>
-        <link href='@@uk/gov/hmrc/senioraccountingofficer/stylesheets/application.css' media="all" rel="stylesheet" type="text/css" />    </head>
+        <link href='@@uk/gov/hmrc/senioraccountingofficer/stylesheets/application.css' media="all" rel="stylesheet" type="text/css" />
+    </head>
     <body>
         <div class="logo-container">
             <img class="logo" src="gov-uk-logo.png" alt="GOV.UK"/>
@@ -71,7 +73,7 @@
                         </tr>
                     </tbody>
                 </table>
-                    <!-- -->
+                    <!-- ADDITIONAL INFORMATION -->
                     @certificate.additionalInformation.filter(_.nonEmpty).map{ additionalInformation =>
                         <h2 id="additional-information">Additional information and explanation</h2>
                         <h4>Information about your certificate</h4>
@@ -105,7 +107,11 @@
                                             <td>@company.companyName</td>
                                             <td>@company.utr</td>
                                             <td>@company.qualifiedRegimesAsText</td>
-                                            <td>@Html(company.additionalInformation.getOrElse("").split("\n").mkString("<br/>"))</td>
+                                            <td>
+                                                @company.additionalInformation.map { text =>
+                                                @Html(HtmlFormat.escape(text).body.replace("\n", "<br>"))
+                                                }
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -153,4 +159,3 @@
         </main>
     </body>
 </html>
-val logoText           = "Senior Accounting Officer notification and certificate"

@@ -37,8 +37,8 @@ import scala.concurrent.ExecutionContext
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
-  given ExecutionContext         = ExecutionContext.global
-  given actorSystem: ActorSystem = ActorSystem()
+  given ExecutionContext = ExecutionContext.global
+  given ActorSystem      = ActorSystem()
 
   val mockOpenHtmlToPdfService: OpenHtmlToPdfService   = mock[OpenHtmlToPdfService]
   val mockNotificationPdfTemplate: NotificationPdfView = mock[NotificationPdfView]

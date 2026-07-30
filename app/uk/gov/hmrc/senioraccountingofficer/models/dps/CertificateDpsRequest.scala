@@ -53,8 +53,8 @@ object CertificateDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.getOrElse(""),
-        companyType = toCompanyType(company.`type`),
-        status = toStatus(company.status),
+        companyType = toCompanyType(company.`type`).orNull,
+        status = toStatus(company.status).orNull,
         financialYearEndDate = company.accPeriodEnd,
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement
@@ -66,9 +66,9 @@ object CertificateDpsRequest {
     Certificate(
       saoName = request.saoName,
       saoEmail = request.saoEmail,
-      submitterName = Some(request.submitterName.getOrElse("")),
+      submitterName = request.submitterName,
       submissionDate = "date",
-      submissionId = request.staffPid.getOrElse(""),
+      submissionId = request.staffPid.orNull,
       companies = companies,
       additionalInformation = request.remarks
     )

@@ -16,22 +16,6 @@
 
 package uk.gov.hmrc.senioraccountingofficer.views
 
-/*
- * Copyright 2026 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.jsoup.Jsoup
@@ -51,8 +35,8 @@ import scala.concurrent.ExecutionContext
 
 class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
-  given ExecutionContext         = ExecutionContext.global
-  given actorSystem: ActorSystem = ActorSystem()
+  given ExecutionContext = ExecutionContext.global
+  given ActorSystem      = ActorSystem()
 
   val certificateData: Certificate =
     PdfTestData.testCertificateData(
@@ -133,7 +117,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
     }
 
     "display the 'submission details' section of the pdf view, when there is not an 'authorised submitter'" in {
-      val certificate   = PdfTestData.testCertificateData(3, None, certificateData.additionalInformation)
+      val certificate   = certificateData.copy(submitterName = None)
       val doc: Document = Jsoup.parse(certificatePdfTemplate(certificate).body)
 
       doc.saoDetailSubheading.text() mustBe subheadings(0)

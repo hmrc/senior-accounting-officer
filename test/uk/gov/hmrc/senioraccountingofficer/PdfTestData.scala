@@ -384,9 +384,8 @@ object AdditionalInformationGenerator {
 
   def generate(totalBytes: Long, repeat: Int): String = {
     val byteArray = lorumIpsumBlock.getBytes("utf-8")
-//    val numberOfRepeats = totalBytes / byteArray.length
-    val offset = byteArray.slice(0, (totalBytes % byteArray.length).toInt)
-    val sb     = StringBuilder()
+    val offset    = byteArray.slice(0, (totalBytes % byteArray.length).toInt)
+    val sb        = StringBuilder()
 
     @tailrec
     def loop(total: Long, counter: Long = 0): Unit = {

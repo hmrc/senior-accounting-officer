@@ -54,28 +54,15 @@ object PdfService {
   enum Status:
     case Active, Dormant, Administration, Liquidation
 
-  def toStatus(status: String): Status = {
-    status match {
-      case "Active"         => Status.Active
-      case "Dormant"        => Status.Dormant
-      case "Administration" => Status.Administration
-      case "Liquidation"    => Status.Liquidation
-      case other            =>
-        throw Exception(
-          s"could not parse company status into 'Active', 'Dormant', 'Administration', or 'Liquidation, found ${other}"
-        )
-    }
+  def toStatus(status: String): Option[Status] = {
+    Status.values.find(_.toString.toLowerCase == status.toLowerCase())
   }
 
   enum CompanyType:
     case Plc, Ltd
 
-  def toCompanyType(`type`: String): CompanyType = {
-    `type` match {
-      case "Plc"         => CompanyType.Plc
-      case "Ltd"         => CompanyType.Ltd
-      case other: String => throw Exception(s"could not parse company type into 'Plc' or 'Ltd', found ${other}")
-    }
+  def toCompanyType(`type`: String): Option[CompanyType] = {
+    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase)
   }
 
   final case class Certificate(
@@ -196,9 +183,15 @@ object PdfService {
 
   object TaxRegimes {
     extension (regimes: TaxRegimes) {
-      def isQualified: Boolean = regimes.productIterator.exists { case b: Boolean =>
-        b
-      }
+      def isQualified: Boolean =
+        regimes.corporationTax ||
+          regimes.vat
+          ||
+          regimes.paye
+          ||
+          regimes.insurancePremiumTax
+          ||
+          regimes.stampDutyLandTax || regimes.stampDutyReserveTax || regimes.petroleumRevenueTax || regimes.customsDuties || regimes.exciseDuties || regimes.bankLevy
     }
   }
 

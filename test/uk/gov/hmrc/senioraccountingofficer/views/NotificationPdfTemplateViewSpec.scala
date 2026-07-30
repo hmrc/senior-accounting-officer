@@ -35,8 +35,9 @@ import scala.concurrent.ExecutionContext
 
 class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
-  given ExecutionContext         = ExecutionContext.global
-  given actorSystem: ActorSystem = ActorSystem()
+  given ExecutionContext = ExecutionContext.global
+
+  given ActorSystem = ActorSystem()
 
   val notificationData: Notification =
     PdfTestData.testNotificationData(3, Option(AdditionalInformationGenerator.generate(totalBytes = 32767L, 1)))

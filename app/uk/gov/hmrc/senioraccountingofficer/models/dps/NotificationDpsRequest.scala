@@ -53,17 +53,17 @@ object NotificationDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.getOrElse(""),
-        companyType = toCompanyType(company.`type`),
-        status = toStatus(company.status),
+        companyType = toCompanyType(company.`type`).orNull,
+        status = toStatus(company.status).orNull,
         financialYearEndDate = company.accPeriodEnd
       )
     })
     val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
     Notification(
-      companyName = "test company",
+      companyName = "Notification.",
       financialYearEndDate = "test date",
       submissionDate = "sub date",
-      submissionId = "request.staffPID",
+      submissionId = "request.",
       saoHistory = saos,
       companies = companies,
       additionalInformation = request.remarks
