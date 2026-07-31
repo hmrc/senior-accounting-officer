@@ -16,6 +16,10 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.{any, eq as meq, isNull}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
@@ -42,15 +46,18 @@ class CertificateServiceSpec extends AnyWordSpec with Matchers with MockitoSugar
 
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
+  given ActorSystem      = ActorSystem()
 
   val mockConnector: CertificateConnector          = mock[CertificateConnector]
   val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
-  val service                                      = new CertificateService(mockConnector, mockObjectStoreClient)
+  val mockPdfService: PdfService                   = mock[PdfService]
+  val service = new CertificateService(mockConnector, mockObjectStoreClient, mockPdfService)
 
   "postCertificate" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+      when(mockPdfService.generateCertificatePdf(any())).thenReturn(objectStoreFileContent)
 
       when(
         mockObjectStoreClient.putObject(
@@ -144,10 +151,10 @@ object CertificateServiceSpec {
       saoEmail = "firstname.lastname@example.com",
       companies = List.empty
     )
-  val certificateRef               = "CRT0001234567"
-  val validDpsResponseBody: String = s"""{"certificateRef":"$certificateRef"}"""
-  val objectStorePath: String      = s"/senior-accounting-officer/${certificateRef}/"
-  val objectStoreFilename: String  = s"${certificateRef}_SAO_Certificate.pdf"
-  val objectStoreOwner             = "senior-accounting-officer"
-  val objectStoreFileContent       = "dummy file content"
+  val certificateRef                                      = "CRT0001234567"
+  val validDpsResponseBody: String                        = s"""{"certificateRef":"$certificateRef"}"""
+  val objectStorePath: String                             = s"/senior-accounting-officer/${certificateRef}/"
+  val objectStoreFilename: String                         = s"${certificateRef}_SAO_Certificate.pdf"
+  val objectStoreOwner                                    = "senior-accounting-officer"
+  val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 }

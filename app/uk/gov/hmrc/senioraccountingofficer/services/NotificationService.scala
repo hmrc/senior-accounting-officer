@@ -17,6 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import cats.data.EitherT
+import org.apache.pekko.actor.ActorSystem
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -37,15 +38,20 @@ import javax.inject.Inject
 
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector,
-    objectStoreClient: PlayObjectStoreClient
-)(using ExecutionContext) {
+    objectStoreClient: PlayObjectStoreClient,
+    pdfService: PdfService
+)(using ExecutionContext, ActorSystem) {
 
   def postNotification(subscriptionId: String, request: NotificationDpsRequest)(using
       HeaderCarrier
   ): Future[PostNotificationResponse] = {
     for {
       dpsResult      <- postNotificationDps(subscriptionId, request)
-      isPdfAvailable <- generateAndUploadPdf(dpsResult.notificationRef)
+      isPdfAvailable <- generateAndUploadPdf(
+        dpsResult.notificationRef,
+        request,
+        "company Name"
+      ) // TO-DO: "company name" must be replaced by the response of the subscription API
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = isPdfAvailable)
   }.merge
 
@@ -63,9 +69,8 @@ class NotificationService @Inject() (
     })
   }
 
-  // TODO proper pdf generation
-  private def generateAndUploadPdf(notificationReference: String)(using
-      HeaderCarrier
+  private def generateAndUploadPdf(notificationReference: String, request: NotificationDpsRequest, companyName: String)(
+      using HeaderCarrier
   ): EitherT[Future, PostNotificationResponse with Failure, Boolean] = {
     EitherT.right(
       objectStoreClient
@@ -73,7 +78,9 @@ class NotificationService @Inject() (
           path = Path
             .Directory(s"/senior-accounting-officer/$notificationReference/")
             .file(s"${notificationReference}_SAO_Notification.pdf"),
-          content = "dummy file content",
+          content = pdfService.generateNotificationPdf(
+            NotificationDpsRequest.toNotification(notificationReference, request, companyName)
+          ),
           owner = "senior-accounting-officer"
         )
         .map { _ => true }

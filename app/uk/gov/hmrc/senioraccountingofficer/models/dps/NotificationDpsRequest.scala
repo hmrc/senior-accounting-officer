@@ -17,6 +17,10 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+
+import java.time.LocalDate
 
 final case class NotificationDpsRequest(
     companies: List[Company],
@@ -43,6 +47,29 @@ final case class Sao(
 
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
+
+  def toNotification(notificationRef: String, request: NotificationDpsRequest, companyName: String): Notification = {
+    val companies = request.companies.map(company => {
+
+      Notification.Row(
+        companyName = company.name,
+        utr = company.utr,
+        crn = company.crn.fold("")(identity),
+        companyType = toCompanyType(company.`type`).fold(err => throw new IllegalArgumentException(err), identity),
+        status = toStatus(company.status).fold(err => throw new IllegalArgumentException(err), identity),
+        financialYearEndDate = company.accPeriodEnd
+      )
+    })
+    val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
+    Notification(
+      companyName = companyName,
+      submissionDate = LocalDate.now().format(dateFormatter),
+      submissionId = notificationRef,
+      saoHistory = saos,
+      companies = companies,
+      additionalInformation = request.remarks
+    )
+  }
 }
 
 object Company {

@@ -18,6 +18,9 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+
+import java.time.LocalDate
 
 final case class CertificateDpsRequest(
     submitterName: Option[String],
@@ -31,4 +34,45 @@ final case class CertificateDpsRequest(
 
 object CertificateDpsRequest {
   given OFormat[CertificateDpsRequest] = Json.format[CertificateDpsRequest]
+
+  def toPdfCertificateCompany(certificateCompany: List[CertificateCompany]): Seq[Certificate.Row] = {
+    certificateCompany.map(company => {
+
+      val taxRegimes = TaxRegimes(
+        corporationTax = company.isCorporationTaxQualified,
+        vat = company.isVatQualified,
+        paye = company.isPayeQualified,
+        insurancePremiumTax = company.isInsurancePremiumTaxQualified,
+        stampDutyLandTax = company.isStampDutyLandTaxQualified,
+        stampDutyReserveTax = company.isStampDutyReserveTaxQualified,
+        petroleumRevenueTax = company.isPetroleumRevenueTaxQualified,
+        customsDuties = company.isCustomsDutiesQualified,
+        exciseDuties = company.isExciseDutiesQualified,
+        bankLevy = company.isBankLevyQualified
+      )
+
+      Certificate.Row(
+        companyName = company.name,
+        utr = company.utr,
+        crn = company.crn.fold("")(identity),
+        companyType = toCompanyType(company.`type`).fold(err => throw new IllegalArgumentException(err), identity),
+        status = toStatus(company.status).fold(err => throw new IllegalArgumentException(err), identity),
+        financialYearEndDate = company.accPeriodEnd,
+        qualifiedRegimes = taxRegimes,
+        additionalInformation = company.qualificationStatement
+      )
+    })
+  }
+  def toCertificate(request: CertificateDpsRequest): Certificate = {
+    val companies = toPdfCertificateCompany(request.companies)
+    Certificate(
+      saoName = request.saoName,
+      saoEmail = request.saoEmail,
+      submitterName = request.submitterName,
+      submissionDate = LocalDate.now().format(dateFormatter),
+      submissionId = request.staffPid.fold("")(identity),
+      companies = companies,
+      additionalInformation = request.remarks
+    )
+  }
 }

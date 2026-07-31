@@ -17,6 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import cats.data.EitherT
+import org.apache.pekko.actor.ActorSystem
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -37,15 +38,16 @@ import javax.inject.Inject
 
 class CertificateService @Inject() (
     certificateConnector: CertificateConnector,
-    objectStoreClient: PlayObjectStoreClient
-)(using ExecutionContext) {
+    objectStoreClient: PlayObjectStoreClient,
+    pdfService: PdfService
+)(using ExecutionContext, ActorSystem) {
 
   def postCertificate(subscriptionId: String, request: CertificateDpsRequest)(using
       HeaderCarrier
   ): Future[PostCertificateResponse] = {
     for {
       dpsResult <- postCertificateDps(subscriptionId, request)
-      _         <- generateAndUploadPdf(dpsResult.certificateRef)
+      _         <- generateAndUploadPdf(dpsResult.certificateRef, request)
     } yield Success(certificateRef = dpsResult.certificateRef)
   }.merge
 
@@ -63,8 +65,7 @@ class CertificateService @Inject() (
     })
   }
 
-  // TODO proper pdf generation in SAOD-833
-  private def generateAndUploadPdf(certificateReference: String)(using
+  private def generateAndUploadPdf(certificateReference: String, request: CertificateDpsRequest)(using
       HeaderCarrier
   ): EitherT[Future, PostCertificateResponse with Failure, Boolean] = {
     EitherT.right(
@@ -73,7 +74,7 @@ class CertificateService @Inject() (
           path = Path
             .Directory(s"/senior-accounting-officer/$certificateReference/")
             .file(s"${certificateReference}_SAO_Certificate.pdf"),
-          content = "dummy file content",
+          content = pdfService.generateCertificatePdf(CertificateDpsRequest.toCertificate(request)),
           owner = "senior-accounting-officer"
         )
         .map { _ => true }

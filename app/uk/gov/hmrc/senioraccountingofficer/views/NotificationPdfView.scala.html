@@ -1,0 +1,120 @@
+@*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+
+@this()
+@(notification: Notification)
+
+<!DOCTYPE html>
+<html lang="en" class="govuk-template govuk-template--rebranded">
+    <head>
+        <title>Senior Accounting Officer Notification submission record</title>
+        <meta name="author" content="HMRC forms service"/>
+        <meta name="subject" content="SAO notification submission record"/>
+        <meta name="Creator" content="HMRC forms service"/>
+        <link href='@@uk/gov/hmrc/senioraccountingofficer/stylesheets/application.css' media="all" rel="stylesheet" type="text/css" />    </head>
+    <body>
+        <div class="logo-container">
+            <img class="logo" src="gov-uk-logo.png" alt="GOV.UK"/>
+            <div class="logo-text">Senior Accounting Officer notification and certificate</div>
+        </div>
+        <bookmarks>
+            <bookmark name="Nominated company details" href="#company-details"/>
+            <bookmark name="Contact details" href="#contact-details"/>
+            @notification.additionalInformation.filter(_.nonEmpty).map { _ =>
+                <bookmark name="Additional information" href="#additional-information"/>
+            }
+            <bookmark name="List of companies" href="#companies-list"/>
+        </bookmarks>
+        <main>
+            <div>
+                <h1>Notification submission record</h1>
+                <p>This document is a record of the information submitted to HMRC through the Digital SAO service at the time of submission. It includes the SAO's name, the dates they held the role during the notification period, contact details recorded for service updates and compliance purposes, and the information uploaded in the submission template for the notification.</p>
+                <h2 id="company-details">Submission details</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Company name</th>
+                            <th>Submission date</th>
+                            <th>Reference number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@notification.companyName</td>
+                            <td>@notification.submissionDate</td>
+                            <td>@notification.submissionId</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h2 id="contact-details">Senior Accounting Officer details</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Full name</th>
+                            <th>Role start date</th>
+                            <th>Role end date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for(saoTenure <- notification.saoHistory) {
+                          <tr>
+                            <td>@saoTenure.name</td>
+                            <td>@saoTenure.startDate.fold("")(identity)</td>
+                            <td>@saoTenure.endDate.fold("")(identity)</td>
+                          </tr>
+                        }
+                    </tbody>
+                </table>
+                @notification.additionalInformation.filter(_.nonEmpty).map { additionalInformation =>
+                    <h2 id="additional-information">Additional information</h2>
+                    <p>Information about your notification</p>
+                    @additionalInformation.split("\n").map { paragraph =>
+                        <p>@paragraph</p>
+                    }
+                }
+                <tables-page>
+                    <h2 id="companies-list">List of companies</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company name</th>
+                                <th>CRN</th>
+                                <th>UTR</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Financial year end</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for(company <- notification.companies) {
+                                <tr>
+                                    <td>@company.companyName</td>
+                                    <td>@company.crn</td>
+                                    <td>@company.utr</td>
+                                    <td>@company.companyType</td>
+                                    <td>@company.status</td>
+                                    <td>@company.financialYearEndDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </tables-page>
+            </div>
+        </main>
+    </body>
+</html>

@@ -16,6 +16,10 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as meq
 import org.mockito.ArgumentMatchers.isNull
@@ -44,15 +48,18 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
 
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
+  given ActorSystem      = ActorSystem()
 
   val mockConnector: NotificationConnector         = mock[NotificationConnector]
   val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
-  val service                                      = new NotificationService(mockConnector, mockObjectStoreClient)
+  val mockPdfService: PdfService                   = mock[PdfService]
+  val service = new NotificationService(mockConnector, mockObjectStoreClient, mockPdfService)
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
+      when(mockPdfService.generateNotificationPdf(any())).thenReturn(objectStoreFileContent)
 
       when(
         mockObjectStoreClient.putObject(
@@ -139,12 +146,12 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
 }
 
 object NotificationServiceSpec {
-  val requestId                           = "123"
-  val testRequest: NotificationDpsRequest = NotificationDpsRequest(List.empty, List.empty)
-  val notificationReference               = "NOT0123456789"
-  val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationReference"}"""
-  val objectStorePath: String             = s"/senior-accounting-officer/${notificationReference}/"
-  val objectStoreFilename: String         = s"${notificationReference}_SAO_Notification.pdf"
-  val objectStoreOwner                    = "senior-accounting-officer"
-  val objectStoreFileContent              = "dummy file content"
+  val requestId                                           = "123"
+  val testRequest: NotificationDpsRequest                 = NotificationDpsRequest(List.empty, List.empty)
+  val notificationReference                               = "NOT0123456789"
+  val validDpsResponseBody: String                        = s"""{"notificationRef":"$notificationReference"}"""
+  val objectStorePath: String                             = s"/senior-accounting-officer/${notificationReference}/"
+  val objectStoreFilename: String                         = s"${notificationReference}_SAO_Notification.pdf"
+  val objectStoreOwner                                    = "senior-accounting-officer"
+  val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 }
