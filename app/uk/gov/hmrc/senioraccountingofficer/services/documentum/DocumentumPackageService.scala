@@ -22,17 +22,17 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, ObjectSummaryWithMd5, Path, RetentionPeriod}
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime, ZoneOffset}
 import javax.inject.Inject
 
 class DocumentumPackageService @Inject() (

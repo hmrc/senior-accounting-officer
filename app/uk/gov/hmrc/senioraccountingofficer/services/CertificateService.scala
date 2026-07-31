@@ -23,10 +23,10 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, CertificateDpsResponse}
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

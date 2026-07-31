@@ -18,8 +18,9 @@ package uk.gov.hmrc.senioraccountingofficer.services.documentum
 
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, SubmissionType}
 
+import scala.xml.{Elem, PrettyPrinter}
+
 import javax.inject.Inject
-import scala.xml.{Elem, NamespaceBinding, PrettyPrinter, TopScope}
 
 class DocumentumMetadataXmlGenerator @Inject() () {
 
@@ -31,7 +32,7 @@ class DocumentumMetadataXmlGenerator @Inject() () {
     }
 
     val xml: Elem =
-      <documents>
+      <documents xmlns="http://govtalk.gov.uk/hmrc/bit/content/1">
         <document>
           <header>
             <title>{documentTitle}</title>
@@ -52,10 +53,8 @@ class DocumentumMetadataXmlGenerator @Inject() () {
         </document>
       </documents>
 
-    val namespacedXml = xml.copy(scope = NamespaceBinding(null, "http://govtalk.gov.uk/hmrc/bit/content/1", TopScope))
-
     """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""" + System.lineSeparator() +
-      new PrettyPrinter(120, 2).format(namespacedXml)
+      new PrettyPrinter(120, 2).format(xml)
   }
 
   private def attribute(name: String, value: String) =

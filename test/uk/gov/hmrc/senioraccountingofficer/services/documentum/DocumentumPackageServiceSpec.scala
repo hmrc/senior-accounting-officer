@@ -29,15 +29,8 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.objectstore.client.{
-  Md5Hash,
-  Object as ObjectStoreObject,
-  ObjectMetadata,
-  ObjectSummaryWithMd5,
-  Path,
-  RetentionPeriod
-}
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
   DocumentumCompany,
@@ -194,7 +187,7 @@ class DocumentumPackageServiceSpec
     .Directory("/senior-accounting-officer/NOT0123456789/")
     .file("NOT0123456789_SAO_Notification.pdf")
   private val generatedPdfSource = Source.single(ByteString("generated-pdf"))
-  private val stagedPdfObject = ObjectStoreObject(
+  private val stagedPdfObject    = ObjectStoreObject(
     expectedPdfPath,
     Source.single(ByteString("retrieved-pdf")),
     ObjectMetadata("application/pdf", 13, Md5Hash("hash"), Instant.parse("2026-07-28T12:00:00Z"), Map.empty)

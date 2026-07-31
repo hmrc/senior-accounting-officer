@@ -16,22 +16,23 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as meq
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -136,5 +137,5 @@ object NotificationServiceSpec {
   val notificationReference               = "NOT0123456789"
   val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationReference"}"""
   val objectStoreFilename: String         = s"20260728_${notificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
-  val objectStoreFileContent              = Source.single(ByteString("dummy file content"))
+  val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 }

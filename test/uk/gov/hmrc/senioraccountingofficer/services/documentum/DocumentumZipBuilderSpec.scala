@@ -25,11 +25,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import scala.concurrent.ExecutionContext
+import scala.util.Using
+
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.util.zip.ZipInputStream
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext
 
 class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
 
@@ -71,20 +72,18 @@ class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutur
     }
   }
 
-  private def unzip(bytes: Array[Byte]): List[(String, String)] = {
-    val zipInputStream = new ZipInputStream(new ByteArrayInputStream(bytes))
-    val entries        = ListBuffer.empty[(String, String)]
-
-    var entry = zipInputStream.getNextEntry
-    while entry != null do {
-      val outputStream = new ByteArrayOutputStream()
-      zipInputStream.transferTo(outputStream)
-      entries += entry.getName -> outputStream.toString(StandardCharsets.UTF_8)
-      zipInputStream.closeEntry()
-      entry = zipInputStream.getNextEntry
+  private def unzip(bytes: Array[Byte]): List[(String, String)] =
+    Using.resource(new ZipInputStream(new ByteArrayInputStream(bytes))) { zipInputStream =>
+      Iterator
+        .continually(Option(zipInputStream.getNextEntry))
+        .takeWhile(_.isDefined)
+        .flatten
+        .map { entry =>
+          val outputStream = new ByteArrayOutputStream()
+          zipInputStream.transferTo(outputStream)
+          zipInputStream.closeEntry()
+          entry.getName -> outputStream.toString(StandardCharsets.UTF_8)
+        }
+        .toList
     }
-
-    zipInputStream.close()
-    entries.toList
-  }
 }

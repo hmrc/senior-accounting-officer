@@ -23,10 +23,10 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

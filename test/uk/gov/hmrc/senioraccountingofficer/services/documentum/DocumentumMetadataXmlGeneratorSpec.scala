@@ -24,11 +24,12 @@ import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
   SubmissionType
 }
 
+import scala.xml.{Elem, XML}
+
 import java.io.StringReader
 import javax.xml.XMLConstants
 import javax.xml.transform.stream.StreamSource
 import javax.xml.validation.SchemaFactory
-import scala.xml.{Elem, XML}
 
 class DocumentumMetadataXmlGeneratorSpec extends AnyWordSpec with Matchers {
 
