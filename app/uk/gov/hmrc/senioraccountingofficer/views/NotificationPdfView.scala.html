@@ -49,7 +49,6 @@
                     <thead>
                         <tr>
                             <th>Company name</th>
-                            <th>Financial year end date</th>
                             <th>Submission date</th>
                             <th>Reference number</th>
                         </tr>
@@ -57,7 +56,6 @@
                     <tbody>
                         <tr>
                             <td>@notification.companyName</td>
-                            <td>@notification.financialYearEndDate</td>
                             <td>@notification.submissionDate</td>
                             <td>@notification.submissionId</td>
                         </tr>
@@ -76,8 +74,8 @@
                         @for(saoTenure <- notification.saoHistory) {
                           <tr>
                             <td>@saoTenure.name</td>
-                            <td>@saoTenure.startDate.getOrElse("")</td>
-                            <td>@saoTenure.endDate.getOrElse("")</td>
+                            <td>@saoTenure.startDate.fold("")(identity)</td>
+                            <td>@saoTenure.endDate.fold("")(identity)</td>
                           </tr>
                         }
                     </tbody>

@@ -53,8 +53,8 @@ object CertificateDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.getOrElse(""),
-        companyType = toCompanyType(company.`type`).orNull,
-        status = toStatus(company.status).orNull,
+        companyType = toCompanyType(company.`type`),
+        status = toStatus(company.status),
         financialYearEndDate = company.accPeriodEnd,
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement

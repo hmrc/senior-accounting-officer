@@ -47,7 +47,11 @@ class NotificationService @Inject() (
   ): Future[PostNotificationResponse] = {
     for {
       dpsResult      <- postNotificationDps(subscriptionId, request)
-      isPdfAvailable <- generateAndUploadPdf(dpsResult.notificationRef, request)
+      isPdfAvailable <- generateAndUploadPdf(
+        dpsResult.notificationRef,
+        request,
+        "company Name"
+      ) // TO-DO: "company name" must be replaced by the response of the subscription API
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = isPdfAvailable)
   }.merge
 
@@ -65,8 +69,8 @@ class NotificationService @Inject() (
     })
   }
 
-  private def generateAndUploadPdf(notificationReference: String, request: NotificationDpsRequest)(using
-      HeaderCarrier
+  private def generateAndUploadPdf(notificationReference: String, request: NotificationDpsRequest, companyName: String)(
+      using HeaderCarrier
   ): EitherT[Future, PostNotificationResponse with Failure, Boolean] = {
     EitherT.right(
       objectStoreClient
@@ -74,7 +78,9 @@ class NotificationService @Inject() (
           path = Path
             .Directory(s"/senior-accounting-officer/$notificationReference/")
             .file(s"${notificationReference}_SAO_Notification.pdf"),
-          content = pdfService.generateNotificationPdf(NotificationDpsRequest.toNotification(request)),
+          content = pdfService.generateNotificationPdf(
+            NotificationDpsRequest.toNotification(notificationReference, request, companyName)
+          ),
           owner = "senior-accounting-officer"
         )
         .map { _ => true }

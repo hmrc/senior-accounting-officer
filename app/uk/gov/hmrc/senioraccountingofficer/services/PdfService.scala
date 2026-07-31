@@ -54,15 +54,15 @@ object PdfService {
   enum Status:
     case Active, Dormant, Administration, Liquidation
 
-  def toStatus(status: String): Option[Status] = {
-    Status.values.find(_.toString.toLowerCase == status.toLowerCase())
+  def toStatus(status: String): Status = {
+    Status.values.find(_.toString.toLowerCase == status.toLowerCase).get
   }
 
   enum CompanyType:
     case Plc, Ltd
 
-  def toCompanyType(`type`: String): Option[CompanyType] = {
-    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase)
+  def toCompanyType(`type`: String): CompanyType = {
+    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase).get
   }
 
   final case class Certificate(
@@ -132,7 +132,6 @@ object PdfService {
 
   final case class Notification(
       companyName: String,
-      financialYearEndDate: String,
       submissionDate: String,
       submissionId: String,
       saoHistory: Seq[SaoTenure],

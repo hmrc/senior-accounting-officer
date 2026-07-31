@@ -147,7 +147,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       val actualAddInfo   = doc.addInfo.eachText()
 
       doc.addInfoSubheading.text mustBe subheadings(1)
-      doc.addInfoParagraph1.text mustBe addInfoParagraph1
+      doc.additionalInfoParagraph.text mustBe additionalInfoParagraph
 
       expectedAddInfo
         .zip(actualAddInfo)
@@ -160,7 +160,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       val actualAddInfo   = doc.addInfo.eachText()
 
       doc.addInfoSubheading.text mustBe ""
-      doc.addInfoParagraph1.text mustBe ""
+      doc.additionalInfoParagraph.text mustBe ""
 
       expectedAddInfo
         .zip(actualAddInfo)
@@ -168,7 +168,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
 
     }
     "display the 'qualified certificates' section on the pdf view, with an 'authorised submitter' paragraph" in {
-      val expectedQualCertPar = qualCompaniesPara_A
+      val expectedQualCertPar = standInQualifiedCompaniesDeclarationParagraph
         .replace("{submitterName}", certificateData.submitterName.get)
         .replace("{saoName}", certificateData.saoName)
         .replace("{length}", certificateData.qualified.size.toString)
@@ -199,7 +199,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       val certificate   = PdfTestData.testCertificateData(3, None, certificateData.additionalInformation)
       val doc: Document = Jsoup.parse(certificatePdfTemplate(certificate).body)
 
-      val expectedQualCertPar = qualCompaniesPara_B
+      val expectedQualCertPar = saoQualifiedCompaniesDeclarationParagraph
         .replace("{saoName}", certificateData.saoName)
         .replace("{length}", certificateData.qualified.size.toString)
 
@@ -234,7 +234,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       doc.qualCertTableData.size() mustBe 0
     }
     "display the 'unqualified certificates' section on the pdf view, with an 'authorised submitter' paragraph" in {
-      val expectedUnqualCertPar = unqualCompaniesPara_A
+      val expectedUnqualCertPar = standInUnqualifiedCompaniesDeclarationParagraph
         .replace("{submitterName}", certificateData.submitterName.get)
         .replace("{saoName}", certificateData.saoName)
         .replace("{length}", certificateData.unqualified.size.toString)
@@ -265,7 +265,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
     "display the 'unqualified certificates' section on the pdf view, with an 'SAO submitter' paragraph " in {
       val certificate           = PdfTestData.testCertificateData(3, None, certificateData.additionalInformation)
       val doc: Document         = Jsoup.parse(certificatePdfTemplate(certificate).body)
-      val expectedUnqualCertPar = unqualCompaniesPara_B
+      val expectedUnqualCertPar = saoUnualifiedCompaniesDeclarationParagraph
         .replace("{saoName}", certificateData.saoName)
         .replace("{length}", certificateData.unqualified.size.toString)
 
@@ -321,10 +321,10 @@ object CertificatePdfTemplateViewSpec {
     def saoDetailTableHeaders: Elements = doc.select("#submission-details + table > thead > tr > th")
     def saoDetailTableData: Elements    = doc.select("#submission-details + table > tbody > tr > td")
 
-    def addInfoSubheading: Elements = doc.select("#additional-information")
-    def addInfoParagraph1: Elements = doc.select("#additional-information+h4")
-    def addInfo: Elements           = doc.select("#additional-information + p ~ p")
-    def companiesSubheading         = doc.select("#companies-list")
+    def addInfoSubheading: Elements       = doc.select("#additional-information")
+    def additionalInfoParagraph: Elements = doc.select("#additional-information+h4")
+    def addInfo: Elements                 = doc.select("#additional-information + p ~ p")
+    def companiesSubheading               = doc.select("#companies-list")
 
     def qualCertSubheading: Elements   = doc.select("#qualified-certificates")
     def qualCertParagraph: Elements    = doc.select("#qualified-certificates ~ p")
@@ -366,17 +366,17 @@ object CertificatePdfTemplateViewSpec {
     Seq("Senior Accounting Officer", "Email address", "Authorised submitter", "Submission date", "Reference number")
   val saoDetailsTableHeadersWithoutAuthSubmitter: Seq[String] =
     Seq("Senior Accounting Officer", "Email address", "Submission date", "Reference number")
-  val addInfoParagraph1 = "Information about your certificate"
+  val additionalInfoParagraph = "Information about your certificate"
 
-  val qualCompaniesPara_A =
+  val standInQualifiedCompaniesDeclarationParagraph =
     "In accordance with paragraph 2 of Schedule 46 to the Finance Act 2009, I {submitterName}, on the behalf of, {saoName} the Senior Accounting Officer, hereby certify that throughout the company's financial year ended 31 December 2024, {length} companies did not have appropriate tax accounting arrangements."
-  val qualCompaniesPara_B =
+  val saoQualifiedCompaniesDeclarationParagraph =
     "In accordance with paragraph 2 of Schedule 46 to the Finance Act 2009, I {saoName} the Senior Accounting Officer, hereby certify that throughout the company's financial year ended 31 December 2024, {length} companies did not have appropriate tax accounting arrangements."
   val qualCertTableHeaders: Seq[String] = Seq("Company name", "UTR", "Tax regimes", "Additional information")
 
-  val unqualCompaniesPara_A =
+  val standInUnqualifiedCompaniesDeclarationParagraph =
     "In accordance with Paragraph 2 Schedule 46 Finance Act 2009, I {submitterName}, on the behalf of, {saoName} the Senior Accounting Officer hereby certify, in respect of the financial year ended 31 December 2024 that {length} companies had appropriate tax accounting arrangements throughout the year."
-  val unqualCompaniesPara_B =
+  val saoUnualifiedCompaniesDeclarationParagraph =
     "In accordance with Paragraph 2 Schedule 46 Finance Act 2009, I {saoName} the Senior Accounting Officer hereby certify, in respect of the financial year ended 31 December 2024 that {length} companies had appropriate tax accounting arrangements throughout the year."
   val unqualCertTableHeaders: Seq[String] =
     Seq("Company name", "CRN", "UTR", "Type", "Status", "Financial year end")

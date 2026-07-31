@@ -20,6 +20,8 @@ import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
+import java.time.LocalDate
+
 final case class NotificationDpsRequest(
     companies: List[Company],
     saos: List[Sao],
@@ -46,24 +48,23 @@ final case class Sao(
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 
-  def toNotification(request: NotificationDpsRequest): Notification = {
+  def toNotification(notificationRef: String, request: NotificationDpsRequest, companyName: String): Notification = {
     val companies = request.companies.map(company => {
 
       Notification.Row(
         companyName = company.name,
         utr = company.utr,
-        crn = company.crn.getOrElse(""),
-        companyType = toCompanyType(company.`type`).orNull,
-        status = toStatus(company.status).orNull,
+        crn = company.crn.fold("")(identity),
+        companyType = toCompanyType(company.`type`),
+        status = toStatus(company.status),
         financialYearEndDate = company.accPeriodEnd
       )
     })
     val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
     Notification(
-      companyName = "Notification.",
-      financialYearEndDate = "test date",
-      submissionDate = "sub date",
-      submissionId = "request.",
+      companyName = companyName,
+      submissionDate = LocalDate.now().toString,
+      submissionId = notificationRef,
       saoHistory = saos,
       companies = companies,
       additionalInformation = request.remarks

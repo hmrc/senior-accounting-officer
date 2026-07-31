@@ -99,18 +99,17 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
       companyDetailsHeaders
         .zip(doc.companyDetailsTableHeaders.eachText())
         .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
-      doc.companyDetailsTableHeaders.size() mustBe 4
+      doc.companyDetailsTableHeaders.size() mustBe 3
 
       val actualCompanyDetails = List(
         notificationData.companyName,
-        notificationData.financialYearEndDate,
         notificationData.submissionDate,
         notificationData.submissionId
       )
       actualCompanyDetails
         .zip(doc.companyDetailsTableData.eachText())
         .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
-      actualCompanyDetails.size mustBe 4
+      actualCompanyDetails.size mustBe 3
     }
     "display the 'contact details' section of the pdf view" in {
       doc.saoDetailSubheading.text() mustBe subheadings(1)
@@ -230,7 +229,7 @@ object NotificationPdfTemplateViewSpec {
   val subheadings: Seq[String] =
     Seq("Submission details", "Senior Accounting Officer details", "Additional information", "List of companies")
   val companyDetailsHeaders: Seq[String] =
-    Seq("Company name", "Financial year end date", "Submission date", "Reference number")
+    Seq("Company name", "Submission date", "Reference number")
 
   val addInfoParagraph1                   = "Information about your notification"
   val saoDetailsTableHeaders: Seq[String] = Seq("Full name", "Role start date", "Role end date")
