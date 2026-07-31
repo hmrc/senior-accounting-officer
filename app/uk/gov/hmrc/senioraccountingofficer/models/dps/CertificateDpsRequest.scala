@@ -20,6 +20,8 @@ import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
+import java.time.LocalDate
+
 final case class CertificateDpsRequest(
     submitterName: Option[String],
     saoName: String,
@@ -53,8 +55,8 @@ object CertificateDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.fold("")(identity),
-        companyType = toCompanyType(company.`type`),
-        status = toStatus(company.status),
+        companyType = toCompanyType(company.`type`).fold(err => throw new IllegalArgumentException(err), identity),
+        status = toStatus(company.status).fold(err => throw new IllegalArgumentException(err), identity),
         financialYearEndDate = company.accPeriodEnd,
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement
@@ -67,8 +69,8 @@ object CertificateDpsRequest {
       saoName = request.saoName,
       saoEmail = request.saoEmail,
       submitterName = request.submitterName,
-      submissionDate = "date",
-      submissionId = request.staffPid.orNull,
+      submissionDate = LocalDate.now().format(dateFormatter),
+      submissionId = request.staffPid.fold("")(identity),
       companies = companies,
       additionalInformation = request.remarks
     )

@@ -45,7 +45,6 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
   val doc: Document                                = Jsoup.parse(notificationPdfTemplate(notificationData).body)
 
   "NotificationPdfView" must {
-
     "must generate a pdf with the correct title" in {
       doc.title mustBe pageTitle
     }

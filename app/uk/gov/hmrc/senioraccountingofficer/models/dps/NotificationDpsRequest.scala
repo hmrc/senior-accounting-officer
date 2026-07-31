@@ -55,15 +55,15 @@ object NotificationDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.fold("")(identity),
-        companyType = toCompanyType(company.`type`),
-        status = toStatus(company.status),
+        companyType = toCompanyType(company.`type`).fold(err => throw new IllegalArgumentException(err), identity),
+        status = toStatus(company.status).fold(err => throw new IllegalArgumentException(err), identity),
         financialYearEndDate = company.accPeriodEnd
       )
     })
     val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
     Notification(
       companyName = companyName,
-      submissionDate = LocalDate.now().toString,
+      submissionDate = LocalDate.now().format(dateFormatter),
       submissionId = notificationRef,
       saoHistory = saos,
       companies = companies,

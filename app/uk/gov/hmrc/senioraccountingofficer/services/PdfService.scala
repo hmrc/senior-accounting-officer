@@ -29,6 +29,8 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
 import java.io.{PipedInputStream, PipedOutputStream}
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 
 class PdfService @Inject() (
@@ -54,16 +56,17 @@ object PdfService {
   enum Status:
     case Active, Dormant, Administration, Liquidation
 
-  def toStatus(status: String): Status = {
-    Status.values.find(_.toString.toLowerCase == status.toLowerCase).get
+  def toStatus(status: String): Either[String, Status] = {
+    Status.values.find(_.toString.toLowerCase == status.toLowerCase).toRight(s"Unknown status: $status")
   }
 
   enum CompanyType:
     case Plc, Ltd
 
-  def toCompanyType(`type`: String): CompanyType = {
-    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase).get
+  def toCompanyType(`type`: String): Either[String, CompanyType] = {
+    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase).toRight(s"Unknown company type: ${`type`}")
   }
+  val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
 
   final case class Certificate(
       saoName: String,
