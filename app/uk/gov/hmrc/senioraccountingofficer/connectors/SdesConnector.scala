@@ -41,16 +41,12 @@ class SdesConnector @Inject() (
       contentLength: Long
   )(using HeaderCarrier): Future[HttpResponse] = {
     val url: URL = URI
-      .create(
-        s"${servicesConfig.baseUrl("secure-data-exchange-proxy")}${servicesConfig.getString(
-            "secure-data-exchange-proxy.notifyPath"
-          )}"
-      )
+      .create(s"${servicesConfig.baseUrl("secure-data-exchange-proxy")}$fileReadyNotificationPath")
       .toURL
 
     httpClientV2
       .post(url)
-      .setHeader("X-Client-ID" -> servicesConfig.getString("secure-data-exchange-proxy.xClientId"))
+      .setHeader("X-Client-ID" -> clientId)
       .withBody(
         Json.obj(
           "informationType"   -> servicesConfig.getString("secure-data-exchange-proxy.informationType"),
@@ -63,4 +59,7 @@ class SdesConnector @Inject() (
       )
       .execute[HttpResponse]
   }
+
+  private val fileReadyNotificationPath = "/notification/fileready"
+  private val clientId                  = "senior-accounting-officer"
 }
