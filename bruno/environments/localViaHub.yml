@@ -6,5 +6,7 @@ variables:
     value: http://localhost:9949
   - name: hubBaseUrl
     value: http://localhost:10056/senior-accounting-officer
+  - name: submissionFrontendBaseUrl
+    value: http://localhost:10058
   - secret: true
     name: authorization
