@@ -52,7 +52,7 @@ object CertificateDpsRequest {
       Certificate.Row(
         companyName = company.name,
         utr = company.utr,
-        crn = company.crn.getOrElse(""),
+        crn = company.crn.fold("")(identity),
         companyType = toCompanyType(company.`type`),
         status = toStatus(company.status),
         financialYearEndDate = company.accPeriodEnd,
