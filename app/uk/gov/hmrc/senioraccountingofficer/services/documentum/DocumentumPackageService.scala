@@ -55,7 +55,7 @@ class DocumentumPackageService @Inject() (
       s"$documentBaseFileName-${submissionDate.format(DateTimeFormatter.BASIC_ISO_DATE)}-metadata.xml"
     val zipFileName      = s"$documentBaseFileName.zip"
     val stagedPdfPath    = stagedPdfObjectStorePath(context)
-    val zipPath          = objectStorePath(context.submissionId, zipFileName)
+    val zipPath          = zipObjectStorePath(context.submissionId, zipFileName)
     val reconciliationId =
       s"$documentBaseFileName-${submissionDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))}"
     val metadataXml = metadataXmlGenerator.generate(context, documentBaseFileName, reconciliationId)
@@ -89,7 +89,7 @@ class DocumentumPackageService @Inject() (
   ): Future[Option[Source[ByteString, NotUsed]]] =
     objectStoreClient
       .getObject[Source[ByteString, NotUsed]](
-        path = objectStorePath(submissionId, fileName),
+        path = zipObjectStorePath(submissionId, fileName),
         owner = owner
       )
       .map(_.map(_.content))
@@ -134,8 +134,8 @@ class DocumentumPackageService @Inject() (
       .Directory(s"/senior-accounting-officer/${context.submissionId}/")
       .file(s"${context.submissionId}_SAO_${context.submissionType.documentumName}.pdf")
 
-  private def objectStorePath(submissionId: String, fileName: String): Path.File =
-    Path.Directory(s"/senior-accounting-officer/$submissionId/").file(fileName)
+  private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =
+    Path.Directory(s"/senior-accounting-officer/sdes/$submissionId/").file(fileName)
 
   private val owner = "senior-accounting-officer"
 }
