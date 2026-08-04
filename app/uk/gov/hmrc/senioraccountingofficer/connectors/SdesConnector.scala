@@ -27,6 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import java.net.URI
 import java.net.URL
+import java.util.Base64
 import javax.inject.Inject
 
 class SdesConnector @Inject() (
@@ -48,18 +49,39 @@ class SdesConnector @Inject() (
       .post(url)
       .setHeader("X-Client-ID" -> clientId)
       .withBody(
-        Json.obj(
-          "informationType"   -> servicesConfig.getString("secure-data-exchange-proxy.informationType"),
-          "fileName"          -> fileName,
-          "objectStorePath"   -> objectStorePath,
-          "checksum"          -> checksum,
-          "checksumAlgorithm" -> "md5",
-          "contentLength"     -> contentLength
-        )
+        buildFileReadyPayload(fileName, objectStorePath, checksum, contentLength)
       )
       .execute[HttpResponse]
   }
 
+  private[connectors] def buildFileReadyPayload(
+      fileName: String,
+      objectStorePath: String,
+      checksum: String,
+      contentLength: Long
+  ) =
+    Json.obj(
+      "informationType" -> servicesConfig.getString("secure-data-exchange-proxy.informationType"),
+      "file"            -> Json.obj(
+        "recipientOrSender" -> servicesConfig.getString("secure-data-exchange-proxy.recipientOrSender"),
+        "name"              -> fileName,
+        "location"          -> s"$objectStoreObjectBaseUrl/${objectStorePath.stripPrefix("/")}",
+        "checksum"          -> Json.obj(
+          "algorithm" -> "md5",
+          "value"     -> base64Md5ToHex(checksum)
+        ),
+        "size"       -> contentLength,
+        "properties" -> Json.arr()
+      ),
+      "audit" -> Json.obj(
+        "correlationID" -> fileName
+      )
+    )
+
+  private[connectors] def base64Md5ToHex(checksum: String): String =
+    Base64.getDecoder.decode(checksum).map(byte => f"${byte & 0xff}%02x").mkString
+
   private val fileReadyNotificationPath = "/notification/fileready"
   private val clientId                  = "senior-accounting-officer"
+  private val objectStoreObjectBaseUrl  = "https://hsopriv.hmrc.gov.uk/object-store/object"
 }

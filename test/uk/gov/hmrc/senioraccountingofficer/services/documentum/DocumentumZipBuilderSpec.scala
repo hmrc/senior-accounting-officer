@@ -16,34 +16,25 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services.documentum
 
-import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-import scala.concurrent.ExecutionContext
 import scala.util.Using
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.util.zip.ZipInputStream
 
-class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutures with BeforeAndAfterAll {
+class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutures with GuiceOneAppPerSuite {
 
-  private given ActorSystem      = ActorSystem("DocumentumZipBuilderSpec")
-  private given Materializer     = Materializer(summon[ActorSystem])
-  private given ExecutionContext = summon[ActorSystem].dispatcher
+  private lazy given Materializer = app.injector.instanceOf[Materializer]
 
-  private val zipBuilder = new DocumentumZipBuilder()
-
-  override def afterAll(): Unit = {
-    summon[ActorSystem].terminate()
-    super.afterAll()
-  }
+  private lazy val zipBuilder = app.injector.instanceOf[DocumentumZipBuilder]
 
   "build" must {
     "create a zip containing the PDF and metadata XML entries" in {
