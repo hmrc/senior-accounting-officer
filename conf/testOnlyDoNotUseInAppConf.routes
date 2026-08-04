@@ -21,3 +21,5 @@ GET        /test-only/documentum-package/:submissionId/:fileName      uk.gov.hmr
 POST       /senior-accounting-officer/test-only/work-item/s1            uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.s1.WorkItemController.postNew
 GET        /senior-accounting-officer/test-only/work-item/s1            uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.s1.WorkItemController.work
 
+POST       /senior-accounting-officer/test-only/work-item/s2            uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.s2.WorkItemController.postNew
+GET        /senior-accounting-officer/test-only/work-item/s2            uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.s2.WorkItemController.work

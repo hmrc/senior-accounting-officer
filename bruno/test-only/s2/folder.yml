@@ -1,0 +1,7 @@
+info:
+  name: s2
+  type: folder
+  seq: 2
+
+request:
+  auth: inherit
