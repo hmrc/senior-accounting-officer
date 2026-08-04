@@ -17,3 +17,7 @@ POST       /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.c
 PUT        /test-only/hip-proxy/*path      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.HipProxyController.proxy(path)
 
 GET        /test-only/documentum-package/:submissionId/:fileName      uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.DocumentumPackageController.download(submissionId, fileName)
+
+POST       /senior-accounting-officer/test-only/work-item/s1            uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.s1.WorkItemController.postNew
+GET        /senior-accounting-officer/test-only/work-item/s1            uk.gov.hmrc.senioraccountingofficer.controllers.testOnly.s1.WorkItemController.work
+
