@@ -45,11 +45,15 @@ class SdesConnector @Inject() (
       .create(s"${servicesConfig.baseUrl("secure-data-exchange-proxy")}$fileReadyNotificationPath")
       .toURL
 
+    val correlationId = summon[HeaderCarrier].extraHeaders
+      .collectFirst { case ("correlationId", id) => id }
+      .fold("")(identity)
+
     httpClientV2
       .post(url)
       .setHeader("X-Client-ID" -> clientId)
       .withBody(
-        buildFileReadyPayload(fileName, owner, objectStorePath, checksum, contentLength)
+        buildFileReadyPayload(fileName, owner, objectStorePath, checksum, contentLength, correlationId)
       )
       .execute[HttpResponse]
   }
@@ -59,7 +63,8 @@ class SdesConnector @Inject() (
       owner: String,
       objectStorePath: String,
       checksum: String,
-      contentLength: Long
+      contentLength: Long,
+      correlationId: String
   ) =
     Json.obj(
       "informationType" -> servicesConfig.getString("secure-data-exchange-proxy.informationType"),
@@ -75,7 +80,7 @@ class SdesConnector @Inject() (
         "properties" -> Json.arr()
       ),
       "audit" -> Json.obj(
-        "correlationID" -> fileName
+        "correlationID" -> correlationId
       )
     )
 
