@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, NotificationDpsRequest}
+import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 
 enum SubmissionType(val documentumName: String) {
   case Notification extends SubmissionType("Notification")
@@ -42,7 +43,7 @@ object DocumentumPackageContext {
   def notification(
       submissionId: String,
       saoSubscriptionId: String,
-      request: NotificationDpsRequest
+      request: NotificationRequest
   ): DocumentumPackageContext =
     DocumentumPackageContext(
       submissionId = submissionId,

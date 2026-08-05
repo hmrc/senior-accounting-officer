@@ -21,7 +21,6 @@ import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as meq
-import org.mockito.ArgumentMatchers.isNull
 import org.mockito.Mockito.*
 import org.mockito.Mockito.when
 import org.mockito.internal.verification.Times
@@ -30,30 +29,27 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.objectstore.client.Md5Hash
-import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerResponse
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageResult
 import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsResponse
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import java.time.Instant
 import java.util.UUID
 
 import NotificationService.PostNotificationResponse.*
@@ -73,95 +69,17 @@ class NotificationServiceSpec
   given HeaderCarrier    = HeaderCarrier()
 
   val mockConnector: NotificationConnector                   = mock[NotificationConnector]
-  val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
-  val mockPdfService: PdfService                             = mock[PdfService]
-  val service = new NotificationService(mockConnector, mockDocumentumPackageService, mockPdfService)
-
-  "postNotification" must {
-    "return Success if everything was orchestrated successfully" in {
-      val mockResponse = HttpResponse(201, validDpsResponseBody)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-      when(mockPdfService.generateNotificationPdf(any())).thenReturn(objectStoreFileContent)
-      when(mockDocumentumPackageService.packageAndSubmit(any(), any())(using any()))
-        .thenReturn(Future.successful(DocumentumPackageResult(packageAvailable = true, Some(objectStoreFilename))))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe Success(notificationReference, true)
-      verify(mockDocumentumPackageService)
-        .packageAndSubmit(
-          meq(DocumentumPackageContext.notification(notificationReference, requestId, testRequest)),
-          meq(objectStoreFileContent)
-        )(using any())
-    }
-
-    "return MalformedResponse(DPS) for a malformed 201 response from DPS" in {
-      val malformedResponseBody = "{"
-      val mockResponse          = HttpResponse(201, malformedResponseBody)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe MalformedResponse(DPS)
-    }
-
-    "return MalformedResponse(DPS) for an invalid 201 response from DPS" in {
-      val invalidResponseBody = "{}"
-      val mockResponse        = HttpResponse(201, invalidResponseBody)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe MalformedResponse(DPS)
-    }
-
-    "return BadRequestFailure(DPS) for an 400 response from DPS" in {
-      val mockResponse = HttpResponse(400)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe BadRequestFailure(DPS)
-    }
-
-    "return InternalServerFailure(DPS) for an 500 response from DPS" in {
-      val mockResponse = HttpResponse(500)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe InternalServerFailure(DPS)
-    }
-
-    "return ServiceUnavailableFailure(DPS) for an 503 response from DPS" in {
-      val requestId    = "123"
-      val mockResponse = HttpResponse(503)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe ServiceUnavailableFailure(DPS)
-    }
-
-    "return UnknownFailure(DPS, status) for an unexpected status response from DPS" in {
-      val unexpectedStatus = 600
-      val mockResponse     = HttpResponse(unexpectedStatus)
-      when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postNotification(requestId, testRequest).futureValue
-
-      result mustBe UnknownFailure(DPS, unexpectedStatus)
-    }
   val mockNotificationConnector: NotificationConnector       = mock[NotificationConnector]
   val mockGetSubscriptionConnector: GetSubscriptionConnector = mock[GetSubscriptionConnector]
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
-  val mockObjectStoreClient: PlayObjectStoreClient           = mock[PlayObjectStoreClient]
+  val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
-  val service                                                = new NotificationService(
+
+  val service = new NotificationService(
     mockNotificationConnector,
     mockGetSubscriptionConnector,
     mockCrmmConnector,
-    mockObjectStoreClient,
+    mockDocumentumPackageService,
     mockPdfService
   )
 
@@ -170,7 +88,7 @@ class NotificationServiceSpec
     reset(mockNotificationConnector)
     reset(mockGetSubscriptionConnector)
     reset(mockCrmmConnector)
-    reset(mockObjectStoreClient)
+    reset(mockDocumentumPackageService)
     reset(mockPdfService)
   }
 
@@ -242,24 +160,9 @@ class NotificationServiceSpec
       .thenReturn(Future.successful(HttpResponse(httpStatusCode, responseBody)))
   }
 
-  def configureObjectStore(): Unit = {
-    when(
-      mockObjectStoreClient.putObject(
-        path = meq(
-          Path
-            .Directory(objectStorePath)
-            .file(objectStoreFilename)
-        ),
-        content = meq(objectStoreFileContent),
-        retentionPeriod = isNull,
-        contentType = isNull,
-        contentMd5 = isNull,
-        owner = meq(objectStoreOwner)
-      )(using any(), any())
-    )
-      .thenReturn(
-        Future.successful(ObjectSummaryWithMd5(Path.File(objectStoreFilename), 0, Md5Hash("hash"), Instant.now))
-      )
+  def configureDocumentumPackageService(): Unit = {
+    when(mockDocumentumPackageService.packageAndSubmit(any(), any())(using any()))
+      .thenReturn(Future.successful(DocumentumPackageResult(packageAvailable = true, Some(exampleZipFilename))))
   }
 
   def configurePdfGeneration(): Unit = {
@@ -274,7 +177,7 @@ class NotificationServiceSpec
           configureCrmmResponse()
           configureDpsResponse()
           configurePdfGeneration()
-          configureObjectStore()
+          configureDocumentumPackageService()
 
           service.postNotification(subscriptionId, testRequest).futureValue
 
@@ -372,7 +275,7 @@ class NotificationServiceSpec
             )
             configureDpsResponse()
             configurePdfGeneration()
-            configureObjectStore()
+            configureDocumentumPackageService()
 
             service.postNotification(subscriptionId, testRequest).futureValue
 
@@ -411,7 +314,7 @@ class NotificationServiceSpec
             )
             configureDpsResponse()
             configurePdfGeneration()
-            configureObjectStore()
+            configureDocumentumPackageService()
 
             service.postNotification(subscriptionId, testRequest).futureValue
 
@@ -535,6 +438,24 @@ class NotificationServiceSpec
 
     "DPS post notification customer endpoint response is" - {
       "201 Created" - {
+        "Valid repsonse; Continue down happy path" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse(201, validDpsResponseBody)
+          configurePdfGeneration()
+          configureDocumentumPackageService()
+
+          val result = service.postNotification(subscriptionId, testRequest).futureValue
+
+          result mustBe Success(exampleNotificationReference, true)
+
+          verify(mockDocumentumPackageService)
+            .packageAndSubmit(
+              meq(DocumentumPackageContext.notification(notificationReference, requestId, testRequest)),
+              meq(objectStoreFileContent)
+            )(using any())
+        }
+
         "Invalid response; Return malformed response error" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
@@ -543,18 +464,6 @@ class NotificationServiceSpec
           val result = service.postNotification(subscriptionId, testRequest).futureValue
 
           result mustBe MalformedResponse(DPS)
-        }
-
-        "Valid repsonse; Continue down happy path" in {
-          configureSubscriptionResponse()
-          configureCrmmResponse()
-          configureDpsResponse(201, validDpsResponseBody)
-          configurePdfGeneration()
-          configureObjectStore()
-
-          val result = service.postNotification(subscriptionId, testRequest).futureValue
-
-          result mustBe Success(exampleNotificationReference, true)
         }
       }
 
@@ -632,11 +541,9 @@ class NotificationServiceSpec
 }
 
 object NotificationServiceSpec {
-  val requestId                           = "123"
-  val testRequest: NotificationDpsRequest = NotificationDpsRequest(List.empty, List.empty)
-  val notificationReference               = "NOT0123456789"
-  val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationReference"}"""
-  val objectStoreFilename: String         = s"20260728_${notificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
+  val requestId                        = "123"
+  val notificationReference            = "NOT0123456789"
+  val exampleZipFilename: String       = s"20260728_${notificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
   val subscriptionId                   = "123"
   val customerId                       = "example customer id"
   val testRequest: NotificationRequest =
@@ -644,11 +551,11 @@ object NotificationServiceSpec {
       List.empty,
       List.empty,
       None
-    ) // TODO: do i need to test with no customer id passed?
+    )
   val exampleNotificationReference = "NOT0123456789"
   val validDpsResponseBody: String = s"""{"notificationRef":"$exampleNotificationReference"}"""
   val objectStorePath: String      = s"/senior-accounting-officer/${exampleNotificationReference}/"
-  val objectStoreFilename: String  = s"${exampleNotificationReference}_SAO_Notification.pdf"
+  val examplePdfFilename: String   = s"${exampleNotificationReference}_SAO_Notification.pdf"
   val objectStoreOwner             = "senior-accounting-officer"
   val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 

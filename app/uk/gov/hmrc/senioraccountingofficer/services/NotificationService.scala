@@ -20,8 +20,14 @@ import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.senioraccountingofficer.connectors.CrmmConnector
+import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnector
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerResponse
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
+import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.toNotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
@@ -49,12 +55,8 @@ class NotificationService @Inject() (
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
-      dpsResult      <- postNotificationDps(subscriptionId, requestWithCustomerId)
-      documentPackage <- packageAndSubmitDocumentumFile(subscriptionId, dpsResult.notificationRef, request)isPdfAvailable <- generateAndUploadPdf(
-        dpsResult.notificationRef,
-        request,
-        dpsSubscription.nominatedCompany.name
-      )
+      dpsResult       <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      documentPackage <- packageAndSubmitDocumentumFile(subscriptionId, dpsResult.notificationRef, request)
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
   }.merge
 
@@ -137,7 +139,7 @@ class NotificationService @Inject() (
   private def packageAndSubmitDocumentumFile(
       subscriptionId: String,
       notificationReference: String,
-      request: NotificationDpsRequest
+      request: NotificationRequest
   )(using
       HeaderCarrier
   ) =
