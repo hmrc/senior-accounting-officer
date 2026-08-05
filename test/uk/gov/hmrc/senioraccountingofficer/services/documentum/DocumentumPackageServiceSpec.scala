@@ -31,7 +31,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
   DocumentumCompany,
@@ -58,16 +57,12 @@ class DocumentumPackageServiceSpec
 
   private val objectStoreClient = mock[PlayObjectStoreClient]
   private val sdesConnector     = mock[SdesConnector]
-  private val servicesConfig    = mock[ServicesConfig]
   private val service           = new DocumentumPackageService(
     metadataXmlGenerator = new DocumentumMetadataXmlGenerator(),
     zipBuilder = new DocumentumZipBuilder(),
     objectStoreClient = objectStoreClient,
-    sdesConnector = sdesConnector,
-    servicesConfig = servicesConfig
+    sdesConnector = sdesConnector
   )
-
-  when(servicesConfig.getString("object-store.default-retention-period")).thenReturn("1-week")
 
   override def afterAll(): Unit = {
     summon[ActorSystem].terminate()

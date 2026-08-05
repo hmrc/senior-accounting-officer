@@ -25,7 +25,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 
@@ -40,8 +39,7 @@ class DocumentumPackageService @Inject() (
     metadataXmlGenerator: DocumentumMetadataXmlGenerator,
     zipBuilder: DocumentumZipBuilder,
     objectStoreClient: PlayObjectStoreClient,
-    sdesConnector: SdesConnector,
-    servicesConfig: ServicesConfig
+    sdesConnector: SdesConnector
 )(using ExecutionContext, Materializer)
     extends Logging {
 
@@ -103,7 +101,7 @@ class DocumentumPackageService @Inject() (
     objectStoreClient.putObject(
       path = path,
       content = pdfSource,
-      retentionPeriod = retentionPeriod,
+      retentionPeriod = RetentionPeriod.OneWeek,
       contentType = Some("application/pdf"),
       owner = owner
     )
@@ -124,7 +122,7 @@ class DocumentumPackageService @Inject() (
     objectStoreClient.putObject(
       path = path,
       content = zipSource,
-      retentionPeriod = retentionPeriod,
+      retentionPeriod = RetentionPeriod.OneWeek,
       contentType = Some("application/zip"),
       owner = owner
     )
@@ -139,16 +137,6 @@ class DocumentumPackageService @Inject() (
 
   private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =
     Path.Directory(s"/sdes/$submissionId/").file(fileName)
-
-  private def retentionPeriod: RetentionPeriod =
-    servicesConfig.getString("object-store.default-retention-period") match {
-      case "1-day"     => RetentionPeriod.OneDay
-      case "1-week"    => RetentionPeriod.OneWeek
-      case unsupported =>
-        throw new IllegalArgumentException(
-          s"Unsupported object-store.default-retention-period: $unsupported"
-        )
-    }
 
   private val owner = "senior-accounting-officer"
 }
