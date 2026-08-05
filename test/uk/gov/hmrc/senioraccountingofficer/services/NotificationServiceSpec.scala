@@ -60,7 +60,6 @@ class NotificationServiceSpec
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
 
-  val mockConnector: NotificationConnector                   = mock[NotificationConnector]
   val mockNotificationConnector: NotificationConnector       = mock[NotificationConnector]
   val mockGetSubscriptionConnector: GetSubscriptionConnector = mock[GetSubscriptionConnector]
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
@@ -96,7 +95,7 @@ class NotificationServiceSpec
         )
       )
   ): Unit = {
-    when(mockGetSubscriptionConnector.getSubscription(meq(subscriptionId))(using any()))
+    when(mockGetSubscriptionConnector.getSubscription(meq(exampleSubscriptionId))(using any()))
       .thenReturn(
         Future.successful(
           HttpResponse(
@@ -145,7 +144,7 @@ class NotificationServiceSpec
   ): Unit = {
     when(
       mockNotificationConnector.postNotification(
-        meq(subscriptionId),
+        meq(exampleSubscriptionId),
         any()
       )(using any())
     )
@@ -171,7 +170,7 @@ class NotificationServiceSpec
           configurePdfGeneration()
           configureDocumentumPackageService()
 
-          service.postNotification(subscriptionId, testRequest).futureValue
+          service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           verify(
             mockCrmmConnector,
@@ -184,7 +183,7 @@ class NotificationServiceSpec
         "Unparsable response; Return malformed response error" in {
           configureSubscriptionResponse(200, "{")
 
-          val result = service.postNotification(subscriptionId, testRequest).futureValue
+          val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           result mustBe MalformedResponse(Subscription)
         }
@@ -193,7 +192,7 @@ class NotificationServiceSpec
       "204 No Content; Return subscription not found error" in {
         configureSubscriptionResponse(204)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe NotFoundFailure(Subscription)
       }
@@ -201,7 +200,7 @@ class NotificationServiceSpec
       "400 Bad Request; Return misalignment error" in {
         configureSubscriptionResponse(400)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misalignment(Subscription)
       }
@@ -209,7 +208,7 @@ class NotificationServiceSpec
       "401 Unauthorized; Return service misconfiguration error" in {
         configureSubscriptionResponse(401)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misconfiguration(Subscription, 401)
       }
@@ -217,7 +216,7 @@ class NotificationServiceSpec
       "403 Forbidden; Return service misconfiguration error" in {
         configureSubscriptionResponse(403)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misconfiguration(Subscription, 403)
       }
@@ -225,7 +224,7 @@ class NotificationServiceSpec
       "500 Internal Server Error; Return \"downstream service error\" error" in {
         configureSubscriptionResponse(500)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe DownstreamServiceError(Subscription)
       }
@@ -233,7 +232,7 @@ class NotificationServiceSpec
       "503 Service Unavailable; Return downstream service unavailable error" in {
         configureSubscriptionResponse(503)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe DownstreamServiceUnavailable(Subscription)
       }
@@ -241,7 +240,7 @@ class NotificationServiceSpec
       "an unknown response code; Return unknown failure error" in {
         configureSubscriptionResponse(618)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe UnknownFailure(Subscription, 618)
       }
@@ -269,13 +268,13 @@ class NotificationServiceSpec
             configurePdfGeneration()
             configureDocumentumPackageService()
 
-            service.postNotification(subscriptionId, testRequest).futureValue
+            service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
             verify(
               mockNotificationConnector,
               Times(1)
             ).postNotification(
-              meq(subscriptionId),
+              meq(exampleSubscriptionId),
               meq(
                 NotificationDpsRequest(
                   companies = Nil,
@@ -308,13 +307,13 @@ class NotificationServiceSpec
             configurePdfGeneration()
             configureDocumentumPackageService()
 
-            service.postNotification(subscriptionId, testRequest).futureValue
+            service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
             verify(
               mockNotificationConnector,
               Times(1)
             ).postNotification(
-              meq(subscriptionId),
+              meq(exampleSubscriptionId),
               meq(
                 NotificationDpsRequest(
                   companies = Nil,
@@ -345,7 +344,7 @@ class NotificationServiceSpec
               )
             )
 
-            val result = service.postNotification(subscriptionId, testRequest).futureValue
+            val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
             result mustBe MalformedResponse(CRMM)
           }
@@ -358,7 +357,7 @@ class NotificationServiceSpec
             "{"
           )
 
-          val result = service.postNotification(subscriptionId, testRequest).futureValue
+          val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           result mustBe MalformedResponse(CRMM)
         }
@@ -368,7 +367,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(400)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misalignment(CRMM)
       }
@@ -377,7 +376,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(401)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misconfiguration(CRMM, 401)
       }
@@ -386,7 +385,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(403)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misconfiguration(CRMM, 403)
       }
@@ -395,7 +394,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(404)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misalignment(CRMM)
       }
@@ -404,7 +403,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(500)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe DownstreamServiceError(CRMM)
       }
@@ -413,7 +412,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(503)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe DownstreamServiceUnavailable(CRMM)
       }
@@ -422,7 +421,7 @@ class NotificationServiceSpec
         configureSubscriptionResponse(200)
         configureCrmmResponse(618)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe UnknownFailure(CRMM, 618)
       }
@@ -437,13 +436,13 @@ class NotificationServiceSpec
           configurePdfGeneration()
           configureDocumentumPackageService()
 
-          val result = service.postNotification(subscriptionId, testRequest).futureValue
+          val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           result mustBe Success(exampleNotificationReference, true)
 
           verify(mockDocumentumPackageService)
             .packageAndSubmit(
-              meq(DocumentumPackageContext.notification(notificationReference, requestId, testRequest)),
+              meq(DocumentumPackageContext.notification(notificationReference, exampleSubscriptionId, testRequest)),
               meq(objectStoreFileContent)
             )(using any())
         }
@@ -453,7 +452,7 @@ class NotificationServiceSpec
           configureCrmmResponse()
           configureDpsResponse(201, "{")
 
-          val result = service.postNotification(subscriptionId, testRequest).futureValue
+          val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           result mustBe MalformedResponse(DPS)
         }
@@ -464,7 +463,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(400)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misalignment(DPS)
       }
@@ -474,7 +473,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(401)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misconfiguration(DPS, 401)
       }
@@ -484,7 +483,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(403)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misconfiguration(DPS, 403)
       }
@@ -494,7 +493,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(404)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misalignment(DPS)
       }
@@ -504,7 +503,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(500)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe DownstreamServiceError(DPS)
       }
@@ -514,7 +513,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(503)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe DownstreamServiceUnavailable(DPS)
       }
@@ -524,7 +523,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(618)
 
-        val result = service.postNotification(subscriptionId, testRequest).futureValue
+        val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe UnknownFailure(DPS, 618)
       }
@@ -533,11 +532,9 @@ class NotificationServiceSpec
 }
 
 object NotificationServiceSpec {
-  val requestId                        = "123"
   val notificationReference            = "NOT0123456789"
   val exampleZipFilename: String       = s"20260728_${notificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
-  val subscriptionId                   = "123"
-  val customerId                       = "example customer id"
+  val exampleSubscriptionId            = "123"
   val testRequest: NotificationRequest =
     NotificationRequest(
       List.empty,
