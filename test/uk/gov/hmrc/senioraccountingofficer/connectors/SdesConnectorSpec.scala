@@ -19,9 +19,18 @@ package uk.gov.hmrc.senioraccountingofficer.connectors
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.libs.json.Json
+import play.api.inject.guice.GuiceApplicationBuilder
 
 class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
+
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder()
+      .configure(
+        "object-store.sdes-host" -> "https://configured-object-store.example/object"
+      )
+      .build()
 
   private val connector = app.injector.instanceOf[SdesConnector]
 
@@ -29,8 +38,8 @@ class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
     "build the SDES file-ready payload with the object-store location and hex MD5 checksum" in {
       val payload = connector.buildFileReadyPayload(
         fileName = "20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
-        objectStorePath =
-          "/senior-accounting-officer/sdes/NOT0123456789/20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
+        owner = "senior-accounting-officer",
+        objectStorePath = "/sdes/NOT0123456789/20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
         checksum = "1B2M2Y8AsgTpgAmY7PhCfg==",
         contentLength = 100L
       )
@@ -41,7 +50,7 @@ class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
           "recipientOrSender" -> "Documentum",
           "name"              -> "20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
           "location"          ->
-            "https://hsopriv.hmrc.gov.uk/object-store/object/senior-accounting-officer/sdes/NOT0123456789/20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
+            "https://configured-object-store.example/object/senior-accounting-officer/sdes/NOT0123456789/20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
           "checksum" -> Json.obj(
             "algorithm" -> "md5",
             "value"     -> "d41d8cd98f00b204e9800998ecf8427e"

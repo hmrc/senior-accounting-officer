@@ -67,6 +67,7 @@ class DocumentumPackageService @Inject() (
       zipSummary <- uploadZip(zipPath, zipSource)
       response   <- sdesConnector.notifyFileReady(
         zipFileName,
+        owner,
         zipPath.asUri,
         zipSummary.contentMd5.value,
         zipSummary.contentLength
@@ -135,7 +136,7 @@ class DocumentumPackageService @Inject() (
       .file(s"${context.submissionId}_SAO_${context.submissionType.documentumName}.pdf")
 
   private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =
-    Path.Directory(s"/senior-accounting-officer/sdes/$submissionId/").file(fileName)
+    Path.Directory(s"/sdes/$submissionId/").file(fileName)
 
   private val owner = "senior-accounting-officer"
 }

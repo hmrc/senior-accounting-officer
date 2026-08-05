@@ -108,6 +108,7 @@ class DocumentumPackageServiceSpec
       when(
         sdesConnector.notifyFileReady(
           meq(expectedFileName),
+          meq(owner),
           meq(expectedZipPath.asUri),
           meq("zip-hash"),
           meq(100L)
@@ -121,6 +122,7 @@ class DocumentumPackageServiceSpec
       result.fileName mustBe Some(expectedFileName)
       verify(sdesConnector).notifyFileReady(
         meq(expectedFileName),
+        meq(owner),
         meq(expectedZipPath.asUri),
         meq("zip-hash"),
         meq(100L)
@@ -165,6 +167,7 @@ class DocumentumPackageServiceSpec
       when(
         sdesConnector.notifyFileReady(
           meq(expectedFileName),
+          meq(owner),
           meq(expectedZipPath.asUri),
           meq("zip-hash"),
           meq(100L)
@@ -182,7 +185,7 @@ class DocumentumPackageServiceSpec
   private val owner            = "senior-accounting-officer"
   private val expectedDate     = LocalDate.now(ZoneOffset.UTC).format(DateTimeFormatter.BASIC_ISO_DATE)
   private val expectedFileName = s"${expectedDate}_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip"
-  private val expectedZipPath  = Path.Directory("/senior-accounting-officer/sdes/NOT0123456789/").file(expectedFileName)
+  private val expectedZipPath  = Path.Directory("/sdes/NOT0123456789/").file(expectedFileName)
   private val expectedPdfPath  = Path
     .Directory("/senior-accounting-officer/NOT0123456789/")
     .file("NOT0123456789_SAO_Notification.pdf")

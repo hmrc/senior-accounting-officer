@@ -37,6 +37,7 @@ class SdesConnector @Inject() (
 
   def notifyFileReady(
       fileName: String,
+      owner: String,
       objectStorePath: String,
       checksum: String,
       contentLength: Long
@@ -49,13 +50,14 @@ class SdesConnector @Inject() (
       .post(url)
       .setHeader("X-Client-ID" -> clientId)
       .withBody(
-        buildFileReadyPayload(fileName, objectStorePath, checksum, contentLength)
+        buildFileReadyPayload(fileName, owner, objectStorePath, checksum, contentLength)
       )
       .execute[HttpResponse]
   }
 
   private[connectors] def buildFileReadyPayload(
       fileName: String,
+      owner: String,
       objectStorePath: String,
       checksum: String,
       contentLength: Long
@@ -65,8 +67,8 @@ class SdesConnector @Inject() (
       "file"            -> Json.obj(
         "recipientOrSender" -> servicesConfig.getString("secure-data-exchange-proxy.recipientOrSender"),
         "name"              -> fileName,
-        "location"          -> s"$objectStoreObjectBaseUrl/${objectStorePath.stripPrefix("/")}",
-        "checksum"          -> Json.obj(
+        "location" -> s"${servicesConfig.getString("object-store.sdes-host")}/${owner.stripPrefix("/")}/${objectStorePath.stripPrefix("/")}",
+        "checksum" -> Json.obj(
           "algorithm" -> "md5",
           "value"     -> base64Md5ToHex(checksum)
         ),
@@ -83,5 +85,4 @@ class SdesConnector @Inject() (
 
   private val fileReadyNotificationPath = "/notification/fileready"
   private val clientId                  = "senior-accounting-officer"
-  private val objectStoreObjectBaseUrl  = "https://hsopriv.hmrc.gov.uk/object-store/object"
 }
