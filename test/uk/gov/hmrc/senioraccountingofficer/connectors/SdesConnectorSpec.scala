@@ -20,19 +20,28 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.libs.json.Json
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 
 class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .configure(
-        "object-store.sdes-host" -> "https://configured-object-store.example/object"
+        "object-store.sdes-host"                       -> "https://configured-object-store.example/object",
+        "secure-data-exchange-proxy.clientId"          -> "configured-client-id",
+        "secure-data-exchange-proxy.informationType"   -> "DSAO",
+        "secure-data-exchange-proxy.recipientOrSender" -> "Documentum"
       )
       .build()
 
   private val connector = app.injector.instanceOf[SdesConnector]
+
+  "clientId" must {
+    "read the SDES client ID from config" in {
+      connector.clientId mustBe "configured-client-id"
+    }
+  }
 
   "buildFileReadyPayload" must {
     "build the SDES file-ready payload with the object-store location and hex MD5 checksum" in {

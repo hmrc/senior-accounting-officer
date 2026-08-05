@@ -83,6 +83,8 @@ class SdesConnector @Inject() (
   private[connectors] def base64Md5ToHex(checksum: String): String =
     Base64.getDecoder.decode(checksum).map(byte => f"${byte & 0xff}%02x").mkString
 
+  private[connectors] def clientId: String =
+    servicesConfig.getString("secure-data-exchange-proxy.clientId")
+
   private val fileReadyNotificationPath = "/notification/fileready"
-  private val clientId                  = "senior-accounting-officer"
 }
