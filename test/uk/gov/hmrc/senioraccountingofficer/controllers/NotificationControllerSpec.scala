@@ -33,8 +33,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerSpec.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.models.*
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, *}
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*

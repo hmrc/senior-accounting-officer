@@ -18,14 +18,12 @@ package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
-import uk.gov.hmrc.http.HttpReads
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 

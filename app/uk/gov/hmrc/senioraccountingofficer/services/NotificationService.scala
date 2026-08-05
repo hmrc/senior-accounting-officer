@@ -20,16 +20,15 @@ import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.CrmmConnector
-import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnector
-import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerResponse
+import uk.gov.hmrc.senioraccountingofficer.connectors.{CrmmConnector, GetSubscriptionConnector, NotificationConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{NotificationDpsRequest, NotificationDpsResponse}
-import uk.gov.hmrc.senioraccountingofficer.models.toNotificationDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{
+  GetSubscriptionDpsResponse,
+  NotificationDpsRequest,
+  NotificationDpsResponse
+}
+import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, toNotificationDpsRequest}
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*

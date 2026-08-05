@@ -17,9 +17,8 @@
 package uk.gov.hmrc.senioraccountingofficer.services.documentum
 
 import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.IOResult
-import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source, StreamConverters}
+import org.apache.pekko.stream.{IOResult, Materializer}
 import org.apache.pekko.util.ByteString
 
 import scala.concurrent.{ExecutionContext, Future}

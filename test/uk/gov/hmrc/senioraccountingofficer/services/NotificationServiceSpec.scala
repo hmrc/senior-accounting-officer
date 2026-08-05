@@ -19,10 +19,8 @@ package uk.gov.hmrc.senioraccountingofficer.services
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq as meq
-import org.mockito.Mockito.*
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.Mockito.{when, *}
 import org.mockito.internal.verification.Times
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
@@ -34,19 +32,13 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerResponse
-import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
-import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageResult
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsResponse
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
+import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn, generateUtr}
 
 import scala.concurrent.{ExecutionContext, Future}
 

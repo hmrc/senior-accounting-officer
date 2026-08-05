@@ -21,10 +21,9 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.notification.*
+import uk.gov.hmrc.senioraccountingofficer.models.{ApiError, NotificationRequest}
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 

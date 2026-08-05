@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.crmm
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json.{Json, OFormat}
 
 final case class RetrieveCustomerRequest(
     companyRegistrationNumber: Option[String],
