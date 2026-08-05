@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://govtalk.gov.uk/hmrc/bit/content/1"
+           xmlns="http://govtalk.gov.uk/hmrc/bit/content/1"
+           elementFormDefault="qualified">
+  <xs:element name="documents">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="document" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="header">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="title" type="xs:string"/>
+                    <xs:element name="format" type="xs:string"/>
+                    <xs:element name="mime_type" type="xs:string"/>
+                    <xs:element name="store" type="xs:boolean"/>
+                    <xs:element name="source" type="xs:string"/>
+                    <xs:element name="target" type="xs:string"/>
+                    <xs:element name="reconciliation_id" type="xs:string"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="metadata">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="attribute" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="attribute_name" type="xs:string"/>
+                          <xs:element name="attribute_type" type="xs:string"/>
+                          <xs:element name="attribute_values">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="attribute_value" type="xs:string"/>
+                              </xs:sequence>
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

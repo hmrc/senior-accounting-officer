@@ -17,71 +17,57 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import org.apache.pekko.NotUsed
-import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq as meq
-import org.mockito.ArgumentMatchers.isNull
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.objectstore.client.Md5Hash
-import uk.gov.hmrc.objectstore.client.ObjectSummaryWithMd5
-import uk.gov.hmrc.objectstore.client.Path
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.connectors.NotificationConnector
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 
 import scala.concurrent.{ExecutionContext, Future}
-
-import java.time.Instant
 
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
 
 class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
 
+  override given patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = Span(5, Seconds), interval = Span(25, Millis))
+
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
-  given ActorSystem      = ActorSystem()
 
-  val mockConnector: NotificationConnector         = mock[NotificationConnector]
-  val mockObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
-  val mockPdfService: PdfService                   = mock[PdfService]
-  val service = new NotificationService(mockConnector, mockObjectStoreClient, mockPdfService)
+  val mockConnector: NotificationConnector                   = mock[NotificationConnector]
+  val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
+  val mockPdfService: PdfService                             = mock[PdfService]
+  val service = new NotificationService(mockConnector, mockDocumentumPackageService, mockPdfService)
 
   "postNotification" must {
     "return Success if everything was orchestrated successfully" in {
       val mockResponse = HttpResponse(201, validDpsResponseBody)
       when(mockConnector.postNotification(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
       when(mockPdfService.generateNotificationPdf(any())).thenReturn(objectStoreFileContent)
-
-      when(
-        mockObjectStoreClient.putObject(
-          path = meq(
-            Path
-              .Directory(objectStorePath)
-              .file(objectStoreFilename)
-          ),
-          content = meq(objectStoreFileContent),
-          retentionPeriod = isNull,
-          contentType = isNull,
-          contentMd5 = isNull,
-          owner = meq(objectStoreOwner)
-        )(using any(), any())
-      )
-        .thenReturn(
-          Future.successful(ObjectSummaryWithMd5(Path.File(objectStoreFilename), 0, Md5Hash("hash"), Instant.now))
-        )
+      when(mockDocumentumPackageService.packageAndSubmit(any(), any())(using any()))
+        .thenReturn(Future.successful(DocumentumPackageResult(packageAvailable = true, Some(objectStoreFilename))))
 
       val result = service.postNotification(requestId, testRequest).futureValue
 
       result mustBe Success(notificationReference, true)
+      verify(mockDocumentumPackageService)
+        .packageAndSubmit(
+          meq(DocumentumPackageContext.notification(notificationReference, requestId, testRequest)),
+          meq(objectStoreFileContent)
+        )(using any())
     }
 
     "return MalformedResponse(DPS) for a malformed 201 response from DPS" in {
@@ -146,12 +132,10 @@ class NotificationServiceSpec extends AnyWordSpec with Matchers with MockitoSuga
 }
 
 object NotificationServiceSpec {
-  val requestId                                           = "123"
-  val testRequest: NotificationDpsRequest                 = NotificationDpsRequest(List.empty, List.empty)
-  val notificationReference                               = "NOT0123456789"
-  val validDpsResponseBody: String                        = s"""{"notificationRef":"$notificationReference"}"""
-  val objectStorePath: String                             = s"/senior-accounting-officer/${notificationReference}/"
-  val objectStoreFilename: String                         = s"${notificationReference}_SAO_Notification.pdf"
-  val objectStoreOwner                                    = "senior-accounting-officer"
+  val requestId                           = "123"
+  val testRequest: NotificationDpsRequest = NotificationDpsRequest(List.empty, List.empty)
+  val notificationReference               = "NOT0123456789"
+  val validDpsResponseBody: String        = s"""{"notificationRef":"$notificationReference"}"""
+  val objectStoreFilename: String         = s"20260728_${notificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
   val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 }
