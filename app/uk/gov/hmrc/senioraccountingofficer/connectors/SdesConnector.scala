@@ -25,8 +25,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import java.net.URI
-import java.net.URL
+import java.net.{URI, URL}
 import java.util.Base64
 import javax.inject.Inject
 

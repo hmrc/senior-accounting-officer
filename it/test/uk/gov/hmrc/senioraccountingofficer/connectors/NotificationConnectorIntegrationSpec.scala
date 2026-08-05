@@ -47,6 +47,7 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
           `type` = "LTD"
         )
       ),
+      customerId = None,
       saos = List(
         Sao(
           name = "Firstname Lastname",

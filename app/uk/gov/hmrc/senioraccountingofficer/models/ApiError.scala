@@ -41,7 +41,8 @@ object ApiError {
       INVALID_ENUM_VALUE,
       ARRAY_MIN_ITEMS_NOT_MET,
       LENGTH_OUT_OF_BOUNDS,
-      CANNOT_BE_EMPTY
+      CANNOT_BE_EMPTY,
+      NOT_FOUND
   }
 
   object Reason {

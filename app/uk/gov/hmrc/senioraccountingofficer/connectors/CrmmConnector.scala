@@ -16,34 +16,46 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
-import play.api.libs.json.*
+import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import java.net.URL
 import javax.inject.Inject
 
-class NotificationConnector @Inject() (
+class CrmmConnector @Inject() (
     httpClientV2: HttpClientV2,
     appConfig: AppConfig
-)(implicit ec: ExecutionContext) {
-
-  def postNotification(
-      subscriptionId: String,
-      request: NotificationDpsRequest
-  )(using HeaderCarrier): Future[HttpResponse] = {
+)(using ExecutionContext) {
+  def retrieveCustomer(
+      request: RetrieveCustomerRequest
+  )(using hc: HeaderCarrier): Future[HttpResponse] = {
     given HttpReads[HttpResponse] = HttpReads.Implicits.readRaw
-    val url: URL                  = url"${appConfig.hipHost}/dapm/subscriptions/$subscriptionId/notifications"
+    val url = url"${appConfig.hipHost}/compliance/civil-investigation-and-avoidance/api/customer/v1/retrievecustomer"
 
-    httpClientV2
-      .post(url)
-      .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
-      .withBody(Json.toJson(request))
-      .execute[HttpResponse]
+    if appConfig.crmmEnabled
+    then
+      httpClientV2
+        .post(url)
+        .setHeader("Authorization" -> appConfig.hipAuthorisationCredentials)
+        .withBody(Json.toJson(request))
+        .execute[HttpResponse]
+    else
+      Future.successful(
+        HttpResponse(
+          200,
+          Json
+            .obj(
+              "existingCustomer" -> false,
+              "errorDescription" -> "Customer not found (stubbed)",
+              "status"           -> "Failure"
+            )
+            .toString()
+        )
+      )
   }
 }

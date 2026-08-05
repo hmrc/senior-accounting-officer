@@ -27,9 +27,10 @@ final case class NotificationRequest(
 
 extension (notificationRequest: NotificationRequest) {
 
-  def toNotificationDpsRequest: NotificationDpsRequest = {
+  def toNotificationDpsRequest(customerId: Option[String] = None): NotificationDpsRequest = {
     NotificationDpsRequest(
       companies = notificationRequest.companies.map(_.toDpsCompany),
+      customerId = customerId,
       saos = notificationRequest.saos.map(_.toDpsSao),
       remarks = notificationRequest.remarks,
       staffPID = None
