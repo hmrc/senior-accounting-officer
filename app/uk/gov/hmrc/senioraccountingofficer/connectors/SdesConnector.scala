@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
+import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, InternalServerException}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,13 +33,14 @@ import javax.inject.Inject
 class SdesConnector @Inject() (
     httpClientV2: HttpClientV2,
     servicesConfig: ServicesConfig
-)(using ExecutionContext) {
+)(using ExecutionContext)
+    extends Logging {
 
   def notifyFileReady(
       fileName: String,
       owner: String,
       objectStorePath: String,
-      checksum: String,
+      base64Checksum: String,
       contentLength: Long
   )(using HeaderCarrier): Future[HttpResponse] = {
     val url: URL = URI
@@ -47,13 +49,15 @@ class SdesConnector @Inject() (
 
     val correlationId = summon[HeaderCarrier].extraHeaders
       .collectFirst { case ("correlationId", id) => id }
-      .fold("")(identity)
+      .fold {
+        throw InternalServerException("No correlationId found")
+      }(identity)
 
     httpClientV2
       .post(url)
       .setHeader("X-Client-ID" -> clientId)
       .withBody(
-        buildFileReadyPayload(fileName, owner, objectStorePath, checksum, contentLength, correlationId)
+        buildFileReadyPayload(fileName, owner, objectStorePath, base64Checksum, contentLength, correlationId)
       )
       .execute[HttpResponse]
   }

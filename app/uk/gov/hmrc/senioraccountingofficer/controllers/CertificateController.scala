@@ -20,14 +20,12 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequest
 import uk.gov.hmrc.senioraccountingofficer.models.certificate.CertificateResponse
+import uk.gov.hmrc.senioraccountingofficer.models.{ApiError, CertificateRequest}
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
 
@@ -41,7 +39,7 @@ class CertificateController @Inject() (
     identify: IdentifierAction,
     ensureCorrelationId: EnsureCorrelationIdAction
 )(using ExecutionContext)
-    extends BackendController(cc)
+    extends BaseController(cc)
     with Logging {
 
   def postCertificate(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
