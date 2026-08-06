@@ -17,6 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
@@ -24,6 +25,7 @@ import java.time.LocalDate
 
 final case class NotificationDpsRequest(
     companies: List[Company],
+    customerId: Option[String],
     saos: List[Sao],
     remarks: Option[String] = None,
     staffPID: Option[String] = None
@@ -48,7 +50,7 @@ final case class Sao(
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 
-  def toNotification(notificationRef: String, request: NotificationDpsRequest, companyName: String): Notification = {
+  def toNotification(notificationRef: String, request: NotificationRequest, companyName: String): Notification = {
     val companies = request.companies.map(company => {
 
       Notification.Row(

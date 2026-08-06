@@ -1,0 +1,16 @@
+info:
+  name: Generate object-store internal auth token
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{submissionFrontendBaseUrl}}/senior-accounting-officer/submission/test-only/internal-auth/object-store"
+  headers: []
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

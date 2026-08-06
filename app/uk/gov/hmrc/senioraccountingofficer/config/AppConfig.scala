@@ -35,4 +35,12 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
     val encoded = Base64.getEncoder.encodeToString(s"$hipClientId:$hipClientSecret".getBytes("UTF-8"))
     s"Basic $encoded"
   }
+
+  def crmmEnabled: Boolean =
+    sys.props.get("feature-toggles.crmm").fold(config.get[Boolean]("feature-toggles.crmm"))(_ == "true")
+}
+
+object AppConfig {
+  def setValue(key: String, value: String): Unit =
+    sys.props.addOne((key, value)): Unit
 }
