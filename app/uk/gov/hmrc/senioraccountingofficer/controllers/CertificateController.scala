@@ -44,8 +44,6 @@ class CertificateController @Inject() (
 
   def postCertificate(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
     implicit request =>
-      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
       JsonErrorHandling.parseJson(request.body) match {
         case Right(json) =>
           val errors = JsonErrorHandling.Validators.validateCertificate(json)
@@ -60,15 +58,21 @@ class CertificateController @Inject() (
                 case Success(certificateRef) =>
                   Created(Json.toJson(CertificateResponse(certificateRef)))
                 case MalformedResponse(downstreamService) =>
-                  logger.warn(s"[Certificate][$downstreamService][MalformedResponse]")
-                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-                case BadRequestFailure(downstreamService) =>
+                  logger.warn(s"[Certificate][$downstreamService][MALFORMED_RESPONSE]")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+                case Misalignment(downstreamService) =>
                   logger.warn(s"[Certificate][$downstreamService][BAD_REQUEST]")
                   InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-                case InternalServerFailure(downstreamService) =>
+                case Misconfiguration(downstreamService, status) =>
+                  logger.warn(s"[Certificate][$downstreamService][MISCONFIGURATION]status=$status")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
+                case NotFoundFailure(downstreamService) =>
+                  logger.warn(s"[Certificate][$downstreamService][NOT_FOUND]")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))
+                case DownstreamServiceError(downstreamService) =>
                   logger.warn(s"[Certificate][$downstreamService][INTERNAL_SERVER_ERROR]")
                   BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
-                case ServiceUnavailableFailure(downstreamService) =>
+                case DownstreamServiceUnavailable(downstreamService) =>
                   logger.warn(s"[Certificate][$downstreamService][SERVICE_UNAVAILABLE]")
                   BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
                 case UnknownFailure(downstreamService, status) =>

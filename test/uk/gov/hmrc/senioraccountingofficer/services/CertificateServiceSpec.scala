@@ -20,25 +20,36 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.{any, eq as meq}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.*
+import org.mockito.internal.verification.Times
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
+import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.models.dps.*
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import CertificateService.PostCertificateResponse.*
-import CertificateServiceSpec.*
+import java.util.UUID
 
-class CertificateServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures {
+import CertificateService.PostCertificateResponse.*
+class CertificateServiceSpec
+    extends AnyFreeSpec
+    with Matchers
+    with MockitoSugar
+    with ScalaFutures
+    with BeforeAndAfterEach {
 
   override given patienceConfig: PatienceConfig =
     PatienceConfig(timeout = Span(5, Seconds), interval = Span(25, Millis))
@@ -46,100 +57,504 @@ class CertificateServiceSpec extends AnyWordSpec with Matchers with MockitoSugar
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
 
-  val mockConnector: CertificateConnector                    = mock[CertificateConnector]
+  val mockCertificateDpsConnector: CertificateConnector      = mock[CertificateConnector]
+  val mockGetSubscriptionConnector: GetSubscriptionConnector = mock[GetSubscriptionConnector]
+  val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
-  val service = new CertificateService(mockConnector, mockDocumentumPackageService, mockPdfService)
 
-  "postCertificate" must {
-    "return Success if everything was orchestrated successfully" in {
-      val mockResponse = HttpResponse(201, validDpsResponseBody)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-      when(mockPdfService.generateCertificatePdf(any())).thenReturn(objectStoreFileContent)
-      when(mockDocumentumPackageService.packageAndSubmit(any(), any())(using any()))
-        .thenReturn(Future.successful(DocumentumPackageResult(packageAvailable = true, Some(objectStoreFilename))))
+  val service =
+    new CertificateService(
+      mockGetSubscriptionConnector,
+      mockCrmmConnector,
+      mockCertificateDpsConnector,
+      mockDocumentumPackageService,
+      mockPdfService
+    )
 
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe Success(certificateRef)
-      verify(mockDocumentumPackageService)
-        .packageAndSubmit(
-          meq(DocumentumPackageContext.certificate(certificateRef, requestId, testRequest)),
-          meq(objectStoreFileContent)
-        )(using any())
-    }
-
-    "return MalformedResponse(DPS) for a malformed 201 response from DPS" in {
-      val malformedResponseBody = "{"
-      val mockResponse          = HttpResponse(201, malformedResponseBody)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe MalformedResponse(DPS)
-    }
-
-    "return MalformedResponse(DPS) for an invalid 201 response from DPS" in {
-      val invalidResponseBody = "{}"
-      val mockResponse        = HttpResponse(201, invalidResponseBody)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe MalformedResponse(DPS)
-    }
-
-    "return BadRequestFailure(DPS) for a 400 response from DPS" in {
-      val mockResponse = HttpResponse(400)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe BadRequestFailure(DPS)
-    }
-
-    "return InternalServerFailure(DPS) for a 500 response from DPS" in {
-      val mockResponse = HttpResponse(500)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe InternalServerFailure(DPS)
-    }
-
-    "return ServiceUnavailableFailure(DPS) for a 503 response from DPS" in {
-      val mockResponse = HttpResponse(503)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe ServiceUnavailableFailure(DPS)
-    }
-
-    "return UnknownFailure(DPS, status) for an unexpected status response from DPS" in {
-      val unexpectedStatus = 600
-      val mockResponse     = HttpResponse(unexpectedStatus)
-      when(mockConnector.postCertificate(any(), any())(using any())).thenReturn(Future.successful(mockResponse))
-
-      val result = service.postCertificate(requestId, testRequest).futureValue
-
-      result mustBe UnknownFailure(DPS, unexpectedStatus)
-    }
+  override def beforeEach(): Unit = {
+    super.beforeEach()
+    reset(mockCertificateDpsConnector)
+    reset(mockGetSubscriptionConnector)
+    reset(mockCrmmConnector)
+    reset(mockDocumentumPackageService)
+    reset(mockPdfService)
   }
 
+  def configureSubscriptionResponse(
+      httpStatusCode: Int = 200,
+      responseBody: String = Json.stringify(
+        Json.toJson(
+          GetSubscriptionDpsResponse(
+            etmpSafeId = exampleSafeId,
+            nominatedCompany = NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
+            contacts = Nil
+          )
+        )
+      )
+  ): Unit = {
+    when(mockGetSubscriptionConnector.getSubscription(meq(exampleSubscriptionId))(using any()))
+      .thenReturn(
+        Future.successful(
+          HttpResponse(
+            httpStatusCode,
+            responseBody
+          )
+        )
+      )
+  }
+
+  def configureCrmmResponse(
+      httpStatusCode: Int = 200,
+      responseBody: String = Json.stringify(
+        Json.toJson(
+          RetrieveCustomerResponse(
+            customerId = Some(exampleCustomerId),
+            errorDescription = None,
+            existingCustomer = true,
+            status = "Success"
+          )
+        )
+      )
+  ): Unit = {
+    when(
+      mockCrmmConnector.retrieveCustomer(
+        meq(
+          RetrieveCustomerRequest(
+            companyRegistrationNumber = Some(exampleCrn),
+            uniqueTaxReference = Some(exampleUtr)
+          )
+        )
+      )(using any())
+    )
+      .thenReturn(Future.successful(HttpResponse(httpStatusCode, responseBody)))
+  }
+
+  def configureDpsResponse(
+      httpStatusCode: Int = 201,
+      responseBody: String = Json.stringify(
+        Json.toJson(
+          CertificateDpsResponse(
+            certificateRef = exampleCertificateReference
+          )
+        )
+      )
+  ): Unit = {
+    when(
+      mockCertificateDpsConnector.postCertificate(
+        meq(exampleSubscriptionId),
+        any()
+      )(using any())
+    )
+      .thenReturn(Future.successful(HttpResponse(httpStatusCode, responseBody)))
+  }
+
+  def configureDocumentumPackageService(): Unit = {
+    when(mockDocumentumPackageService.packageAndSubmit(any(), any())(using any()))
+      .thenReturn(Future.successful(DocumentumPackageResult(packageAvailable = true, Some(exampleZipFilename))))
+  }
+
+  def configurePdfGeneration(): Unit = {
+    when(mockPdfService.generateCertificatePdf(any(), any())).thenReturn(objectStoreFileContent)
+  }
+
+  "postCertificate" - {
+    "DPS get subscription endpoint response is" - {
+      "200 OK" - {
+        "Parseable response; Continue down happy path" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse()
+          configurePdfGeneration()
+          configureDocumentumPackageService()
+
+          service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+          verify(
+            mockCrmmConnector,
+            Times(1)
+          ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(exampleCrn), Some(exampleUtr))))(using
+            any()
+          )
+        }
+
+        "Unparsable response; Return malformed response error" in {
+          configureSubscriptionResponse(200, "{")
+
+          val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+          result mustBe MalformedResponse(Subscription)
+        }
+      }
+
+      "204 No Content; Return subscription not found error" in {
+        configureSubscriptionResponse(204)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe NotFoundFailure(Subscription)
+      }
+
+      "400 Bad Request; Return misalignment error" in {
+        configureSubscriptionResponse(400)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misalignment(Subscription)
+      }
+
+      "401 Unauthorized; Return service misconfiguration error" in {
+        configureSubscriptionResponse(401)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misconfiguration(Subscription, 401)
+      }
+
+      "403 Forbidden; Return service misconfiguration error" in {
+        configureSubscriptionResponse(403)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misconfiguration(Subscription, 403)
+      }
+
+      "500 Internal Server Error; Return \"downstream service error\" error" in {
+        configureSubscriptionResponse(500)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceError(Subscription)
+      }
+
+      "503 Service Unavailable; Return downstream service unavailable error" in {
+        configureSubscriptionResponse(503)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceUnavailable(Subscription)
+      }
+
+      "an unknown response code; Return unknown failure error" in {
+        configureSubscriptionResponse(618)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe UnknownFailure(Subscription, 618)
+      }
+    }
+
+    "CRMM retrieve customer endpoint response is" - {
+      "200 OK" - {
+        "Parsable response" - {
+          "Success response indicating customer found; Continue down happy path with a customer id" in {
+            val expectedCustomerId = UUID.randomUUID().toString
+            configureSubscriptionResponse()
+            configureCrmmResponse(responseBody =
+              Json.stringify(
+                Json.toJson(
+                  RetrieveCustomerResponse(
+                    customerId = Some(expectedCustomerId),
+                    errorDescription = None,
+                    existingCustomer = true,
+                    status = "Success"
+                  )
+                )
+              )
+            )
+            configureDpsResponse()
+            configurePdfGeneration()
+            configureDocumentumPackageService()
+
+            service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+            verify(
+              mockCertificateDpsConnector,
+              Times(1)
+            ).postCertificate(
+              meq(exampleSubscriptionId),
+              meq(
+                CertificateDpsRequest(
+                  submitterName = Some("Firstname Lastname"),
+                  saoName = expectedSaoName,
+                  saoEmail = expectedSaoEmail,
+                  companies = Nil
+                )
+              )
+            )(using
+              any()
+            )
+          }
+
+          "Failure response indicating customer not found; Continue down happy path with no customer id" in {
+            configureSubscriptionResponse()
+            configureCrmmResponse(responseBody =
+              Json.stringify(
+                Json.toJson(
+                  RetrieveCustomerResponse(
+                    customerId = None,
+                    errorDescription = Some("customer not found"),
+                    existingCustomer = false,
+                    status = "Failure"
+                  )
+                )
+              )
+            )
+            configureDpsResponse()
+            configurePdfGeneration()
+            configureDocumentumPackageService()
+
+            service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+            verify(
+              mockCertificateDpsConnector,
+              Times(1)
+            ).postCertificate(
+              meq(exampleSubscriptionId),
+              meq(
+                CertificateDpsRequest(
+                  submitterName = Some("Firstname Lastname"),
+                  saoName = expectedSaoName,
+                  saoEmail = expectedSaoEmail,
+                  companies = Nil
+                )
+              )
+            )(using
+              any()
+            )
+          }
+
+          "Invalid response; Return malformed response error" in {
+            configureSubscriptionResponse(200)
+            configureCrmmResponse(
+              200,
+              Json.stringify(
+                Json.toJson(
+                  RetrieveCustomerResponse(
+                    customerId = Some(exampleCustomerId),
+                    errorDescription = Some("an error message?!?"),
+                    existingCustomer = true,
+                    status = "a real status"
+                  )
+                )
+              )
+            )
+
+            val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+            result mustBe MalformedResponse(CRMM)
+          }
+        }
+
+        "Unparsable response; Return malformed response error" in {
+          configureSubscriptionResponse(200)
+          configureCrmmResponse(
+            200,
+            "{"
+          )
+
+          val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+          result mustBe MalformedResponse(CRMM)
+        }
+      }
+
+      "400 Bad Request; Return misalignment error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(400)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misalignment(CRMM)
+      }
+
+      "401 Unauthorized; Return service misconfiguration error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(401)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misconfiguration(CRMM, 401)
+      }
+
+      "403 Forbidden; Return service misconfiguration error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(403)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misconfiguration(CRMM, 403)
+      }
+
+      "404 Not Found; Return misalignment error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(404)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misalignment(CRMM)
+      }
+
+      "500 Internal Server Error; Return \"downstream service error\" error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(500)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceError(CRMM)
+      }
+
+      "503 Service Unavailable; Return downstream service unavailable error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(503)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceUnavailable(CRMM)
+      }
+
+      "an unknown response code; Return unknown failure error" in {
+        configureSubscriptionResponse(200)
+        configureCrmmResponse(618)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe UnknownFailure(CRMM, 618)
+      }
+    }
+
+    "DPS post certificate customer endpoint response is" - {
+      "201 Created" - {
+        "Valid repsonse; Continue down happy path" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse(201, validDpsResponseBody)
+          configurePdfGeneration()
+          configureDocumentumPackageService()
+
+          val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+          result mustBe Success(exampleCertificateReference)
+
+          verify(mockDocumentumPackageService)
+            .packageAndSubmit(
+              meq(
+                DocumentumPackageContext
+                  .certificate(exampleCertificateReference, exampleSubscriptionId, incomingRequest)
+              ),
+              meq(objectStoreFileContent)
+            )(using any())
+        }
+
+        "Invalid response; Return malformed response error" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse(201, "{")
+
+          val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+          result mustBe MalformedResponse(DPS)
+        }
+      }
+
+      "400 Bad Request; Return misalignment error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(400)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misalignment(DPS)
+      }
+
+      "401 Unauthorized; Return service misconfiguration error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(401)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misconfiguration(DPS, 401)
+      }
+
+      "403 Forbidden; Return service misconfiguration error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(403)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misconfiguration(DPS, 403)
+      }
+
+      "404 Not Found; Return misalignment error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(404)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Misalignment(DPS)
+      }
+
+      "500 Internal Server Error; Return \"downstream service error\" error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(500)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceError(DPS)
+      }
+
+      "503 Service Unavailable; Return downstream service unavailable error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(503)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceUnavailable(DPS)
+      }
+
+      "an unknown response code; Return unknown failure error" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse(618)
+
+        val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe UnknownFailure(DPS, 618)
+      }
+    }
+  }
 }
 
 object CertificateServiceSpec {
-  val requestId                          = "123"
-  val testRequest: CertificateDpsRequest =
+  val requestId                              = "123"
+  val incomingRequest: CertificateDpsRequest =
     CertificateDpsRequest(
       submitterName = Some("Firstname Lastname"),
       saoName = "Firstname Lastname",
       saoEmail = "firstname.lastname@example.com",
       companies = List.empty
     )
-  val certificateRef               = "CRT0001234567"
-  val validDpsResponseBody: String = s"""{"certificateRef":"$certificateRef"}"""
-  val objectStoreFilename: String  = s"20260728_${certificateRef}_SAO_Certificate_OFFICIAL_SENSITIVE.ZIP"
+
+  val exampleSubscriptionId       = "123"
+  val exampleCertificateReference = "CRT0123456789"
+  val exampleUtr                  = generateUtr
+  val exampleCrn                  = generateCrn
+  val exampleCompanyName          = "company name"
+  val exampleSafeId               = "safe id"
+  val exampleCustomerId           = "customer id"
+  val expectedSaoName             = "Firstname Lastname"
+  val expectedSaoEmail            = "firstname.lastname@example.com"
+
+  val validDpsResponseBody: String = s"""{"certificateRef":"$exampleCertificateReference"}"""
+
+  val exampleZipFilename: String = s"20260728_${exampleCertificateReference}_SAO_Certificate_OFFICIAL_SENSITIVE.ZIP"
+  val examplePdfFilename: String = s"${exampleCertificateReference}_SAO_Certificate.pdf"
+
   val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
+
 }
