@@ -60,8 +60,36 @@ class DocumentumPackageService @Inject() (
       s"$documentBaseFileName-${submissionDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))}"
     val metadataXml = metadataXmlGenerator.generate(context, documentBaseFileName, reconciliationId)
 
+    uploadStagedPdf(stagedPdfPath, pdfSource)
+      .map { _ =>
+        val _ = submitPackageToSdes(
+          stagedPdfPath,
+          pdfFileName,
+          metadataXml,
+          metadataXmlName,
+          zipPath,
+          zipFileName,
+          context.submissionId
+        )
+
+        DocumentumPackageResult(packageAvailable = true, Some(zipFileName))
+      }
+      .recover { case NonFatal(exception) =>
+        logger.warn(s"[DocumentumPackage][Failed] submissionId=${context.submissionId}", exception)
+        DocumentumPackageResult(packageAvailable = false)
+      }
+  }
+
+  private def submitPackageToSdes(
+      stagedPdfPath: Path.File,
+      pdfFileName: String,
+      metadataXml: String,
+      metadataXmlName: String,
+      zipPath: Path.File,
+      zipFileName: String,
+      submissionId: String
+  )(using HeaderCarrier): Future[Unit] =
     (for {
-      _          <- uploadStagedPdf(stagedPdfPath, pdfSource)
       stagedPdf  <- getStagedPdf(stagedPdfPath)
       zipSource  <- zipBuilder.build(stagedPdf.content, pdfFileName, metadataXml, metadataXmlName)
       zipSummary <- uploadZip(zipPath, zipSource)
@@ -73,17 +101,12 @@ class DocumentumPackageService @Inject() (
         zipSummary.contentLength
       )
     } yield {
-      if response.status >= 200 && response.status < 300 then
-        DocumentumPackageResult(packageAvailable = true, Some(zipFileName))
-      else {
+      if response.status < 200 || response.status >= 300 then
         logger.warn(s"[DocumentumPackage][SDES][UnexpectedStatus] status=${response.status}")
-        DocumentumPackageResult(packageAvailable = false)
-      }
     }).recover { case NonFatal(exception) =>
-      logger.warn(s"[DocumentumPackage][Failed] submissionId=${context.submissionId}", exception)
-      DocumentumPackageResult(packageAvailable = false)
+      logger.warn(s"[DocumentumPackage][Failed] submissionId=$submissionId", exception)
+      ()
     }
-  }
 
   def download(submissionId: String, fileName: String)(using
       HeaderCarrier

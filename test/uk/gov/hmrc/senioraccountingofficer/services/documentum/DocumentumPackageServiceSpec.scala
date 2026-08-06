@@ -24,8 +24,9 @@ import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.{any, eq as meq, isNull}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -48,7 +49,11 @@ class DocumentumPackageServiceSpec
     with Matchers
     with MockitoSugar
     with ScalaFutures
+    with Eventually
     with BeforeAndAfterAll {
+
+  override given patienceConfig: PatienceConfig =
+    PatienceConfig(timeout = Span(5, Seconds), interval = Span(25, Millis))
 
   private given ActorSystem      = ActorSystem("DocumentumPackageServiceSpec")
   private given Materializer     = Materializer(summon[ActorSystem])
@@ -56,10 +61,11 @@ class DocumentumPackageServiceSpec
   private given HeaderCarrier    = HeaderCarrier()
 
   private val objectStoreClient = mock[PlayObjectStoreClient]
+  private val zipBuilder        = mock[DocumentumZipBuilder]
   private val sdesConnector     = mock[SdesConnector]
   private val service           = new DocumentumPackageService(
     metadataXmlGenerator = new DocumentumMetadataXmlGenerator(),
-    zipBuilder = new DocumentumZipBuilder(),
+    zipBuilder = zipBuilder,
     objectStoreClient = objectStoreClient,
     sdesConnector = sdesConnector
   )
@@ -70,7 +76,7 @@ class DocumentumPackageServiceSpec
   }
 
   "packageAndSubmit" must {
-    "upload the zip to object store with one week retention and notify SDES" in {
+    "return available once the PDF is uploaded and notify SDES in the background" in {
       when(
         objectStoreClient.putObject(
           path = meq(expectedPdfPath),
@@ -91,10 +97,12 @@ class DocumentumPackageServiceSpec
           owner = meq(owner)
         )(using any(), any())
       ).thenReturn(Future.successful(Some(stagedPdfObject)))
+      when(zipBuilder.build(any[Source[ByteString, ?]](), any(), any(), any()))
+        .thenReturn(Future.successful(zipSource))
       when(
         objectStoreClient.putObject(
           path = meq(expectedZipPath),
-          content = any[Source[ByteString, NotUsed]](),
+          content = meq(zipSource),
           retentionPeriod = meq(RetentionPeriod.OneWeek),
           contentType = meq(Some("application/zip")),
           contentMd5 = isNull,
@@ -120,7 +128,7 @@ class DocumentumPackageServiceSpec
 
       result.packageAvailable mustBe true
       result.fileName mustBe Some(expectedFileName)
-      verify(sdesConnector).notifyFileReady(
+      verify(sdesConnector, org.mockito.Mockito.timeout(5000)).notifyFileReady(
         meq(expectedFileName),
         meq(owner),
         meq(expectedZipPath.asUri),
@@ -129,7 +137,7 @@ class DocumentumPackageServiceSpec
       )(using any())
     }
 
-    "return unavailable when SDES rejects the notification" in {
+    "return available when SDES rejects the background notification" in {
       when(
         objectStoreClient.putObject(
           path = meq(expectedPdfPath),
@@ -150,10 +158,12 @@ class DocumentumPackageServiceSpec
           owner = meq(owner)
         )(using any(), any())
       ).thenReturn(Future.successful(Some(stagedPdfObject)))
+      when(zipBuilder.build(any[Source[ByteString, ?]](), any(), any(), any()))
+        .thenReturn(Future.successful(zipSource))
       when(
         objectStoreClient.putObject(
           path = meq(expectedZipPath),
-          content = any[Source[ByteString, NotUsed]](),
+          content = meq(zipSource),
           retentionPeriod = meq(RetentionPeriod.OneWeek),
           contentType = meq(Some("application/zip")),
           contentMd5 = isNull,
@@ -177,8 +187,8 @@ class DocumentumPackageServiceSpec
 
       val result = service.packageAndSubmit(context, generatedPdfSource).futureValue
 
-      result.packageAvailable mustBe false
-      result.fileName mustBe None
+      result.packageAvailable mustBe true
+      result.fileName mustBe Some(expectedFileName)
     }
   }
 
@@ -190,6 +200,7 @@ class DocumentumPackageServiceSpec
     .Directory("/senior-accounting-officer/NOT0123456789/")
     .file("NOT0123456789_SAO_Notification.pdf")
   private val generatedPdfSource = Source.single(ByteString("generated-pdf"))
+  private val zipSource          = Source.single(ByteString("zip"))
   private val stagedPdfObject    = ObjectStoreObject(
     expectedPdfPath,
     Source.single(ByteString("retrieved-pdf")),
