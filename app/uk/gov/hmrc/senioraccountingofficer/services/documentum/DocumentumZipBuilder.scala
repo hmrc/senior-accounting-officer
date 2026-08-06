@@ -23,7 +23,7 @@ import org.apache.pekko.util.ByteString
 
 import scala.concurrent.*
 import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Using}
 
 import java.io.{IOException, OutputStream}
 import java.nio.charset.StandardCharsets
@@ -80,29 +80,27 @@ class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
       metadataFileName: String,
       zipStream: ZipOutputStream
   ): Unit = {
-    val pdfInputStream =
-      pdfSource.runWith(StreamConverters.asInputStream(5.seconds))
+    Using.Manager { managed =>
+      val zip            = managed(zipStream)
+      val pdfInputStream = managed(pdfSource.runWith(StreamConverters.asInputStream(5.seconds)))
 
-    try {
-      zipStream.putNextEntry(new ZipEntry(pdfFileName))
-      pdfInputStream.transferTo(zipStream)
-      zipStream.closeEntry()
+      addEntry(zip, pdfFileName) {
+        pdfInputStream.transferTo(zip)
+      }
 
-      addEntry(
-        zipStream,
-        metadataFileName,
-        metadataXml.getBytes(StandardCharsets.UTF_8)
-      )
-    } finally {
-      try pdfInputStream.close()
-      finally zipStream.close()
+      addEntry(zip, metadataFileName) {
+        zip.write(metadataXml.getBytes(StandardCharsets.UTF_8))
+      }
+    } match {
+      case Success(_)         => ()
+      case Failure(exception) => throw exception
     }
   }
 
-  private def addEntry(zipStream: ZipOutputStream, fileName: String, content: Array[Byte]): Unit = {
+  private def addEntry(zipStream: ZipOutputStream, fileName: String)(writeContent: => Unit): Unit = {
     zipStream.putNextEntry(new ZipEntry(fileName))
-    zipStream.write(content)
-    zipStream.closeEntry()
+    try writeContent
+    finally zipStream.closeEntry()
   }
 
   private class QueueOutputStream(queue: SourceQueueWithComplete[ByteString]) extends OutputStream {
