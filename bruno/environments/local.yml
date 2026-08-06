@@ -2,15 +2,11 @@ name: local
 variables:
   - name: baseUrl
     value: http://localhost:10060/senior-accounting-officer
-    description: ""
   - name: authHost
     value: http://localhost:9949
-    description: ""
   - name: hubBaseUrl
     value: http://localhost:10056/senior-accounting-officer
-    description: ""
   - name: submissionFrontendBaseUrl
     value: http://localhost:10058
-    description: ""
   - secret: true
     name: authorization

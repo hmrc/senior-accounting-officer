@@ -11,7 +11,7 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
     PlayKeys.playDefaultPort := 10060,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / "src/main/resources",
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources",
     Compile / unmanagedResourceDirectories += baseDirectory.value / "target/swagger",
     resolvers += MavenRepository( // needed for object-store-client
       "HMRC-open-artefacts-maven2",
