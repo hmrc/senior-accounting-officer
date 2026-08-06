@@ -20,35 +20,30 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.Mockito.*
+import org.mockito.internal.verification.Times
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
+import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.*
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import CertificateService.PostCertificateResponse.*
-import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnector
-import uk.gov.hmrc.senioraccountingofficer.connectors.CrmmConnector
-import org.scalatest.freespec.AnyFreeSpec
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
-import play.api.libs.json.Json
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerResponse
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import java.util.UUID
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsResponse
-import org.mockito.internal.verification.Times
-import org.scalatest.BeforeAndAfterEach
-import org.mockito.Mockito.*
+
+import CertificateService.PostCertificateResponse.*
 class CertificateServiceSpec
     extends AnyFreeSpec
     with Matchers

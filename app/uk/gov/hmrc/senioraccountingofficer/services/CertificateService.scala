@@ -20,9 +20,14 @@ import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.CertificateConnector
+import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, CertificateDpsResponse}
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{
+  CertificateDpsRequest,
+  CertificateDpsResponse,
+  GetSubscriptionDpsResponse
+}
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
@@ -32,11 +37,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 import javax.inject.Inject
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
-import uk.gov.hmrc.senioraccountingofficer.connectors.CrmmConnector
-import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnector
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
-import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerResponse
 
 class CertificateService @Inject() (
     getSubscriptionConnector: GetSubscriptionConnector,
