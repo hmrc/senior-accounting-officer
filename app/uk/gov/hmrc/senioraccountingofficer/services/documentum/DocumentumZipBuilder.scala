@@ -17,13 +17,13 @@
 package uk.gov.hmrc.senioraccountingofficer.services.documentum
 
 import org.apache.pekko.NotUsed
+import org.apache.pekko.stream.*
 import org.apache.pekko.stream.scaladsl.{Source, SourceQueueWithComplete, StreamConverters}
-import org.apache.pekko.stream.{IOResult, Materializer, OverflowStrategy, QueueOfferResult}
 import org.apache.pekko.util.ByteString
 
-import scala.concurrent.duration.{Duration, DurationInt}
-import scala.concurrent.{Await, ExecutionContext, Future, blocking}
-import scala.util.control.NonFatal
+import scala.concurrent.*
+import scala.concurrent.duration.DurationInt
+import scala.util.{Failure, Success}
 
 import java.io.{IOException, OutputStream}
 import java.nio.charset.StandardCharsets
@@ -32,29 +32,36 @@ import javax.inject.Inject
 
 class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
 
+  private val blockingEc =
+    summon[Materializer].system.dispatchers.lookup(
+      "pekko.stream.materializer.blocking-io-dispatcher"
+    )
+
   def build(
       pdfSource: Source[ByteString, ?],
       pdfFileName: String,
       metadataXml: String,
       metadataFileName: String
   ): Source[ByteString, NotUsed] =
+
     Source
       .queue[ByteString](bufferSize = 16, OverflowStrategy.backpressure)
       .mapMaterializedValue { queue =>
-        given blockingEc: ExecutionContext =
-          summon[Materializer].system.dispatchers.lookup("pekko.stream.materializer.blocking-io-dispatcher")
-
         Future {
           blocking {
             val zipStream = new ZipOutputStream(new QueueOutputStream(queue))
 
-            try {
-              writeZip(pdfSource, pdfFileName, metadataXml, metadataFileName, zipStream)
-              queue.complete()
-            } catch {
-              case NonFatal(exception) => queue.fail(exception)
-            }
+            writeZip(
+              pdfSource,
+              pdfFileName,
+              metadataXml,
+              metadataFileName,
+              zipStream
+            )
           }
+        }(blockingEc).onComplete {
+          case Success(_)         => queue.complete()
+          case Failure(exception) => queue.fail(exception)
         }
 
         NotUsed
@@ -73,16 +80,22 @@ class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
       metadataFileName: String,
       zipStream: ZipOutputStream
   ): Unit = {
-    val pdfInputStream = pdfSource.runWith(StreamConverters.asInputStream(5.seconds))
+    val pdfInputStream =
+      pdfSource.runWith(StreamConverters.asInputStream(5.seconds))
 
     try {
       zipStream.putNextEntry(new ZipEntry(pdfFileName))
       pdfInputStream.transferTo(zipStream)
       zipStream.closeEntry()
-      addEntry(zipStream, metadataFileName, metadataXml.getBytes(StandardCharsets.UTF_8))
+
+      addEntry(
+        zipStream,
+        metadataFileName,
+        metadataXml.getBytes(StandardCharsets.UTF_8)
+      )
     } finally {
-      pdfInputStream.close()
-      zipStream.close()
+      try pdfInputStream.close()
+      finally zipStream.close()
     }
   }
 
@@ -93,6 +106,7 @@ class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
   }
 
   private class QueueOutputStream(queue: SourceQueueWithComplete[ByteString]) extends OutputStream {
+    private val QueueOfferTimeout = 30.seconds
 
     override def write(byte: Int): Unit =
       offer(ByteString((byte & 0xff).toByte))
@@ -101,7 +115,7 @@ class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
       if length > 0 then offer(ByteString.fromArray(bytes, offset, length))
 
     private def offer(bytes: ByteString): Unit =
-      Await.result(queue.offer(bytes), Duration.Inf) match {
+      Await.result(queue.offer(bytes), QueueOfferTimeout) match {
         case QueueOfferResult.Enqueued    => ()
         case QueueOfferResult.Dropped     => throw new IOException("Zip stream chunk dropped")
         case QueueOfferResult.QueueClosed => throw new IOException("Zip stream queue closed")
