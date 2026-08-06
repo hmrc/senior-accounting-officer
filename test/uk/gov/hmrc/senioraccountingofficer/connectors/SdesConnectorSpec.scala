@@ -50,7 +50,8 @@ class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
         owner = "senior-accounting-officer",
         objectStorePath = "/sdes/NOT0123456789/20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip",
         checksum = "1B2M2Y8AsgTpgAmY7PhCfg==",
-        contentLength = 100L
+        contentLength = 100L,
+        correlationId = "test-id"
       )
 
       payload mustBe Json.obj(
@@ -68,7 +69,7 @@ class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
           "properties" -> Json.arr()
         ),
         "audit" -> Json.obj(
-          "correlationID" -> "20260728_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip"
+          "correlationID" -> "test-id"
         )
       )
     }
