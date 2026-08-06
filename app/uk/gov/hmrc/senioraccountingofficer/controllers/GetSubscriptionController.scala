@@ -20,7 +20,6 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnector
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
@@ -39,7 +38,7 @@ class GetSubscriptionController @Inject() (
     ensureCorrelationId: EnsureCorrelationIdAction
 )(using
     ExecutionContext
-) extends BackendController(cc)
+) extends BaseController(cc)
     with Logging {
   def getSubscription: Action[AnyContent] = (identify andThen ensureCorrelationId).async { implicit request =>
     getSubscriptionConnector
