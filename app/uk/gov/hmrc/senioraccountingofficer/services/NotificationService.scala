@@ -55,7 +55,12 @@ class NotificationService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
       dpsResult       <- postNotificationDps(subscriptionId, requestWithCustomerId)
-      documentPackage <- packageAndSubmitDocumentumFile(subscriptionId, dpsResult.notificationRef, request)
+      documentPackage <- packageAndSubmitDocumentumFile(
+        subscriptionId,
+        dpsSubscription.nominatedCompany.name,
+        dpsResult.notificationRef,
+        request
+      )
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
   }.merge
 
@@ -137,6 +142,7 @@ class NotificationService @Inject() (
 
   private def packageAndSubmitDocumentumFile(
       subscriptionId: String,
+      companyName: String,
       notificationReference: String,
       request: NotificationRequest
   )(using
@@ -146,7 +152,7 @@ class NotificationService @Inject() (
       documentumPackageService.packageAndSubmit(
         DocumentumPackageContext.notification(notificationReference, subscriptionId, request),
         pdfService.generateNotificationPdf(
-          NotificationDpsRequest.toNotification(notificationReference, request, "company Name")
+          NotificationDpsRequest.toNotification(notificationReference, request, companyName)
         )
       )
     )
