@@ -289,13 +289,3 @@ POST        /certificate       uk.gov.hmrc.senioraccountingofficer.controllers.C
 #                reason: "DOWNSTREAM_SERVICE_UNAVAILABLE"
 ###
 GET         /subscription        uk.gov.hmrc.senioraccountingofficer.controllers.GetSubscriptionController.getSubscription()
-
-
-### NoDocs ###
-GET         /obligation/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ObligationController.getObligation(saoSubscriptionId: String)
-
-### NoDocs ###
-GET         /contact-details/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.getContactDetails(saoSubscriptionId: String)
-
-### NoDocs ###
-PUT         /contact-details/:saoSubscriptionId        uk.gov.hmrc.senioraccountingofficer.controllers.ContactDetailsController.putContactDetails(saoSubscriptionId: String)
