@@ -53,7 +53,12 @@ class CertificateService @Inject() (
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       dpsResult  <- postCertificateDps(subscriptionId, request)
-      _          <- packageAndSubmitDocumentumFile(subscriptionId, dpsResult.certificateRef, request)
+      _          <- packageAndSubmitDocumentumFile(
+        subscriptionId,
+        dpsSubscription,
+        dpsResult.certificateRef,
+        request
+      )
     } yield Success(certificateReference = dpsResult.certificateRef)
   }.merge
 
@@ -137,6 +142,7 @@ class CertificateService @Inject() (
 
   private def packageAndSubmitDocumentumFile(
       subscriptionId: String,
+      dpsSubscription: GetSubscriptionDpsResponse,
       certificateReference: String,
       request: CertificateDpsRequest
   )(using
@@ -145,7 +151,7 @@ class CertificateService @Inject() (
     EitherT.right[PostCertificateResponse with Failure](
       documentumPackageService.packageAndSubmit(
         DocumentumPackageContext.certificate(certificateReference, subscriptionId, request),
-        pdfService.generateCertificatePdf(CertificateDpsRequest.toCertificate(request))
+        pdfService.generateCertificatePdf(CertificateDpsRequest.toCertificate(request), dpsSubscription)
       )
     )
 }

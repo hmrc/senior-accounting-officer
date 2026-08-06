@@ -29,11 +29,16 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.Html
 import uk.gov.hmrc.senioraccountingofficer.PdfTestData
+import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
+import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
 import scala.concurrent.ExecutionContext
+
+import PdfServiceSpec.*
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
@@ -70,11 +75,19 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
       when(mockCertificatePdfTemplate.toString).thenReturn(txt)
       when(mockOpenHtmlToPdfService.builderFor(txt)).thenReturn(mockPdfRendererBuilder)
 
-      val res = service.generateCertificatePdf(certificate)
+      val res = service.generateCertificatePdf(certificate, dummySubscription)
       verify(mockOpenHtmlToPdfService, times(1)).builderFor(html)
       res mustBe a[Source[ByteString, ?]]
     }
 
   }
 
+}
+
+object PdfServiceSpec {
+  val dummySubscription: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
+    "etmpSafeId",
+    NominatedCompany(None, "example name", generateUtr),
+    Nil
+  )
 }

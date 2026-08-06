@@ -155,7 +155,7 @@ class CertificateServiceSpec
   }
 
   def configurePdfGeneration(): Unit = {
-    when(mockPdfService.generateCertificatePdf(any())).thenReturn(objectStoreFileContent)
+    when(mockPdfService.generateCertificatePdf(any(), any())).thenReturn(objectStoreFileContent)
   }
 
   "postCertificate" - {
