@@ -89,21 +89,7 @@ class CertificateService @Inject() (
       crmmConnector
         .retrieveCustomer(request)
         .map {
-          case HttpResponse(OK, body, _) =>
-            Try(
-              Json
-                .parse(body)
-                .as[RetrieveCustomerResponse]
-            ).toEither match {
-              case Left(_)         => Left(MalformedResponse(CRMM))
-              case Right(customer) =>
-                customer match {
-                  case RetrieveCustomerResponse(None, Some(_), false, "Failure") =>
-                    Right(None)
-                  case RetrieveCustomerResponse(Some(customerId), None, true, "Success") => Right(Some(customerId))
-                  case _ => Left(MalformedResponse(CRMM))
-                }
-            }
+          case HttpResponse(OK, body, _)                 => parseCrmmResponse(body)
           case HttpResponse(BAD_REQUEST, _, _)           => Left(Misalignment(CRMM))
           case HttpResponse(INTERNAL_SERVER_ERROR, _, _) => Left(DownstreamServiceError(CRMM))
           case HttpResponse(UNAUTHORIZED, _, _)          => Left(Misconfiguration(CRMM, UNAUTHORIZED))
@@ -113,6 +99,23 @@ class CertificateService @Inject() (
           case HttpResponse(status, _, _)                => Left(UnknownFailure(CRMM, status))
         }
     )
+  }
+
+  private def parseCrmmResponse(body: String): Either[PostCertificateResponse with Failure, Option[String]] = {
+    Try(
+      Json
+        .parse(body)
+        .as[RetrieveCustomerResponse]
+    ).toEither match {
+      case Left(_)         => Left(MalformedResponse(CRMM))
+      case Right(customer) =>
+        customer match {
+          case RetrieveCustomerResponse(None, Some(_), false, "Failure") =>
+            Right(None)
+          case RetrieveCustomerResponse(Some(customerId), None, true, "Success") => Right(Some(customerId))
+          case _                                                                 => Left(MalformedResponse(CRMM))
+        }
+    }
   }
 
   private def postCertificateDps(subscriptionId: String, request: CertificateDpsRequest)(using
