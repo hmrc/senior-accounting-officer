@@ -161,22 +161,22 @@ class CertificateServiceSpec
   "postCertificate" - {
     "DPS get subscription endpoint response is" - {
       "200 OK" - {
-        // "Parseable response; Continue down happy path" in {
-        //   configureSubscriptionResponse()
-        //   configureCrmmResponse()
-        //   configureDpsResponse()
-        //   configurePdfGeneration()
-        //   configureDocumentumPackageService()
+        "Parseable response; Continue down happy path" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse()
+          configurePdfGeneration()
+          configureDocumentumPackageService()
 
-        //   service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+          service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
-        //   verify(
-        //     mockCrmmConnector,
-        //     Times(1)
-        //   ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(exampleCrn), Some(exampleUtr))))(using
-        //     any()
-        //   )
-        // }
+          verify(
+            mockCrmmConnector,
+            Times(1)
+          ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(exampleCrn), Some(exampleUtr))))(using
+            any()
+          )
+        }
 
         "Unparsable response; Return malformed response error" in {
           configureSubscriptionResponse(200, "{")
