@@ -44,8 +44,6 @@ class CertificateController @Inject() (
 
   def postCertificate(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
     implicit request =>
-      given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-
       JsonErrorHandling.parseJson(request.body) match {
         case Right(json) =>
           val errors = JsonErrorHandling.Validators.validateCertificate(json)
