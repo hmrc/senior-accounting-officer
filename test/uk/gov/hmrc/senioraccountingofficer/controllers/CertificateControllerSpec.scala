@@ -144,7 +144,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
     "return 500 when the service returns BadRequestFailure" in {
       when(mockCertificateService.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(BadRequestFailure(DPS)))
+        .thenReturn(Future.successful(Misalignment(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
@@ -154,7 +154,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
     "return 502 when the service returns InternalServerFailure" in {
       when(mockCertificateService.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(InternalServerFailure(DPS)))
+        .thenReturn(Future.successful(DownstreamServiceError(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
@@ -164,7 +164,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
     "return 502 when the service returns ServiceUnavailableFailure" in {
       when(mockCertificateService.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(ServiceUnavailableFailure(DPS)))
+        .thenReturn(Future.successful(DownstreamServiceUnavailable(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 

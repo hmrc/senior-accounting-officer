@@ -61,7 +61,10 @@ class NotificationService @Inject() (
         dpsResult.notificationRef,
         request
       )
-    } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
+    } yield Success(
+      notificationReference = dpsResult.notificationRef,
+      isPdfAvailable = documentPackage.packageAvailable
+    )
   }.merge
 
   private def getSubscriptionDps(
@@ -164,8 +167,8 @@ object NotificationService {
   }
   sealed trait Failure
   enum PostNotificationResponse {
-    case Success(notificationId: String, isPdfAvailable: Boolean) extends PostNotificationResponse
-    case MalformedResponse(downstreamService: DownstreamService)  extends PostNotificationResponse with Failure
+    case Success(notificationReference: String, isPdfAvailable: Boolean) extends PostNotificationResponse
+    case MalformedResponse(downstreamService: DownstreamService)         extends PostNotificationResponse with Failure
     case DownstreamServiceUnavailable(downstreamService: DownstreamService)
         extends PostNotificationResponse
         with Failure
