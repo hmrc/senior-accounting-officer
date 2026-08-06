@@ -17,13 +17,15 @@
 package uk.gov.hmrc.senioraccountingofficer.services.documentum
 
 import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.{Sink, Source, StreamConverters}
-import org.apache.pekko.stream.{IOResult, Materializer}
+import org.apache.pekko.stream.scaladsl.{Source, SourceQueueWithComplete, StreamConverters}
+import org.apache.pekko.stream.{IOResult, Materializer, OverflowStrategy, QueueOfferResult}
 import org.apache.pekko.util.ByteString
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.{Await, ExecutionContext, Future, blocking}
+import scala.util.control.NonFatal
 
-import java.io.ByteArrayOutputStream
+import java.io.{IOException, OutputStream}
 import java.nio.charset.StandardCharsets
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
@@ -35,20 +37,28 @@ class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
       pdfFileName: String,
       metadataXml: String,
       metadataFileName: String
-  ): Future[Source[ByteString, NotUsed]] =
-    pdfSource.runWith(Sink.fold(ByteString.empty)(_ ++ _)).map { pdfBytes =>
-      val outputStream = new ByteArrayOutputStream()
-      val zipStream    = new ZipOutputStream(outputStream)
+  ): Source[ByteString, NotUsed] =
+    Source
+      .queue[ByteString](bufferSize = 16, OverflowStrategy.backpressure)
+      .mapMaterializedValue { queue =>
+        given blockingEc: ExecutionContext =
+          summon[Materializer].system.dispatchers.lookup("pekko.stream.materializer.blocking-io-dispatcher")
 
-      try {
-        addEntry(zipStream, pdfFileName, pdfBytes.toArray)
-        addEntry(zipStream, metadataFileName, metadataXml.getBytes(StandardCharsets.UTF_8))
-      } finally {
-        zipStream.close()
+        Future {
+          blocking {
+            val zipStream = new ZipOutputStream(new QueueOutputStream(queue))
+
+            try {
+              writeZip(pdfSource, pdfFileName, metadataXml, metadataFileName, zipStream)
+              queue.complete()
+            } catch {
+              case NonFatal(exception) => queue.fail(exception)
+            }
+          }
+        }
+
+        NotUsed
       }
-
-      Source.single(ByteString(outputStream.toByteArray))
-    }
 
   def resourceSource(resourcePath: String): Source[ByteString, Future[IOResult]] =
     StreamConverters.fromInputStream(() =>
@@ -56,9 +66,46 @@ class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
         .getOrElse(throw new IllegalStateException(s"Resource not found: $resourcePath"))
     )
 
+  private def writeZip(
+      pdfSource: Source[ByteString, ?],
+      pdfFileName: String,
+      metadataXml: String,
+      metadataFileName: String,
+      zipStream: ZipOutputStream
+  ): Unit = {
+    val pdfInputStream = pdfSource.runWith(StreamConverters.asInputStream(5.seconds))
+
+    try {
+      zipStream.putNextEntry(new ZipEntry(pdfFileName))
+      pdfInputStream.transferTo(zipStream)
+      zipStream.closeEntry()
+      addEntry(zipStream, metadataFileName, metadataXml.getBytes(StandardCharsets.UTF_8))
+    } finally {
+      pdfInputStream.close()
+      zipStream.close()
+    }
+  }
+
   private def addEntry(zipStream: ZipOutputStream, fileName: String, content: Array[Byte]): Unit = {
     zipStream.putNextEntry(new ZipEntry(fileName))
     zipStream.write(content)
     zipStream.closeEntry()
+  }
+
+  private class QueueOutputStream(queue: SourceQueueWithComplete[ByteString]) extends OutputStream {
+
+    override def write(byte: Int): Unit =
+      offer(ByteString((byte & 0xff).toByte))
+
+    override def write(bytes: Array[Byte], offset: Int, length: Int): Unit =
+      if length > 0 then offer(ByteString.fromArray(bytes, offset, length))
+
+    private def offer(bytes: ByteString): Unit =
+      Await.result(queue.offer(bytes), Duration.Inf) match {
+        case QueueOfferResult.Enqueued    => ()
+        case QueueOfferResult.Dropped     => throw new IOException("Zip stream chunk dropped")
+        case QueueOfferResult.QueueClosed => throw new IOException("Zip stream queue closed")
+        case QueueOfferResult.Failure(ex) => throw ex
+      }
   }
 }
