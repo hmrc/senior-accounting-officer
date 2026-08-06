@@ -60,8 +60,8 @@ class CertificateController @Inject() (
                 case Success(certificateRef) =>
                   Created(Json.toJson(CertificateResponse(certificateRef)))
                 case MalformedResponse(downstreamService) =>
-                  logger.warn(s"[Certificate][$downstreamService][MalformedResponse]")
-                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+                  logger.warn(s"[Certificate][$downstreamService][MALFORMED_RESPONSE]")
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
                 case Misalignment(downstreamService) =>
                   logger.warn(s"[Certificate][$downstreamService][BAD_REQUEST]")
                   InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
