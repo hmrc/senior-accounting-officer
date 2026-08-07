@@ -8,6 +8,7 @@ object AppDependencies {
   private val bootstrapVersion = "10.7.1"
   private val pekkoVersion     = "1.1.5"
   private val jacksonVersion   = "2.21.1"
+  private val hmrcMongoVersion = "2.12.0"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                     %% "bootstrap-backend-play-30" % bootstrapVersion,
@@ -21,7 +22,8 @@ object AppDependencies {
     "org.typelevel"           %% "cats-core"                   % "2.13.0",
     "io.github.openhtmltopdf"  % "openhtmltopdf-pdfbox"        % "1.1.70",
     "org.apache.pekko"        %% "pekko-connectors-file"       % "1.3.0",
-    "uk.gov.hmrc.objectstore" %% "object-store-client-play-30" % "2.6.0"
+    "uk.gov.hmrc.objectstore" %% "object-store-client-play-30" % "2.6.0",
+    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-play-30"          % hmrcMongoVersion
   )
 
   def overrides: Seq[ModuleID] = Seq(
@@ -35,7 +37,8 @@ object AppDependencies {
   )
 
   val test: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc" %% "bootstrap-test-play-30" % bootstrapVersion % Test
+    "uk.gov.hmrc"       %% "bootstrap-test-play-30" % bootstrapVersion % Test,
+    "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-30"     % hmrcMongoVersion
   )
 
   val it: Seq[ModuleID] = Seq(

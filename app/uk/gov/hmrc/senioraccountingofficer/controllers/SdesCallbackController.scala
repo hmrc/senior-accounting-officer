@@ -21,15 +21,24 @@ import scala.concurrent.ExecutionContext
 import play.api.Logging
 import javax.inject.Inject
 import play.api.mvc.Action
-import play.api.mvc.AnyContent
+import play.api.libs.json.JsValue
+import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
+import uk.gov.hmrc.senioraccountingofficer.repositories.SdesFileStatusRepository
 
 class SdesCallbackController @Inject() (
-    cc: ControllerComponents
+    cc: ControllerComponents,
+    sdesFileStatusRepository: SdesFileStatusRepository
 )(using ExecutionContext)
     extends BaseController(cc)
     with Logging {
-  def callback(): Action[AnyContent] = Action {
-    println("jacobwozere")
+  // TODO: store state in mongodb
+  // TODO: FileReceived -> create record in mongo
+  // TODO: FileProcessed -> update mongo; delete zip from object store
+  // TODO: FileProcessingFailure -> update mongo; log error
+  def callback(): Action[JsValue] = Action(parse.json) { request =>
+    // TODO: log if json conversion fails
+    val notification = request.body.as[SdesFileNotification]
+    sdesFileStatusRepository.upsert(notification)
     Ok("jacobwozere")
   }
 }
