@@ -1,5 +1,5 @@
 info:
-  name: post notification (201) valid multiple companies and saos details
+  name: (201) successful-request (multiple companies and SAOs)
   type: http
   seq: 2
 

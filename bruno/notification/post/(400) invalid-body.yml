@@ -1,5 +1,5 @@
 info:
-  name: post notification (400) Invalid body
+  name: (400) invalid-body
   type: http
   seq: 3
 

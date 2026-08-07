@@ -1,5 +1,5 @@
 info:
-  name: post notification (400) missing company and sao details
+  name: (400) missing-company-and-sao-details
   type: http
   seq: 4
 

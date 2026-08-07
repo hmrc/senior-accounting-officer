@@ -1,5 +1,5 @@
 info:
-  name: post certificate (400) missing company details
+  name: (400) missing-company-details
   type: http
   seq: 4
 
