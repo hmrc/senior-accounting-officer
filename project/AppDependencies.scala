@@ -6,6 +6,7 @@ import sbt.*
 object AppDependencies {
 
   private val bootstrapVersion = "10.7.0"
+  private val pekkoVersion = "1.1.5"
 
   val compile: Seq[ModuleID] = Seq(
     "uk.gov.hmrc"                     %% "bootstrap-backend-play-30" % bootstrapVersion,
@@ -18,8 +19,14 @@ object AppDependencies {
       .exclude("com.fasterxml.jackson.dataformat", "jackson-dataformat-yaml"),
     "org.typelevel"           %% "cats-core"                   % "2.13.0",
     "io.github.openhtmltopdf"  % "openhtmltopdf-pdfbox"        % "1.1.37",
-    "org.apache.pekko"        %% "pekko-connectors-file"       % "1.0.0",
+    "org.apache.pekko"        %% "pekko-connectors-file"       % "1.3.0",
     "uk.gov.hmrc.objectstore" %% "object-store-client-play-30" % "2.6.0"
+  )
+
+  def overrides: Seq[ModuleID] = Seq(
+    "org.apache.pekko" %% "pekko-actor-typed"           % pekkoVersion,
+    "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
+    "org.apache.pekko" %% "pekko-slf4j"                 % pekkoVersion
   )
 
   val test: Seq[ModuleID] = Seq(
