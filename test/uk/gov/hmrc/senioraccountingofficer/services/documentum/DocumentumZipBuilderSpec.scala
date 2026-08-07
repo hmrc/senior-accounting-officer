@@ -40,9 +40,21 @@ class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutur
     "create a zip containing the PDF and metadata XML entries" in {
       val source = Source.single(ByteString("pdf-content"))
 
-      val zipSource = zipBuilder
-        .build(source, "submission.pdf", "<metadata/>", "metadata.xml")
-        .futureValue
+      val zipSource = zipBuilder.build(source, "submission.pdf", "<metadata/>", "metadata.xml")
+
+      val zipBytes = zipSource.runWith(Sink.fold(ByteString.empty)(_ ++ _)).futureValue
+      val entries  = unzip(zipBytes.toArray)
+      val entryMap = entries.map((fileName, content) => fileName -> content).toMap
+
+      entries.map(_._1) mustBe List("submission.pdf", "metadata.xml")
+      entryMap("submission.pdf") mustBe "pdf-content"
+      entryMap("metadata.xml") mustBe "<metadata/>"
+    }
+
+    "stream multiple PDF chunks into a single PDF zip entry" in {
+      val source = Source(List(ByteString("pdf-"), ByteString("content")))
+
+      val zipSource = zipBuilder.build(source, "submission.pdf", "<metadata/>", "metadata.xml")
 
       val zipBytes = zipSource.runWith(Sink.fold(ByteString.empty)(_ ++ _)).futureValue
       val entries  = unzip(zipBytes.toArray)

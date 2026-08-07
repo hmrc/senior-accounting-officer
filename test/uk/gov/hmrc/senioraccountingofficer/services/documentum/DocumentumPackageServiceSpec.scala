@@ -98,7 +98,7 @@ class DocumentumPackageServiceSpec
         )(using any(), any())
       ).thenReturn(Future.successful(Some(stagedPdfObject)))
       when(zipBuilder.build(any[Source[ByteString, ?]](), any(), any(), any()))
-        .thenReturn(Future.successful(zipSource))
+        .thenReturn(zipSource)
       when(
         objectStoreClient.putObject(
           path = meq(expectedZipPath),
@@ -159,7 +159,7 @@ class DocumentumPackageServiceSpec
         )(using any(), any())
       ).thenReturn(Future.successful(Some(stagedPdfObject)))
       when(zipBuilder.build(any[Source[ByteString, ?]](), any(), any(), any()))
-        .thenReturn(Future.successful(zipSource))
+        .thenReturn(zipSource)
       when(
         objectStoreClient.putObject(
           path = meq(expectedZipPath),

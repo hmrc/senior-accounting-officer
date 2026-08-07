@@ -2,6 +2,7 @@ import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
 ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / dependencyOverrides ++= AppDependencies.overrides
 
 lazy val microservice = Project("senior-accounting-officer", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin, SwaggerPlugin)

@@ -88,10 +88,11 @@ class DocumentumPackageService @Inject() (
       zipPath: Path.File,
       zipFileName: String,
       submissionId: String
-  )(using HeaderCarrier): Future[Unit] =
+  )(using HeaderCarrier): Future[Unit] = {
+    val stagedPdfSource = Source.lazyFutureSource(() => getStagedPdf(stagedPdfPath).map(_.content))
+    val zipSource       = zipBuilder.build(stagedPdfSource, pdfFileName, metadataXml, metadataXmlName)
+
     (for {
-      stagedPdf  <- getStagedPdf(stagedPdfPath)
-      zipSource  <- zipBuilder.build(stagedPdf.content, pdfFileName, metadataXml, metadataXmlName)
       zipSummary <- uploadZip(zipPath, zipSource)
       response   <- sdesConnector.notifyFileReady(
         zipFileName,
@@ -107,6 +108,7 @@ class DocumentumPackageService @Inject() (
       logger.warn(s"[DocumentumPackage][Failed] submissionId=$submissionId", exception)
       ()
     }
+  }
 
   def download(submissionId: String, fileName: String)(using
       HeaderCarrier
