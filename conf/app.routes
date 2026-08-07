@@ -289,3 +289,5 @@ POST        /certificate       uk.gov.hmrc.senioraccountingofficer.controllers.C
 #                reason: "DOWNSTREAM_SERVICE_UNAVAILABLE"
 ###
 GET         /subscription        uk.gov.hmrc.senioraccountingofficer.controllers.GetSubscriptionController.getSubscription()
+
+POST        /sdes/callback      uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.callback()
