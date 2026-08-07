@@ -20,7 +20,7 @@ import cats.data.EitherT
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.{CrmmConnector, GetSubscriptionConnector, NotificationConnector}
+import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{
@@ -43,6 +43,7 @@ class NotificationService @Inject() (
     notificationConnector: NotificationConnector,
     getSubscriptionConnector: GetSubscriptionConnector,
     crmmConnector: CrmmConnector,
+    emailConnector: EmailConnector,
     documentumPackageService: DocumentumPackageService,
     pdfService: PdfService
 )(using ExecutionContext) {
@@ -54,7 +55,8 @@ class NotificationService @Inject() (
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
-      dpsResult       <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      emailResult <- sendEmail("sender name", "company name", "2026", dpsResult.notificationRef)
       documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription.nominatedCompany.name,
@@ -63,6 +65,26 @@ class NotificationService @Inject() (
       )
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
   }.merge
+
+  private def sendEmail(senderName: String, companyName: String, submittedDateTime: String, notificationRef: String)(
+    using HeaderCarrier
+  ): EitherT[Future, String, HttpResponse] = {
+    val body = Json.obj(
+      "to" -> Array("email@as.com"),
+      "templateId" -> "dsao_notification_confirmation",
+      "parameters" -> Json.obj(
+        "recipientName" -> senderName,
+        "companyName" -> companyName,
+        "submittedDateTime" -> submittedDateTime,
+        "referenceId" -> notificationRef
+      )
+    )
+    EitherT(emailConnector.postEmail(body.as[String], "hmrc").map {
+      case HttpResponse(ACCEPTED, body, _) => Right("")
+      case HttpResponse(_, body, _) => Left("failed to send email")
+      case HttpResponse(BAD_REQUEST, body, _) => Left("failed to send email")
+    })
+  }
 
   private def getSubscriptionDps(
       subscriptionId: String

@@ -65,11 +65,13 @@ class NotificationServiceSpec
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
+  val mockEmailConnector: EmailConnector                     = mock[EmailConnector]
 
   val service = new NotificationService(
     mockNotificationConnector,
     mockGetSubscriptionConnector,
     mockCrmmConnector,
+    mockEmailConnector,
     mockDocumentumPackageService,
     mockPdfService
   )
