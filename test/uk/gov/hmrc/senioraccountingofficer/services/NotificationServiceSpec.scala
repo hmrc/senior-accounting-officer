@@ -65,15 +65,15 @@ class NotificationServiceSpec
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
-  val mockEmailConnector: EmailConnector                     = mock[EmailConnector]
+  val mockEmailService: EmailService                         = mock[EmailService]
 
   val service = new NotificationService(
     mockNotificationConnector,
     mockGetSubscriptionConnector,
     mockCrmmConnector,
-    mockEmailConnector,
     mockDocumentumPackageService,
-    mockPdfService
+    mockPdfService,
+    mockEmailService
   )
 
   override def beforeEach(): Unit = {
@@ -81,7 +81,7 @@ class NotificationServiceSpec
     reset(mockNotificationConnector)
     reset(mockGetSubscriptionConnector)
     reset(mockCrmmConnector)
-    reset(mockEmailConnector)
+    reset(mockEmailService)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
   }
@@ -163,6 +163,31 @@ class NotificationServiceSpec
     when(mockPdfService.generateNotificationPdf(any())).thenReturn(objectStoreFileContent)
   }
 
+  def configureEmailResponse(
+      httpStatus: Int = 202,
+      body: String = Json.stringify(
+        Json.obj(
+          "to"         -> any(),
+          "templateId" -> any(),
+          "parameters" -> any()
+
+          //        Json.obj(
+//          "to"         -> Array("email@example.com"),
+//          "templateId" -> "dsao_notification_confirmation",
+//          "parameters" -> Json.obj(
+//            "recipientName"     -> "senderName",
+//            "companyName"       -> "companyName",
+//            "submittedDateTime" -> "submittedDateTime",
+//            "referenceId"       -> "notificationRef"
+//          )
+        )
+      )
+  ): Unit = {
+
+//    when(mockEmailConnector.postEmail(body, "hmrc")).thenReturn(Future.successful(HttpResponse(202)))
+
+  }
+
   "postNotification" - {
     "DPS get subscription endpoint response is" - {
       "200 OK" - {
@@ -172,6 +197,7 @@ class NotificationServiceSpec
           configureDpsResponse()
           configurePdfGeneration()
           configureDocumentumPackageService()
+          configureEmailResponse()
 
           service.postNotification(exampleSubscriptionId, testRequest).futureValue
 

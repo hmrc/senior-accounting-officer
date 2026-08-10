@@ -38,32 +38,31 @@ import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackage
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import javax.inject.Inject
 
 class NotificationService @Inject() (
     notificationConnector: NotificationConnector,
     getSubscriptionConnector: GetSubscriptionConnector,
     crmmConnector: CrmmConnector,
-    emailConnector: EmailConnector,
     documentumPackageService: DocumentumPackageService,
-    pdfService: PdfService
+    pdfService: PdfService,
+    emailService: EmailService
 )(using ExecutionContext)
     extends Logging {
 
   def postNotification(subscriptionId: String, request: NotificationRequest)(using
       HeaderCarrier
   ): Future[PostNotificationResponse] = {
-    val dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH))
     for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
       dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
-//      _ = sendEmail(dpsSubscription.contacts(0).name, dpsSubscription.contacts(0).email, dpsSubscription.nominatedCompany.name, dateTime, dpsResult.notificationRef)
-      _ = sendEmail(request.saos(0).name, request.saos(0).email.get, dpsSubscription.nominatedCompany.name, dateTime, dpsResult.notificationRef)
+      _ = emailService.sendNotificationEmail(
+        dpsSubscription.contacts,
+        dpsSubscription.nominatedCompany.name,
+        dpsResult.notificationRef
+      )
       documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription.nominatedCompany.name,
@@ -72,25 +71,11 @@ class NotificationService @Inject() (
       )
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
   }.merge
-
-  private def sendEmail(senderName: String, email: String, companyName: String, submittedDateTime: String, notificationRef: String)(
-      using HeaderCarrier
-  ): Future[Unit] = {
-    val body = Json.obj(
-      "to"         -> Array(email),
-      "templateId" -> "dsao_notification_confirmation",
-      "parameters" -> Json.obj(
-        "recipientName"     -> senderName,
-        "companyName"       -> companyName,
-        "submittedDateTime" -> submittedDateTime,
-        "referenceId"       -> notificationRef
-      )
-    )
-    emailConnector.postEmail(Json.stringify(body), "hmrc").map {
-      case HttpResponse(ACCEPTED, body, _) => ()
-      case HttpResponse(BAD_REQUEST, body, _) => logger.warn(s"Error from HMRC email service: $body")
-    }
-  }
+//    emailConnector.postEmail(Json.stringify(body), "hmrc").map {
+//      case HttpResponse(ACCEPTED, body, _)    => ()
+//      case HttpResponse(BAD_REQUEST, body, _) => logger.warn(s"Error from HMRC email service: $body")
+//    }
+//  }
 
   private def getSubscriptionDps(
       subscriptionId: String
