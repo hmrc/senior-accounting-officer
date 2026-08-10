@@ -19,28 +19,28 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 import play.api.libs.json.{Json, OFormat}
 
 final case class Contact(
-    name: String,
-    email: String,
-    language: String,
-    status: String
+    name: Option[String],
+    email: Option[String],
+    language: Option[String],
+    status: Option[String]
 )
 
 object Contact {
   given OFormat[Contact] = Json.format
 }
 
-final case class NominatedCompany(crn: Option[String], name: String, utr: String)
+final case class NominatedCompany(crn: Option[String], name: Option[String], utr: Option[String])
 
 object NominatedCompany {
   given OFormat[NominatedCompany] = Json.format
 }
 
 final case class GetSubscriptionDpsResponse(
-    etmpSafeId: String,
-    nominatedCompany: NominatedCompany,
+    etmpSafeId: Option[String],
+    nominatedCompany: Option[NominatedCompany],
     contacts: List[Contact]
 )
 
 object GetSubscriptionDpsResponse {
-  given OFormat[GetSubscriptionDpsResponse] = Json.format[GetSubscriptionDpsResponse]
+  given OFormat[GetSubscriptionDpsResponse] = Json.format
 }

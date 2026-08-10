@@ -86,8 +86,9 @@ class CertificateServiceSpec
       responseBody: String = Json.stringify(
         Json.toJson(
           GetSubscriptionDpsResponse(
-            etmpSafeId = exampleSafeId,
-            nominatedCompany = NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
+            etmpSafeId = Some(exampleSafeId),
+            nominatedCompany =
+              Some(NominatedCompany(crn = Some(exampleCrn), name = Some(exampleCompanyName), utr = Some(exampleUtr))),
             contacts = Nil
           )
         )

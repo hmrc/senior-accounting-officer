@@ -86,8 +86,8 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
 
 object PdfServiceSpec {
   val dummySubscription: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
-    "etmpSafeId",
-    NominatedCompany(None, "example name", generateUtr),
+    Some("etmpSafeId"),
+    Some(NominatedCompany(None, Some("example name"), Some(generateUtr))),
     Nil
   )
 }

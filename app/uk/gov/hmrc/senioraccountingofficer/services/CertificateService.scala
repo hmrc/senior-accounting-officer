@@ -51,9 +51,12 @@ class CertificateService @Inject() (
   ): Future[PostCertificateResponse] = {
     for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
-      customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
-      dpsResult  <- postCertificateDps(subscriptionId, request)
-      _          <- packageAndSubmitDocumentumFile(
+      customerId      <- retrieveCrmmCustomerId(
+        dpsSubscription.nominatedCompany.fold(None)(_.crn),
+        dpsSubscription.nominatedCompany.fold(None)(_.utr)
+      )
+      dpsResult <- postCertificateDps(subscriptionId, request)
+      _         <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
         dpsResult.certificateRef,
@@ -70,6 +73,8 @@ class CertificateService @Inject() (
         .getSubscription(subscriptionId)
         .map {
           case HttpResponse(OK, body, _) =>
+            println("jacobwozere")
+            println(body)
             Try(Json.parse(body).as[GetSubscriptionDpsResponse]).toEither.left
               .map { _ =>
                 MalformedResponse(Subscription)
@@ -87,9 +92,9 @@ class CertificateService @Inject() (
 
   private def retrieveCrmmCustomerId(
       crn: Option[String],
-      utr: String
+      utr: Option[String]
   )(using HeaderCarrier): EitherT[Future, PostCertificateResponse with Failure, Option[String]] = {
-    val request = RetrieveCustomerRequest(crn, Some(utr))
+    val request = RetrieveCustomerRequest(crn, utr)
     EitherT(
       crmmConnector
         .retrieveCustomer(request)

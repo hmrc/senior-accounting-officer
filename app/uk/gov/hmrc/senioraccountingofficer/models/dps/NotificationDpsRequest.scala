@@ -50,7 +50,11 @@ final case class Sao(
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 
-  def toNotification(notificationRef: String, request: NotificationRequest, companyName: String): Notification = {
+  def toNotification(
+      notificationRef: String,
+      request: NotificationRequest,
+      companyName: Option[String]
+  ): Notification = {
     val companies = request.companies.map(company => {
 
       Notification.Row(
@@ -64,7 +68,7 @@ object NotificationDpsRequest {
     })
     val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
     Notification(
-      companyName = companyName,
+      companyName = companyName.fold("")(identity),
       submissionDate = LocalDate.now().format(dateFormatter),
       submissionId = notificationRef,
       saoHistory = saos,

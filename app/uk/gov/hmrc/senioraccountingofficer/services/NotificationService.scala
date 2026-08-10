@@ -52,12 +52,15 @@ class NotificationService @Inject() (
   ): Future[PostNotificationResponse] = {
     for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
-      customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
+      customerId      <- retrieveCrmmCustomerId(
+        dpsSubscription.nominatedCompany.fold(None)(_.crn),
+        dpsSubscription.nominatedCompany.fold(None)(_.utr)
+      )
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
       dpsResult       <- postNotificationDps(subscriptionId, requestWithCustomerId)
       documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,
-        dpsSubscription.nominatedCompany.name,
+        dpsSubscription.nominatedCompany.fold(None)(_.name),
         dpsResult.notificationRef,
         request
       )
@@ -92,9 +95,9 @@ class NotificationService @Inject() (
 
   private def retrieveCrmmCustomerId(
       crn: Option[String],
-      utr: String
+      utr: Option[String]
   )(using HeaderCarrier): EitherT[Future, PostNotificationResponse with Failure, Option[String]] = {
-    val request = RetrieveCustomerRequest(crn, Some(utr))
+    val request = RetrieveCustomerRequest(crn, utr)
     EitherT(
       crmmConnector
         .retrieveCustomer(request)
@@ -148,7 +151,7 @@ class NotificationService @Inject() (
 
   private def packageAndSubmitDocumentumFile(
       subscriptionId: String,
-      companyName: String,
+      companyName: Option[String],
       notificationReference: String,
       request: NotificationRequest
   )(using
