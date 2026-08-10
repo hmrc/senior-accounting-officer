@@ -73,8 +73,6 @@ class CertificateService @Inject() (
         .getSubscription(subscriptionId)
         .map {
           case HttpResponse(OK, body, _) =>
-            println("jacobwozere")
-            println(body)
             Try(Json.parse(body).as[GetSubscriptionDpsResponse]).toEither.left
               .map { _ =>
                 MalformedResponse(Subscription)
