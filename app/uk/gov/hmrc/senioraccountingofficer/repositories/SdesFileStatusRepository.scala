@@ -17,54 +17,37 @@
 package uk.gov.hmrc.senioraccountingofficer.repositories
 
 import org.mongodb.scala.bson.conversions.Bson
-import play.api.libs.json.Format
+import org.mongodb.scala.model.*
+import org.mongodb.scala.model.IndexModel
+import org.mongodb.scala.model.IndexOptions
+import org.mongodb.scala.model.Indexes
+import org.mongodb.scala.model.ReplaceOptions
 import uk.gov.hmrc.mdc.Mdc
-
-import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import java.time.{Clock, Instant}
-import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import org.mongodb.scala.model.Indexes
-import org.mongodb.scala.model.IndexModel
-import org.mongodb.scala.model.IndexOptions
-import org.mongodb.scala.model.Filters
-import uk.gov.hmrc.mongo.MongoComponent
-import org.mongodb.scala.model.ReplaceOptions
 
 @Singleton
 class SdesFileStatusRepository @Inject() (
     mongoComponent: MongoComponent
 )(using ec: ExecutionContext)
     extends PlayMongoRepository[SdesFileNotification](
-      collectionName = "user-answers",
+      collectionName = "sdes-file-notifications",
       mongoComponent = mongoComponent,
       domainFormat = SdesFileNotification.format,
       indexes = Seq(
         IndexModel(
           Indexes.ascending(s"correlationID"),
-          IndexOptions().name(s"correlationIDIdx").unique(true).sparse(true)
+          IndexOptions().name(s"correlationIdIdx").unique(true).sparse(true)
         )
       )
     ) {
 
-  given instantFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
-
   private def byId(id: String): Bson = Filters.equal("_id", id)
-
-  // def get(id: String): Future[Option[UserAnswers]] = Mdc.preservingMdc {
-  //   keepAlive(id).flatMap { _ =>
-  //     collection
-  //       .find(byId(id))
-  //       .headOption()
-  //   }
-  // }
 
   def upsert(answers: SdesFileNotification): Future[true] = Mdc.preservingMdc {
     collection
