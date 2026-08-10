@@ -81,6 +81,7 @@ class NotificationServiceSpec
     reset(mockNotificationConnector)
     reset(mockGetSubscriptionConnector)
     reset(mockCrmmConnector)
+    reset(mockEmailConnector)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
   }
