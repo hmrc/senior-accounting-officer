@@ -1,7 +1,7 @@
 info:
-  name: testOnly
+  name: post
   type: folder
-  seq: 17
+  seq: 1
 
 request:
   auth: inherit

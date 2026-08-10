@@ -1,5 +1,5 @@
 info:
-  name: post notification (201) valid request
+  name: (201) successful-request (single company and SAO)
   type: http
   seq: 1
 

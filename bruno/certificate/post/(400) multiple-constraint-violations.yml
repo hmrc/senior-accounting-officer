@@ -1,5 +1,5 @@
 info:
-  name: post certificate (400) multiple constraint violations
+  name: (400) multiple-constraint-violations
   type: http
   seq: 5
 

@@ -1,23 +1,23 @@
 info:
-  name: post certificate (400) Invalid body
+  name: (404) invalid-url
   type: http
-  seq: 3
+  seq: 6
 
 http:
   method: POST
-  url: "{{baseUrl}}/certificate"
+  url: "{{baseUrl}}/certificates"
   headers:
     - name: Authorization
       value: "{{authorization}}"
     - name: correlationId
-      value: ""
+      value: "{{$randomUUID}}"
   body:
     type: json
     data: |-
-      {@@@
+      {
         "submitterName": "Submittername",
         "saoName": "SubmitterTestName",
-        "saoEmail": "test@emailcom",
+        "saoEmail": "test@email.com",
         "companies": [
           {
             "crn": "12435678",
