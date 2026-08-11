@@ -163,31 +163,6 @@ class NotificationServiceSpec
     when(mockPdfService.generateNotificationPdf(any())).thenReturn(objectStoreFileContent)
   }
 
-  def configureEmailResponse(
-      httpStatus: Int = 202,
-      body: String = Json.stringify(
-        Json.obj(
-          "to"         -> any(),
-          "templateId" -> any(),
-          "parameters" -> any()
-
-          //        Json.obj(
-//          "to"         -> Array("email@example.com"),
-//          "templateId" -> "dsao_notification_confirmation",
-//          "parameters" -> Json.obj(
-//            "recipientName"     -> "senderName",
-//            "companyName"       -> "companyName",
-//            "submittedDateTime" -> "submittedDateTime",
-//            "referenceId"       -> "notificationRef"
-//          )
-        )
-      )
-  ): Unit = {
-
-//    when(mockEmailConnector.postEmail(body, "hmrc")).thenReturn(Future.successful(HttpResponse(202)))
-
-  }
-
   "postNotification" - {
     "DPS get subscription endpoint response is" - {
       "200 OK" - {
@@ -197,10 +172,10 @@ class NotificationServiceSpec
           configureDpsResponse()
           configurePdfGeneration()
           configureDocumentumPackageService()
-          configureEmailResponse()
 
           service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+          verify(mockEmailService, Times(1)).sendNotificationEmail(any(), any(), any())(using any)
           verify(
             mockCrmmConnector,
             Times(1)
@@ -212,6 +187,7 @@ class NotificationServiceSpec
         "Unparsable response; Return malformed response error" in {
           configureSubscriptionResponse(200, "{")
 
+          verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
           val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           result mustBe MalformedResponse(Subscription)
@@ -221,6 +197,7 @@ class NotificationServiceSpec
       "204 No Content; Return subscription not found error" in {
         configureSubscriptionResponse(204)
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe NotFoundFailure(Subscription)
@@ -467,6 +444,7 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+          verify(mockEmailService, Times(1)).sendNotificationEmail(any(), any(), any())(using any)
           result mustBe Success(exampleNotificationReference, true)
 
           verify(mockDocumentumPackageService)
@@ -481,6 +459,7 @@ class NotificationServiceSpec
           configureCrmmResponse()
           configureDpsResponse(201, "{")
 
+          verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
           val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
           result mustBe MalformedResponse(DPS)
@@ -492,6 +471,7 @@ class NotificationServiceSpec
         configureCrmmResponse()
         configureDpsResponse(400)
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
         result mustBe Misalignment(DPS)
@@ -504,6 +484,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe Misconfiguration(DPS, 401)
       }
 
@@ -514,6 +495,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe Misconfiguration(DPS, 403)
       }
 
@@ -524,6 +506,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe Misalignment(DPS)
       }
 
@@ -534,6 +517,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe DownstreamServiceError(DPS)
       }
 
@@ -544,6 +528,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe DownstreamServiceUnavailable(DPS)
       }
 
@@ -554,6 +539,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, testRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe UnknownFailure(DPS, 618)
       }
     }

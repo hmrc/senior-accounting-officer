@@ -71,11 +71,6 @@ class NotificationService @Inject() (
       )
     } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
   }.merge
-//    emailConnector.postEmail(Json.stringify(body), "hmrc").map {
-//      case HttpResponse(ACCEPTED, body, _)    => ()
-//      case HttpResponse(BAD_REQUEST, body, _) => logger.warn(s"Error from HMRC email service: $body")
-//    }
-//  }
 
   private def getSubscriptionDps(
       subscriptionId: String
