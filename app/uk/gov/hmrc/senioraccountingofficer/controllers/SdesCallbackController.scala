@@ -24,9 +24,9 @@ import uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.to
 import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
 
 import scala.concurrent.ExecutionContext
+import scala.util.*
 
 import javax.inject.Inject
-import scala.util.*
 
 class SdesCallbackController @Inject() (
     cc: ControllerComponents
