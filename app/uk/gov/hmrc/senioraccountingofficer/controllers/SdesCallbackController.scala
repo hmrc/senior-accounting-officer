@@ -35,12 +35,7 @@ class SdesCallbackController @Inject() (
 
   def callback: Action[JsValue] = Action(parse.json) { request =>
     val notification = request.body.as[SdesFileNotification]
-
-    notification match {
-      case SdesFileNotification("FileProcessingFailure", _, _) => logger.error(notification.toLog)
-      case _                                                   => logger.info(notification.toLog)
-    }
-
+    logger.warn(notification.toLog)
     NoContent
   }
 }
