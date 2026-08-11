@@ -2,6 +2,7 @@ import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
 ThisBuild / scalaVersion := "3.3.4"
+ThisBuild / dependencyOverrides ++= AppDependencies.overrides
 
 lazy val microservice = Project("senior-accounting-officer", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin, SwaggerPlugin)
@@ -11,7 +12,7 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
     PlayKeys.playDefaultPort := 10060,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / "src/main/resources",
+    Compile / unmanagedResourceDirectories += baseDirectory.value / "resources",
     Compile / unmanagedResourceDirectories += baseDirectory.value / "target/swagger",
     resolvers += MavenRepository( // needed for object-store-client
       "HMRC-open-artefacts-maven2",

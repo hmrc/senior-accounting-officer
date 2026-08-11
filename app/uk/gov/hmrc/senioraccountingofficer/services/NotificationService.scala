@@ -69,7 +69,10 @@ class NotificationService @Inject() (
         dpsResult.notificationRef,
         request
       )
-    } yield Success(notificationId = dpsResult.notificationRef, isPdfAvailable = documentPackage.packageAvailable)
+    } yield Success(
+      notificationReference = dpsResult.notificationRef,
+      isPdfAvailable = documentPackage.packageAvailable
+    )
   }.merge
 
   private def getSubscriptionDps(
@@ -104,21 +107,7 @@ class NotificationService @Inject() (
       crmmConnector
         .retrieveCustomer(request)
         .map {
-          case HttpResponse(OK, body, _) =>
-            Try(
-              Json
-                .parse(body)
-                .as[RetrieveCustomerResponse]
-            ).toEither match {
-              case Left(_)         => Left(MalformedResponse(CRMM))
-              case Right(customer) =>
-                customer match {
-                  case RetrieveCustomerResponse(None, Some(_), false, "Failure") =>
-                    Right(None)
-                  case RetrieveCustomerResponse(Some(customerId), None, true, "Success") => Right(Some(customerId))
-                  case _ => Left(MalformedResponse(CRMM))
-                }
-            }
+          case HttpResponse(OK, body, _)                 => parseCrmmResponse(body)
           case HttpResponse(BAD_REQUEST, _, _)           => Left(Misalignment(CRMM))
           case HttpResponse(INTERNAL_SERVER_ERROR, _, _) => Left(DownstreamServiceError(CRMM))
           case HttpResponse(UNAUTHORIZED, _, _)          => Left(Misconfiguration(CRMM, UNAUTHORIZED))
@@ -128,6 +117,23 @@ class NotificationService @Inject() (
           case HttpResponse(status, _, _)                => Left(UnknownFailure(CRMM, status))
         }
     )
+  }
+
+  private def parseCrmmResponse(body: String): Either[PostNotificationResponse with Failure, Option[String]] = {
+    Try(
+      Json
+        .parse(body)
+        .as[RetrieveCustomerResponse]
+    ).toEither match {
+      case Left(_)         => Left(MalformedResponse(CRMM))
+      case Right(customer) =>
+        customer match {
+          case RetrieveCustomerResponse(None, Some(_), false, "Failure") =>
+            Right(None)
+          case RetrieveCustomerResponse(Some(customerId), None, true, "Success") => Right(Some(customerId))
+          case _                                                                 => Left(MalformedResponse(CRMM))
+        }
+    }
   }
 
   private def postNotificationDps(subscriptionId: String, request: NotificationDpsRequest)(using
@@ -172,8 +178,8 @@ object NotificationService {
   }
   sealed trait Failure
   enum PostNotificationResponse {
-    case Success(notificationId: String, isPdfAvailable: Boolean) extends PostNotificationResponse
-    case MalformedResponse(downstreamService: DownstreamService)  extends PostNotificationResponse with Failure
+    case Success(notificationReference: String, isPdfAvailable: Boolean) extends PostNotificationResponse
+    case MalformedResponse(downstreamService: DownstreamService)         extends PostNotificationResponse with Failure
     case DownstreamServiceUnavailable(downstreamService: DownstreamService)
         extends PostNotificationResponse
         with Failure

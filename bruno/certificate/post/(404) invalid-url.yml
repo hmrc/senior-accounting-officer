@@ -1,0 +1,48 @@
+info:
+  name: (404) invalid-url
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{baseUrl}}/certificates"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "submitterName": "Submittername",
+        "saoName": "SubmitterTestName",
+        "saoEmail": "test@email.com",
+        "companies": [
+          {
+            "crn": "12435678",
+            "utr": "1243567843",
+            "name": "companyname",
+            "accPeriodEnd": "2010-10-10",
+            "status": "DORMANT",
+            "type": "LTD",
+            "isCorporationTaxQualified": false,
+            "isVatQualified": true,
+            "isPayeQualified": true,
+            "isInsurancePremiumTaxQualified": true,
+            "isStampDutyLandTaxQualified": true,
+            "isStampDutyReserveTaxQualified": true,
+            "isPetroleumRevenueTaxQualified": true,
+            "isCustomsDutiesQualified": true,
+            "isExciseDutiesQualified": true,
+            "isBankLevyQualified": true
+          }
+        ],
+        "remarks": "Testremarks"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

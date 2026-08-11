@@ -21,6 +21,9 @@ import play.api.http.{HeaderNames, MimeTypes, Status}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
+import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
+import play.api.libs.json.Json
 
 class CertificateConnectorIntegrationSpec extends ISpecBase {
 
@@ -36,37 +39,37 @@ class CertificateConnectorIntegrationSpec extends ISpecBase {
 
   val testSubscriptionId = "testSubscriptionId"
 
-  private val validPayload = s"""{
-                                |  "submitterName": "Firstname Lastname",
-                                |  "saoName": "Firstname Lastname",
-                                |  "saoEmail": "firstname.lastname@example.com",
-                                |  "staffPid": "non-empty string",
-                                |  "customerId": "non-empty string",
-                                |  "companies": [
-                                |    {
-                                |      "crn": "crn",
-                                |      "utr": "utr",
-                                |      "name": "Example Subsidiary Ltd",
-                                |      "accPeriodEnd": "2025-03-31",
-                                |      "status": "COMPLIANT",
-                                |      "type": "LTD",
-                                |      "isCorporationTaxQualified": true,
-                                |      "isVatQualified": true,
-                                |      "isPayeQualified": true,
-                                |      "isInsurancePremiumTaxQualified": false,
-                                |      "isStampDutyLandTaxQualified": false,
-                                |      "isStampDutyReserveTaxQualified": false,
-                                |      "isPetroleumRevenueTaxQualified": false,
-                                |      "isCustomsDutiesQualified": false,
-                                |      "isExciseDutiesQualified": false,
-                                |      "isBankLevyQualified": false,
-                                |      "qualificationStatement": "non-empty string"
-                                |    }
-                                |  ],
-                                |  "remarks": "non-empty string"
-                                |}""".stripMargin
+  private val validPayload = CertificateDpsRequest(
+    submitterName = Some("Firstname Lastname"),
+    saoName = "Firstname Lastname",
+    saoEmail = "firstname.lastname@example.com",
+    staffPid = Some("non-empty string"),
+    customerId = Some("non-empty string"),
+    companies = List(
+      CertificateCompany(
+        crn = Some("crn"),
+        utr = "utr",
+        name = "Example Subsidiary Ltd",
+        accPeriodEnd = "2025-03-31",
+        status = "COMPLIANT",
+        `type` = "LTD",
+        isCorporationTaxQualified = true,
+        isVatQualified = true,
+        isPayeQualified = true,
+        isInsurancePremiumTaxQualified = false,
+        isStampDutyLandTaxQualified = false,
+        isStampDutyReserveTaxQualified = false,
+        isPetroleumRevenueTaxQualified = false,
+        isCustomsDutiesQualified = false,
+        isExciseDutiesQualified = false,
+        isBankLevyQualified = false,
+        qualificationStatement = Some("non-empty string")
+      )
+    ),
+    remarks = Some("non-empty string")
+  )
 
-  "POST /certificate" must {
+  "postCertificate" must {
     "pass through a successful downstream response" in {
       stubFor(
         post(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
@@ -85,7 +88,7 @@ class CertificateConnectorIntegrationSpec extends ISpecBase {
         postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
-          .withRequestBody(equalToJson(validPayload))
+          .withRequestBody(equalTo(Json.stringify(Json.toJson(validPayload))))
       )
     }
 
@@ -111,7 +114,7 @@ class CertificateConnectorIntegrationSpec extends ISpecBase {
         postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$testSubscriptionId/certificates"))
           .withHeader(HeaderNames.AUTHORIZATION, equalTo(appConfig.hipAuthorisationCredentials))
           .withHeader(HeaderNames.CONTENT_TYPE, equalTo(MimeTypes.JSON))
-          .withRequestBody(equalToJson(validPayload))
+          .withRequestBody(equalToJson(Json.stringify(Json.toJson(validPayload))))
       )
     }
   }

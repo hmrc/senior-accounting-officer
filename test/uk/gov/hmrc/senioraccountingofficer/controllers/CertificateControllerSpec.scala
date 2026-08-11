@@ -132,19 +132,9 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-    "return 502 when the service returns MalformedResponse" in {
+    "return 500 when the service returns MalformedResponse" in {
       when(mockCertificateService.postCertificate(any(), any())(using any()))
         .thenReturn(Future.successful(MalformedResponse(DPS)))
-
-      val result = routeResult(certificateRequest(validPayload.toString()))
-
-      status(result) shouldBe Status.BAD_GATEWAY
-      contentAsString(result) should include("DOWNSTREAM_SERVICE_MISALIGNMENT")
-    }
-
-    "return 500 when the service returns BadRequestFailure" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(BadRequestFailure(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
@@ -152,9 +142,19 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       contentAsString(result) should include("DOWNSTREAM_SERVICE_MISALIGNMENT")
     }
 
-    "return 502 when the service returns InternalServerFailure" in {
+    "return 500 when the service returns Misalignment" in {
       when(mockCertificateService.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(InternalServerFailure(DPS)))
+        .thenReturn(Future.successful(Misalignment(DPS)))
+
+      val result = routeResult(certificateRequest(validPayload.toString()))
+
+      status(result) shouldBe Status.INTERNAL_SERVER_ERROR
+      contentAsString(result) should include("DOWNSTREAM_SERVICE_MISALIGNMENT")
+    }
+
+    "return 502 when the service returns DownstreamServiceError" in {
+      when(mockCertificateService.postCertificate(any(), any())(using any()))
+        .thenReturn(Future.successful(DownstreamServiceError(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 
@@ -162,9 +162,9 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       contentAsString(result) should include("DOWNSTREAM_SERVICE_ERROR")
     }
 
-    "return 502 when the service returns ServiceUnavailableFailure" in {
+    "return 502 when the service returns DownstreamServiceUnavailable" in {
       when(mockCertificateService.postCertificate(any(), any())(using any()))
-        .thenReturn(Future.successful(ServiceUnavailableFailure(DPS)))
+        .thenReturn(Future.successful(DownstreamServiceUnavailable(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
 

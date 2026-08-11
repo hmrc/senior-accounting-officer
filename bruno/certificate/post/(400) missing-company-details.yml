@@ -1,0 +1,28 @@
+info:
+  name: (400) missing-company-details
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/certificate"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "submitterName": "Subname",
+        "saoName": "SubmitterTestName",
+        "saoEmail": "test@email.com",
+        "companies": []
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

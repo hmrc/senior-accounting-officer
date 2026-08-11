@@ -27,6 +27,7 @@ import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
+import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -88,10 +89,11 @@ class DocumentumPackageService @Inject() (
       zipPath: Path.File,
       zipFileName: String,
       submissionId: String
-  )(using HeaderCarrier): Future[Unit] =
+  )(using HeaderCarrier): Future[Unit] = {
+    val stagedPdfSource = Source.lazyFutureSource(() => getStagedPdf(stagedPdfPath).map(_.content))
+    val zipSource       = zipBuilder.build(stagedPdfSource, pdfFileName, metadataXml, metadataXmlName)
+
     (for {
-      stagedPdf  <- getStagedPdf(stagedPdfPath)
-      zipSource  <- zipBuilder.build(stagedPdf.content, pdfFileName, metadataXml, metadataXmlName)
       zipSummary <- uploadZip(zipPath, zipSource)
       response   <- sdesConnector.notifyFileReady(
         zipFileName,
@@ -107,6 +109,7 @@ class DocumentumPackageService @Inject() (
       logger.warn(s"[DocumentumPackage][Failed] submissionId=$submissionId", exception)
       ()
     }
+  }
 
   def download(submissionId: String, fileName: String)(using
       HeaderCarrier
@@ -155,7 +158,7 @@ class DocumentumPackageService @Inject() (
 
   private def stagedPdfObjectStorePath(context: DocumentumPackageContext): Path.File =
     Path
-      .Directory(s"/senior-accounting-officer/${context.submissionId}/")
+      .Directory(s"/senior-accounting-officer/${SubscriptionIdHash.hex(context.saoSubscriptionId)}/")
       .file(s"${context.submissionId}_SAO_${context.submissionType.documentumName}.pdf")
 
   private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =

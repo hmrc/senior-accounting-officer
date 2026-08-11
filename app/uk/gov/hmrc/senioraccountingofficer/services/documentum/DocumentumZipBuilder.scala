@@ -17,48 +17,42 @@
 package uk.gov.hmrc.senioraccountingofficer.services.documentum
 
 import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.scaladsl.{Sink, Source, StreamConverters}
-import org.apache.pekko.stream.{IOResult, Materializer}
+import org.apache.pekko.stream.*
+import org.apache.pekko.stream.connectors.file.ArchiveMetadata
+import org.apache.pekko.stream.connectors.file.scaladsl.Archive
+import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
 import org.apache.pekko.util.ByteString
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
-import java.util.zip.{ZipEntry, ZipOutputStream}
 import javax.inject.Inject
 
-class DocumentumZipBuilder @Inject() ()(using Materializer, ExecutionContext) {
+class DocumentumZipBuilder @Inject() () {
 
   def build(
       pdfSource: Source[ByteString, ?],
       pdfFileName: String,
       metadataXml: String,
       metadataFileName: String
-  ): Future[Source[ByteString, NotUsed]] =
-    pdfSource.runWith(Sink.fold(ByteString.empty)(_ ++ _)).map { pdfBytes =>
-      val outputStream = new ByteArrayOutputStream()
-      val zipStream    = new ZipOutputStream(outputStream)
+  ): Source[ByteString, NotUsed] = {
+    val pdf: Source[ByteString, NotUsed] = pdfSource.mapMaterializedValue(_ => NotUsed)
+    val xml: Source[ByteString, NotUsed] = Source.single(ByteString(metadataXml, StandardCharsets.UTF_8.name()))
 
-      try {
-        addEntry(zipStream, pdfFileName, pdfBytes.toArray)
-        addEntry(zipStream, metadataFileName, metadataXml.getBytes(StandardCharsets.UTF_8))
-      } finally {
-        zipStream.close()
-      }
+    val files: Source[(ArchiveMetadata, Source[ByteString, NotUsed]), NotUsed] =
+      Source(
+        List(
+          ArchiveMetadata(pdfFileName)      -> pdf,
+          ArchiveMetadata(metadataFileName) -> xml
+        )
+      )
 
-      Source.single(ByteString(outputStream.toByteArray))
-    }
+    files.via(Archive.zip())
+  }
 
   def resourceSource(resourcePath: String): Source[ByteString, Future[IOResult]] =
     StreamConverters.fromInputStream(() =>
       Option(getClass.getClassLoader.getResourceAsStream(resourcePath))
         .getOrElse(throw new IllegalStateException(s"Resource not found: $resourcePath"))
     )
-
-  private def addEntry(zipStream: ZipOutputStream, fileName: String, content: Array[Byte]): Unit = {
-    zipStream.putNextEntry(new ZipEntry(fileName))
-    zipStream.write(content)
-    zipStream.closeEntry()
-  }
 }

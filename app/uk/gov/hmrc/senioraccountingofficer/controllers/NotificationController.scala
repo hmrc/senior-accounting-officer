@@ -61,7 +61,7 @@ class NotificationController @Inject() (
                   InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
                 case Misconfiguration(downstreamService, status) =>
                   logger.warn(s"[Notification][$downstreamService][MISCONFIGURATION]status=$status")
-                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+                  InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
                 case NotFoundFailure(downstreamService) =>
                   logger.warn(s"[Notification][$downstreamService][NOT_FOUND]")
                   InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))

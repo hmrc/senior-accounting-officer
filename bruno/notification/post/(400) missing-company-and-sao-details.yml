@@ -1,0 +1,27 @@
+info:
+  name: (400) missing-company-and-sao-details
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "companies": [],
+        "saos": [],
+        "remarks": "testremarks"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

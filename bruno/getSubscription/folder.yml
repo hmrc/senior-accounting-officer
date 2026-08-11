@@ -1,7 +1,0 @@
-info:
-  name: getSubscription
-  type: folder
-  seq: 14
-
-request:
-  auth: inherit
