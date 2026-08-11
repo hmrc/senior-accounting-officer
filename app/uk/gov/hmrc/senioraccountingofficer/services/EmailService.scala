@@ -61,12 +61,17 @@ class EmailService @Inject() (
 
     contacts.foreach(contact => {
       val emailParameters = NotificationEmailParameters(
-        templateId = EmailTemplate.NotificationConfirmation,
+        recipientName = contact.name,
         companyName = companyName,
         submittedDateTime = datetime,
         referenceId = referenceId
       )
-      val emailModel = NotificationEmail(List(contact.email), emailParameters)
+      val emailModel = NotificationEmail(
+        List(contact.email),
+        templateId = EmailTemplate.NotificationConfirmation,
+        parameters = emailParameters
+      )
+
       sendEmail(emailModel)
     })
   }

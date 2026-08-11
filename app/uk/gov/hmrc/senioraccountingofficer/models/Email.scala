@@ -23,6 +23,7 @@ sealed trait Email:
 
 final case class NotificationEmail(
     to: List[String],
+    templateId: EmailTemplate,
     parameters: NotificationEmailParameters
 ) extends Email
 final case class CertificateEmail(
@@ -31,7 +32,7 @@ final case class CertificateEmail(
 ) extends Email
 
 final case class NotificationEmailParameters(
-    templateId: EmailTemplate,
+    recipientName: String,
     companyName: String,
     submittedDateTime: String,
     referenceId: String
