@@ -290,4 +290,4 @@ POST        /certificate       uk.gov.hmrc.senioraccountingofficer.controllers.C
 ###
 GET         /subscription        uk.gov.hmrc.senioraccountingofficer.controllers.GetSubscriptionController.getSubscription()
 
-POST        /sdes-callback      uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.callback()
+POST        /sdes-callback      uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.callback

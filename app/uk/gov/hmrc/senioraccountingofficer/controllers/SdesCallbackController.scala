@@ -31,12 +31,14 @@ class SdesCallbackController @Inject() (
     extends BaseController(cc)
     with Logging {
 
-  def callback(): Action[JsValue] = Action(parse.json) { request =>
+  def callback: Action[JsValue] = Action(parse.json) { request =>
     val notification = request.body.as[SdesFileNotification]
+
     notification match {
-      case SdesFileNotification("FileProcessingFailure", _, correlationId) => logger.error(notification.toLog)
-      case _                                                               => logger.info(notification.toLog)
+      case SdesFileNotification("FileProcessingFailure", _, _) => logger.error(notification.toLog)
+      case _                                                   => logger.info(notification.toLog)
     }
+
     NoContent
   }
 }
