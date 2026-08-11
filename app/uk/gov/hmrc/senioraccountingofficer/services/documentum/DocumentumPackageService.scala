@@ -27,6 +27,7 @@ import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
+import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -157,7 +158,7 @@ class DocumentumPackageService @Inject() (
 
   private def stagedPdfObjectStorePath(context: DocumentumPackageContext): Path.File =
     Path
-      .Directory(s"/senior-accounting-officer/${context.submissionId}/")
+      .Directory(s"/senior-accounting-officer/${SubscriptionIdHash.hex(context.saoSubscriptionId)}/")
       .file(s"${context.submissionId}_SAO_${context.submissionType.documentumName}.pdf")
 
   private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =

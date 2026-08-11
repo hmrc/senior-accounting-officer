@@ -38,6 +38,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
   DocumentumPackageContext,
   SubmissionType
 }
+import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -192,12 +193,13 @@ class DocumentumPackageServiceSpec
     }
   }
 
-  private val owner            = "senior-accounting-officer"
-  private val expectedDate     = LocalDate.now(ZoneOffset.UTC).format(DateTimeFormatter.BASIC_ISO_DATE)
-  private val expectedFileName = s"${expectedDate}_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip"
-  private val expectedZipPath  = Path.Directory("/sdes/NOT0123456789/").file(expectedFileName)
-  private val expectedPdfPath  = Path
-    .Directory("/senior-accounting-officer/NOT0123456789/")
+  private val owner             = "senior-accounting-officer"
+  private val saoSubscriptionId = "XASAO1234567890"
+  private val expectedDate      = LocalDate.now(ZoneOffset.UTC).format(DateTimeFormatter.BASIC_ISO_DATE)
+  private val expectedFileName  = s"${expectedDate}_NOT0123456789_SAO_Notification_OFFICIAL_SENSITIVE.zip"
+  private val expectedZipPath   = Path.Directory("/sdes/NOT0123456789/").file(expectedFileName)
+  private val expectedPdfPath   = Path
+    .Directory(s"/senior-accounting-officer/${SubscriptionIdHash.hex(saoSubscriptionId)}/")
     .file("NOT0123456789_SAO_Notification.pdf")
   private val generatedPdfSource = Source.single(ByteString("generated-pdf"))
   private val zipSource          = Source.single(ByteString("zip"))
@@ -210,7 +212,7 @@ class DocumentumPackageServiceSpec
     DocumentumPackageContext(
       submissionId = "NOT0123456789",
       submissionType = SubmissionType.Notification,
-      saoSubscriptionId = "XASAO1234567890",
+      saoSubscriptionId = saoSubscriptionId,
       customerId = None,
       companies = List(DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")))
     )
