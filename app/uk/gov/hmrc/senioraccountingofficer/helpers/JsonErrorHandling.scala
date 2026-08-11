@@ -54,9 +54,6 @@ object JsonErrorHandling {
     def validateNotification(json: JsValue): Seq[ApiError] =
       validate(notificationSchema, json, rootPrefix = None)
 
-    def validateSubscription(json: JsValue): Seq[ApiError] =
-      validate(subscriptionSchema, json, rootPrefix = None)
-
     def validateCertificate(json: JsValue): Seq[ApiError] =
       validate(certificateSchema, json, rootPrefix = None)
 
@@ -123,7 +120,6 @@ object JsonErrorHandling {
       Option(error.getInstanceNode).exists(node => node.isTextual && node.textValue().isEmpty)
 
     private lazy val notificationSchema = loadSchema("schemas/notification-request-schema.yaml")
-    private lazy val subscriptionSchema = loadSchema("schemas/subscription-request-schema.yaml")
     private lazy val certificateSchema  = loadSchema("schemas/certificate-request-schema.yaml")
 
     private def loadSchema(path: String): Schema = {
