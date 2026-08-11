@@ -26,6 +26,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
 import scala.concurrent.ExecutionContext
 
 import javax.inject.Inject
+import scala.util.*
 
 class SdesCallbackController @Inject() (
     cc: ControllerComponents
@@ -34,9 +35,15 @@ class SdesCallbackController @Inject() (
     with Logging {
 
   def callback: Action[JsValue] = Action(parse.json) { request =>
-    val notification = request.body.as[SdesFileNotification]
-    logger.warn(notification.toLog)
-    NoContent
+    Try(request.body.as[SdesFileNotification]) match {
+      case Failure(exception) =>
+        logger.warn("[SDES Callback][MALFORMED_REQUEST]")
+        BadRequest
+      case Success(notification) => {
+        logger.warn(notification.toLog)
+        NoContent
+      }
+    }
   }
 }
 

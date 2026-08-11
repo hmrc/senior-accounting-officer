@@ -108,6 +108,21 @@ class SdesCallbackControllerSpec
         status(result) mustBe Status.NO_CONTENT
       }
     }
+
+    "return 400" - {
+      "for a malformed request" in {
+        val request =
+          FakeRequest("POST", routes.SdesCallbackController.callback.url)
+            .withTextBody(malformedPayload)
+            .withHeaders(
+              "Content-Type" -> MimeTypes.JSON
+            )
+
+        val result = routeResult(request)
+
+        status(result) mustBe Status.BAD_REQUEST
+      }
+    }
   }
 }
 
@@ -151,4 +166,6 @@ object SdesCallbackControllerSpec {
       |  "dateTime": "2026-08-11T13:35:10.279Z",
       |  "properties": []
       |}""".stripMargin
+
+  val malformedPayload = "{"
 }
