@@ -46,9 +46,9 @@ class SdesCallbackController @Inject() (
 }
 
 object SdesCallbackController {
-  extension (notification: SdesFileNotification) {
+  extension (sdesFileNotification: SdesFileNotification) {
     def toLog: String = {
-      s"[SDES Callback][${notification.notification}]correlationId=${notification.correlationID}"
+      s"[SDES Callback][${sdesFileNotification.notification}]correlationId=${sdesFileNotification.correlationID}"
     }
   }
 }
