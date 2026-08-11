@@ -18,6 +18,8 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -25,7 +27,8 @@ import play.api.Application
 import play.api.http.{MimeTypes, Status}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.AnyContentAsText
+import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
@@ -34,14 +37,7 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
-import java.util.UUID
-
 import SdesCallbackControllerSpec.*
-import org.scalatest.concurrent.ScalaFutures
-import play.api.mvc.AnyContentAsJson
-import play.api.mvc.Result
-import play.api.mvc.AnyContentAsText
-import org.scalatest.freespec.AnyFreeSpec
 
 class SdesCallbackControllerSpec
     extends AnyFreeSpec
@@ -119,7 +115,7 @@ object SdesCallbackControllerSpec {
   val crn = generateCrn
   val utr = generateUtr
 
-  val fileReceivedPayload =
+  val fileReceivedPayload: String =
     """{
       |  "notification": "FileReceived",
       |  "filename": "filename",
@@ -131,7 +127,7 @@ object SdesCallbackControllerSpec {
       |  "properties": []
       |}""".stripMargin
 
-  val fileProcessedPayload =
+  val fileProcessedPayload: String =
     """{
       |  "notification": "FileProcessed",
       |  "filename": "filename",
@@ -144,7 +140,7 @@ object SdesCallbackControllerSpec {
       |}
       |""".stripMargin
 
-  val fileProcessingFailurePayload =
+  val fileProcessingFailurePayload: String =
     """{
       |  "notification": "FileProcessingFailure",
       |  "filename": "filename",
