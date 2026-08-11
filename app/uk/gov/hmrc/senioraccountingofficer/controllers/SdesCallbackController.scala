@@ -23,22 +23,28 @@ import javax.inject.Inject
 import play.api.mvc.Action
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
-import uk.gov.hmrc.senioraccountingofficer.repositories.SdesFileStatusRepository
+import uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.toLog
 
 class SdesCallbackController @Inject() (
-    cc: ControllerComponents,
-    sdesFileStatusRepository: SdesFileStatusRepository
+    cc: ControllerComponents
 )(using ExecutionContext)
     extends BaseController(cc)
     with Logging {
-  // TODO: store state in mongodb
-  // TODO: FileReceived -> create record in mongo
-  // TODO: FileProcessed -> update mongo; delete zip from object store
-  // TODO: FileProcessingFailure -> update mongo; log error
+
   def callback(): Action[JsValue] = Action(parse.json) { request =>
-    // TODO: log if json conversion fails
     val notification = request.body.as[SdesFileNotification]
-    sdesFileStatusRepository.upsert(notification)
-    Ok("jacobwozere")
+    notification match {
+      case SdesFileNotification("FileProcessingFailure", _, correlationId) => logger.error(notification.toLog)
+      case _                                                               => logger.info(notification.toLog)
+    }
+    NoContent
+  }
+}
+
+object SdesCallbackController {
+  extension (notification: SdesFileNotification) {
+    def toLog: String = {
+      s"[SDES Callback][${notification.notification}]correlationId=${notification.correlationID}"
+    }
   }
 }
