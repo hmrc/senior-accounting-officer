@@ -209,17 +209,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       )
     }
 
-//    "return 400 with INVALID_DATA_TYPE for additional properties without calling the service" in {
-//      val invalidPayload = validPayload ++ Json.obj(
-//        "unexpectedField" -> "value"
-//      )
-//
-//      assertValidationError(
-//        invalidPayload.toString(),
-//        Json.obj("path" -> "unexpectedField", "reason" -> "INVALID_DATA_TYPE")
-//      )
-//    }
-
     "return 400 with INVALID_FORMAT for an invalid sao email without calling the service" in {
       val invalidPayload = validPayload ++ Json.obj(
         "saoEmail" -> "not-an-email"

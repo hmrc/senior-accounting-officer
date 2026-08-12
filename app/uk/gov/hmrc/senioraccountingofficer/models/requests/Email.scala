@@ -22,6 +22,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 final case class Email(value: String) extends AnyVal
 
 object Email {
+  val maxEmailLength: Int = 254
+  val emailRegex          = """^([a-zA-Z0-9.!#$%&’'*+/=?^_`{|}~-]+)@([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*)$"""
 
   given Reads[Email] = Json.valueReads[Email].flatMapResult {
     case email if email.value.isEmpty                 => JsError(Reason.CANNOT_BE_EMPTY.toString)
@@ -30,8 +32,5 @@ object Email {
     case _                                            => JsError(Reason.INVALID_FORMAT.toString)
   }
   given Writes[Email] = Json.valueWrites
-
-  val maxEmailLength: Int = 254
-  val emailRegex          = """^([a-zA-Z0-9.!#$%&’'*+/=?^_`{|}~-]+)@([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*)$"""
 
 }

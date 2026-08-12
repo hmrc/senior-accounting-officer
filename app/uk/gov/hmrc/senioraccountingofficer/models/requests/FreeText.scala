@@ -22,6 +22,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 final case class FreeText(value: String) extends AnyVal
 
 object FreeText {
+  val maxFreeTextLength: Int = 32767
+
   given Reads[FreeText] = Json.valueReads[FreeText].flatMapResult {
     case freeText if freeText.value.isEmpty                    => JsError(Reason.CANNOT_BE_EMPTY.toString)
     case freeText if freeText.value.length > maxFreeTextLength => JsError(Reason.INVALID_FORMAT.toString)
@@ -29,5 +31,4 @@ object FreeText {
   }
   given Writes[FreeText] = Json.valueWrites
 
-  val maxFreeTextLength: Int = 32767
 }

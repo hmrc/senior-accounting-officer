@@ -32,10 +32,8 @@ object CompanyStatus {
   given Reads[CompanyStatus] = JsPath
     .read[String]
     .flatMapResult(name =>
-      Try(CompanyStatus.valueOf(name)).toEither match {
-        case Left(_)      => JsError(Reason.INVALID_ENUM_VALUE.toString)
-        case Right(value) => JsSuccess(value)
-      }
+      Try(CompanyStatus.valueOf(name)).toOption
+        .fold(JsError(Reason.INVALID_ENUM_VALUE.toString))(status => JsSuccess(status))
     )
 
   given Writes[CompanyStatus] = Writes(r => JsString(r.toString))

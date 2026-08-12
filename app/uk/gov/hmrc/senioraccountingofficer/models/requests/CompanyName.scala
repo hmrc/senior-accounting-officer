@@ -22,6 +22,9 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 final case class CompanyName(value: String) extends AnyVal
 
 object CompanyName {
+
+  val maxCompanyNameLength: Int = 160
+
   given Reads[CompanyName] = Json.valueReads[CompanyName].flatMapResult {
     case companyName if companyName.value.isEmpty                       => JsError(Reason.CANNOT_BE_EMPTY.toString)
     case companyName if companyName.value.length > maxCompanyNameLength => JsError(Reason.INVALID_FORMAT.toString)
@@ -29,5 +32,4 @@ object CompanyName {
   }
   given Writes[CompanyName] = Json.valueWrites
 
-  val maxCompanyNameLength: Int = 160
 }

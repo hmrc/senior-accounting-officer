@@ -22,13 +22,13 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 final case class StaffId(value: String) extends AnyVal
 
 object StaffId {
+  val maxStaffIdLength: Int = 30
+
   given Reads[StaffId] = Json.valueReads[StaffId].flatMapResult {
     case id if id.value.isEmpty                   => JsError(Reason.CANNOT_BE_EMPTY.toString)
     case id if id.value.length > maxStaffIdLength => JsError(Reason.INVALID_FORMAT.toString)
     case id                                       => JsSuccess(id)
   }
   given Writes[StaffId] = Json.valueWrites
-
-  val maxStaffIdLength: Int = 30
 
 }
