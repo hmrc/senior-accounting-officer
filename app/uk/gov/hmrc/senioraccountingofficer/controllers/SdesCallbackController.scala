@@ -17,7 +17,6 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.Logging
-import play.api.libs.json.JsValue
 import play.api.mvc.Action
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.toLog
@@ -27,6 +26,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.*
 
 import javax.inject.Inject
+import play.api.mvc.AnyContent
 
 class SdesCallbackController @Inject() (
     cc: ControllerComponents
@@ -34,15 +34,16 @@ class SdesCallbackController @Inject() (
     extends BaseController(cc)
     with Logging {
 
-  def callback: Action[JsValue] = Action(parse.json) { request =>
-    Try(request.body.as[SdesFileNotification]) match {
-      case Failure(exception) =>
-        logger.warn("[SDES Callback][MALFORMED_REQUEST]")
-        BadRequest
-      case Success(notification) => {
-        logger.warn(notification.toLog)
-        NoContent
-      }
+  def callback: Action[AnyContent] = Action { implicit request =>
+    (for
+      json         <- request.body.asJson
+      notification <- Try(json.as[SdesFileNotification]).toOption
+    yield notification).fold {
+      logger.warn("[SDES Callback][MALFORMED_REQUEST]")
+      BadRequest
+    } { notification =>
+      logger.warn(notification.toLog)
+      NoContent
     }
   }
 }
