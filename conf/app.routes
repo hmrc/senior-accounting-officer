@@ -106,7 +106,7 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #    content:
 #      application/json:
 #        schema:
-#          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.CertificateRequest"
+#          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest"
 #  responses:
 #    "201":
 #      description: Certificate submitted successfully
@@ -137,11 +137,6 @@ POST        /notification                         uk.gov.hmrc.senioraccountingof
 #              summary: A required field is missing
 #              value:
 #                - path: "companies"
-#                  reason: "MISSING_REQUIRED_FIELD"
-#            missingRequiredField:
-#              summary: A required field is missing
-#              value:
-#                - path: "saoEmail"
 #                  reason: "MISSING_REQUIRED_FIELD"
 #            saoEmailIsInvalidType:
 #              summary: Field has unexpected JSON type
