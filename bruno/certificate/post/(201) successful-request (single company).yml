@@ -24,7 +24,7 @@ http:
             "utr": "1243567843",
             "name": "companyname",
             "accPeriodEnd": "2010-10-10",
-            "status": "DORMANT",
+            "status": "Dormant",
             "type": "LTD",
             "isCorporationTaxQualified": false,
             "isVatQualified": true,

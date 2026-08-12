@@ -32,7 +32,7 @@ import java.util.zip.ZipInputStream
 
 class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutures with GuiceOneAppPerSuite {
 
-  private lazy given Materializer = app.injector.instanceOf[Materializer]
+  private given Materializer = app.injector.instanceOf[Materializer]
 
   private lazy val zipBuilder = app.injector.instanceOf[DocumentumZipBuilder]
 

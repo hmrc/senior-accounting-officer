@@ -6,7 +6,7 @@
 #    content:
 #      application/json:
 #        schema:
-#          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest"
+#          $ref: "#/components/schemas/uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest"
 #  responses:
 #    "200":
 #      description: Notification submitted successfully

@@ -14,33 +14,31 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.Company as DpsCompany
+import uk.gov.hmrc.senioraccountingofficer.models.dps.Sao as DpsSao
 
-final case class Company(
-    crn: Option[String] = None,
-    utr: String,
-    name: String,
-    accPeriodEnd: String,
-    status: String,
-    `type`: String
+import java.time.LocalDate
+
+final case class Sao(
+    name: PersonName,
+    fromDate: Option[LocalDate],
+    toDate: Option[LocalDate]
 )
 
-object Company {
-  given Format[Company] = Json.format[Company]
-}
+object Sao {
 
-extension (company: Company) {
-  def toDpsCompany: DpsCompany = {
-    DpsCompany(
-      crn = company.crn,
-      utr = company.utr,
-      name = company.name,
-      accPeriodEnd = company.accPeriodEnd,
-      status = company.status,
-      `type` = company.`type`
-    )
+  given Format[Sao] = Json.format[Sao]
+
+  extension (sao: Sao) {
+    def toDpsSao: DpsSao = {
+      DpsSao(
+        name = sao.name.value,
+        fromDate = sao.fromDate.map(_.toString),
+        toDate = sao.toDate.map(_.toString)
+      )
+    }
   }
+
 }

@@ -22,6 +22,7 @@ import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company, NotificationDpsRequest, Sao}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyType, CompanyStatus}
 
 class NotificationConnectorIntegrationSpec extends ISpecBase {
 
@@ -43,15 +44,14 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
           utr = "1234567890",
           name = "Example Ltd",
           accPeriodEnd = "2024-12-31",
-          status = "Active",
-          `type` = "LTD"
+          status = CompanyStatus.Active,
+          `type` = CompanyType.LTD
         )
       ),
       customerId = None,
       saos = List(
         Sao(
           name = "Firstname Lastname",
-          email = Some("Firstname.Lastname@example.com"),
           fromDate = Some("2024-04-01"),
           toDate = Some("2025-03-31")
         )
@@ -73,7 +73,6 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
                                |    "saos": [
                                |        {
                                |          "name": "Firstname Lastname",
-                               |          "email": "Firstname.Lastname@example.com",
                                |          "fromDate": "2024-04-01",
                                |          "toDate": "2025-03-31"
                                |        }

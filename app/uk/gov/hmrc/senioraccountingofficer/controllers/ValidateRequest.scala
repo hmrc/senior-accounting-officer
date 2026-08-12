@@ -21,7 +21,6 @@ import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason.MALFORMED_REQUEST
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -35,7 +34,7 @@ object ValidateRequest {
   }
 
   private def malformedRequestResponse: Future[Result] =
-    Future.successful(JsonErrorHandling.badRequest(Seq(ApiError(MALFORMED_REQUEST))))
+    Future.successful(JsonErrorHandling.malformedRequest)
 
   private def toBadRequestResponse(
       validationErrors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]

@@ -21,7 +21,7 @@ http:
             "utr": "2236324676",
             "name": "Example Subsidiary Ltd",
             "accPeriodEnd": "2025-07-06",
-            "status": "DORMANT",
+            "status": "Dormant",
             "type": "LTD"
           },
           {
@@ -29,20 +29,18 @@ http:
             "utr": "2233445566",
             "name": "Example Subsidiary Ltd",
             "accPeriodEnd": "2020-03-01",
-            "status": "ACTIVE",
+            "status": "Active",
             "type": "PLC"
           }
         ],
         "saos": [
           {
             "name": "Testname1",
-            "email": "test.name1@example.com",
             "fromDate": "2024-04-01",
             "toDate": "2025-03-31"
           },
           {
             "name": "Testname2",
-            "email": "test.name2@example.com",
             "fromDate": "2020-04-01",
             "toDate": "2025-03-31"
           }

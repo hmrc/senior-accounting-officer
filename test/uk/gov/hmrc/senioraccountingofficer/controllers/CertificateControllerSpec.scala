@@ -35,6 +35,7 @@ import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
@@ -105,8 +106,8 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
               utr = utr,
               name = "Example Subsidiary Ltd",
               accPeriodEnd = "2025-03-31",
-              status = "ACTIVE",
-              `type` = "LTD",
+              status = CompanyStatus.Active,
+              `type` = CompanyType.LTD,
               isCorporationTaxQualified = true,
               isVatQualified = true,
               isPayeQualified = true,
@@ -228,7 +229,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
             "utr"                            -> utr,
             "name"                           -> "Example Subsidiary Ltd",
             "accPeriodEnd"                   -> "2025-03-31",
-            "status"                         -> "ACTIVE",
+            "status"                         -> "Active",
             "type"                           -> "NOT VALID",
             "isCorporationTaxQualified"      -> true,
             "isVatQualified"                 -> true,
@@ -288,7 +289,7 @@ object CertificateControllerSpec {
         "utr"                            -> utr,
         "name"                           -> "Example Subsidiary Ltd",
         "accPeriodEnd"                   -> "2025-03-31",
-        "status"                         -> "ACTIVE",
+        "status"                         -> "Active",
         "type"                           -> "LTD",
         "isCorporationTaxQualified"      -> true,
         "isVatQualified"                 -> true,

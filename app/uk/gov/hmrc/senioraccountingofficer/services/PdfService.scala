@@ -57,19 +57,14 @@ class PdfService @Inject() (
 
 object PdfService {
 
-  enum Status:
+  enum Status {
     case Active, Dormant, Administration, Liquidation
-
-  def toStatus(status: String): Either[String, Status] = {
-    Status.values.find(_.toString.toLowerCase == status.toLowerCase).toRight(s"Unknown status: $status")
   }
 
-  enum CompanyType:
+  enum CompanyType {
     case Plc, Ltd
-
-  def toCompanyType(`type`: String): Either[String, CompanyType] = {
-    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase).toRight(s"Unknown company type: ${`type`}")
   }
+
   val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
 
   final case class Certificate(

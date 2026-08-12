@@ -18,27 +18,15 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 
-import scala.util.Try
+final case class NotificationCompanies(value: List[NotificationCompany]) extends AnyVal
 
-enum CompanyType {
-  case PLC, LTD
-}
+object NotificationCompanies {
+  given Reads[NotificationCompanies] =
+    Json
+      .valueReads[NotificationCompanies]
+      .filter(JsonValidationError(Reason.ARRAY_MIN_ITEMS_NOT_MET.toString))(_.value.nonEmpty)
 
-object CompanyType {
-  given Reads[CompanyType] = JsPath
-    .read[String]
-    .flatMapResult(name =>
-      Try(CompanyType.valueOf(name)).toOption
-        .fold(JsError(Reason.INVALID_ENUM_VALUE.toString))(companyType => JsSuccess(companyType))
-    )
-  given Writes[CompanyType] = Writes[CompanyType](r => JsString(r.toString))
+  given Writes[NotificationCompanies] = Json.valueWrites[NotificationCompanies]
 
-  extension (companyType: CompanyType) {
-    def toPdfCompanyType: PdfService.CompanyType = companyType match {
-      case PLC => PdfService.CompanyType.Plc
-      case LTD => PdfService.CompanyType.Ltd
-    }
-  }
 }

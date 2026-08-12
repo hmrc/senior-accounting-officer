@@ -30,7 +30,6 @@ http:
           {
             "name": "",
             "fromDate": "2020-03-10",
-            "email": "testname    @email.com",
             "toDate": "2021-03-10"
           }
         ],

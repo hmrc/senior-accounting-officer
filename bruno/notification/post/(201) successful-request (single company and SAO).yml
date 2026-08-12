@@ -21,7 +21,7 @@ http:
             "utr": "1233456679",
             "name": "TestCompanyName",
             "accPeriodEnd": "2009-09-09",
-            "status": "DORMANT",
+            "status": "Dormant",
             "type": "LTD"
           }
         ],
@@ -29,7 +29,6 @@ http:
           {
             "name": "Testname",
             "fromDate": "2020-03-10",
-            "email": "testname@mail.com",
             "toDate": "2021-03-10"
           }
         ],

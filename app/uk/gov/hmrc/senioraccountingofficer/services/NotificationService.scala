@@ -28,7 +28,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   NotificationDpsRequest,
   NotificationDpsResponse
 }
-import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, toNotificationDpsRequest}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
@@ -158,7 +158,7 @@ class NotificationService @Inject() (
       documentumPackageService.packageAndSubmit(
         DocumentumPackageContext.notification(notificationReference, subscriptionId, request),
         pdfService.generateNotificationPdf(
-          NotificationDpsRequest.toNotification(notificationReference, request, companyName)
+          NotificationDpsRequest.toPdfNotification(notificationReference, request, companyName)
         )
       )
     )
