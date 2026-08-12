@@ -23,9 +23,11 @@ final case class CompanyName(value: String) extends AnyVal
 
 object CompanyName {
   given Reads[CompanyName] = Json.valueReads[CompanyName].flatMapResult {
-    case companyName if companyName.value.isEmpty      => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case companyName if companyName.value.length > 160 => JsError(Reason.INVALID_FORMAT.toString)
-    case companyName                                   => JsSuccess(companyName)
+    case companyName if companyName.value.isEmpty                       => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case companyName if companyName.value.length > maxCompanyNameLength => JsError(Reason.INVALID_FORMAT.toString)
+    case companyName                                                    => JsSuccess(companyName)
   }
   given Writes[CompanyName] = Json.valueWrites
+
+  val maxCompanyNameLength: Int = 160
 }

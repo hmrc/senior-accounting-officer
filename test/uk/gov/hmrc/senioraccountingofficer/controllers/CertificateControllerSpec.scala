@@ -91,7 +91,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
         .thenReturn(Future.successful(Success("CRT0001234567")))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
-//      status(result) shouldBe Status.CREATED
+      status(result) shouldBe Status.CREATED
       contentAsJson(result) shouldBe Json.obj("certificateRef" -> "CRT0001234567")
 
       val expectedDpsRequest =
@@ -105,7 +105,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
               utr = utr,
               name = "Example Subsidiary Ltd",
               accPeriodEnd = "2025-03-31",
-              status = "COMPLIANT",
+              status = "ACTIVE",
               `type` = "LTD",
               isCorporationTaxQualified = true,
               isVatQualified = true,
@@ -239,7 +239,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
             "utr"                            -> utr,
             "name"                           -> "Example Subsidiary Ltd",
             "accPeriodEnd"                   -> "2025-03-31",
-            "status"                         -> "COMPLIANT",
+            "status"                         -> "ACTIVE",
             "type"                           -> "NOT VALID",
             "isCorporationTaxQualified"      -> true,
             "isVatQualified"                 -> true,
@@ -299,7 +299,7 @@ object CertificateControllerSpec {
         "utr"                            -> utr,
         "name"                           -> "Example Subsidiary Ltd",
         "accPeriodEnd"                   -> "2025-03-31",
-        "status"                         -> "COMPLIANT",
+        "status"                         -> "ACTIVE",
         "type"                           -> "LTD",
         "isCorporationTaxQualified"      -> true,
         "isVatQualified"                 -> true,

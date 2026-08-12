@@ -24,7 +24,6 @@ final case class CertificateRequest(
     saoName: PersonName,
     saoEmail: Email,
     staffPid: Option[String],
-    customerId: Option[String],
     companies: CertificateCompanies,
     remarks: Option[FreeText]
 )
@@ -42,7 +41,7 @@ object CertificateRequest {
         companies = certificateRequest.companies.value.map(_.toDpsCertificateCompany),
         remarks = certificateRequest.remarks.map(_.value),
         staffPid = certificateRequest.staffPid,
-        customerId = certificateRequest.customerId
+        customerId = None
       )
     }
   }

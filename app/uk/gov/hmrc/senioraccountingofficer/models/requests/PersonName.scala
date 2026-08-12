@@ -23,9 +23,12 @@ final case class PersonName(value: String) extends AnyVal
 
 object PersonName {
   given Reads[PersonName] = Json.valueReads[PersonName].flatMapResult {
-    case name if name.value.isEmpty      => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case name if name.value.length > 254 => JsError(Reason.INVALID_FORMAT.toString)
-    case name                            => JsSuccess(name)
+    case name if name.value.isEmpty                      => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case name if name.value.length > maxPersonNameLength => JsError(Reason.INVALID_FORMAT.toString)
+    case name                                            => JsSuccess(name)
   }
   given Writes[PersonName] = Json.valueWrites
+
+  val maxPersonNameLength: Int = 254
+
 }

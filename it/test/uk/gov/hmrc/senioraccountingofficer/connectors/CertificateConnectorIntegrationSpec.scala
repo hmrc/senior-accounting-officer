@@ -18,12 +18,11 @@ package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.{HeaderNames, MimeTypes, Status}
+import play.api.libs.json.Json
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
-import play.api.libs.json.Json
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsCompany, CertificateDpsRequest}
 
 class CertificateConnectorIntegrationSpec extends ISpecBase {
 
@@ -46,12 +45,12 @@ class CertificateConnectorIntegrationSpec extends ISpecBase {
     staffPid = Some("non-empty string"),
     customerId = Some("non-empty string"),
     companies = List(
-      CertificateCompany(
+      CertificateDpsCompany(
         crn = Some("crn"),
         utr = "utr",
         name = "Example Subsidiary Ltd",
         accPeriodEnd = "2025-03-31",
-        status = "COMPLIANT",
+        status = "ACTIVE",
         `type` = "LTD",
         isCorporationTaxQualified = true,
         isVatQualified = true,

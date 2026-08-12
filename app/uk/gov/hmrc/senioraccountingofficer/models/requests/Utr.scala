@@ -23,9 +23,12 @@ final case class Utr(value: String) extends AnyVal
 
 object Utr {
   given Reads[Utr] = Json.valueReads[Utr].flatMapResult {
-    case utr if utr.value.isEmpty     => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case utr if utr.value.length > 10 => JsError(Reason.INVALID_FORMAT.toString)
-    case utr                          => JsSuccess(utr)
+    case utr if utr.value.isEmpty               => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case utr if utr.value.length > maxUtrLength => JsError(Reason.INVALID_FORMAT.toString)
+    case utr                                    => JsSuccess(utr)
   }
   given Writes[Utr] = Json.valueWrites
+
+  val maxUtrLength: Int = 10
+
 }

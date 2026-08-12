@@ -29,10 +29,10 @@ object CompanyType {
   given Reads[CompanyType] = JsPath
     .read[String]
     .flatMapResult(name =>
-      Try(CompanyType.valueOf(name)).toEither.left
-        .map(_ => JsError(Reason.INVALID_ENUM_VALUE.toString))
-        .map(value => JsSuccess(value))
-        .merge
+      Try(CompanyType.valueOf(name)).toEither match {
+        case Left(_)      => JsError(Reason.INVALID_ENUM_VALUE.toString)
+        case Right(value) => JsSuccess(value)
+      }
     )
   given Writes[CompanyType] = Writes[CompanyType](r => JsString(r.toString))
 }

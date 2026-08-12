@@ -19,13 +19,25 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-final case class CompanyStatus(value: String) extends AnyVal
+import scala.util.Try
+
+enum CompanyStatus {
+  case ACTIVE
+  case DORMANT
+  case ADMINISTRATION
+  case LIQUIDATION
+}
 
 object CompanyStatus {
-  given Reads[CompanyStatus] = Json.valueReads[CompanyStatus].flatMapResult {
-    case companyName if companyName.value.isEmpty     => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case companyName if companyName.value.length > 20 => JsError(Reason.INVALID_FORMAT.toString)
-    case companyName                                  => JsSuccess(companyName)
-  }
-  given Writes[CompanyStatus] = Json.valueWrites
+  given Reads[CompanyStatus] = JsPath
+    .read[String]
+    .flatMapResult(name =>
+      Try(CompanyStatus.valueOf(name)).toEither match {
+        case Left(_)      => JsError(Reason.INVALID_ENUM_VALUE.toString)
+        case Right(value) => JsSuccess(value)
+      }
+    )
+
+  given Writes[CompanyStatus] = Writes(r => JsString(r.toString))
+
 }

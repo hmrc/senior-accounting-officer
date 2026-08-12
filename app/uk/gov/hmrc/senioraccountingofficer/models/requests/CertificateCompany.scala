@@ -19,11 +19,13 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsCompany
 
+import java.time.LocalDate
+
 final case class CertificateCompany(
     crn: Option[Crn],
     utr: Utr,
     name: CompanyName,
-    accPeriodEnd: String,
+    accPeriodEnd: LocalDate,
     status: CompanyStatus,
     `type`: CompanyType,
     isCorporationTaxQualified: Boolean,
@@ -49,8 +51,8 @@ object CertificateCompany {
         crn = certificateCompany.crn.map(_.value),
         utr = certificateCompany.utr.value,
         name = certificateCompany.name.value,
-        accPeriodEnd = certificateCompany.accPeriodEnd,
-        status = certificateCompany.status.value,
+        accPeriodEnd = certificateCompany.accPeriodEnd.toString,
+        status = certificateCompany.status.toString,
         `type` = certificateCompany.`type`.toString,
         isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
         isVatQualified = certificateCompany.isVatQualified,

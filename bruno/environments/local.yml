@@ -9,4 +9,4 @@ variables:
   - name: submissionFrontendBaseUrl
     value: http://localhost:10058
   - name: authorization
-    value: Bearer BXQ3/Treo4kQCZvVcCqKPphQEt52MQKWYLWxjImXHFncyULA1gVVAfCrXBNOn3EUP3RRRdUt1MDKFyFLndqhR12HRIX6sMFLyoTC3Pq2ye2UGQ/nNwSg+z3PFrSAuJgI4BGVQBZ5qiLONk7oyqCs2TWMpy2wohoHuwR91esKNNr8ps45HcwvNXtd2+dWJz71/SsCJHiDyv5jJQREo7nuFQ==,GNAP dummy-12425b98141f45deb9d86cb616426fcf
+    value: GNAP dummy-8db86df5126d49588a6c4df84ac2a652,Bearer BXQ3/Treo4kQCZvVcCqKPn6swQn9Ai7nmjmySiLtpBwhF4k/26DkAyPztxkGw8JdH/mEQkMas0ZJKqLzetmFNIzq2t4jZRPw4YygkM2DNItj1y+YtXiH9sEc9j5EfROG4BGVQBZ5qiLONk7oyqCs2cRLTPLLscRa52pz7B92fpE8LT4sY+HsJeE5VMKcY/pQ/SsCJHiDyv5jJQREo7nuFQ==

@@ -23,9 +23,11 @@ final case class FreeText(value: String) extends AnyVal
 
 object FreeText {
   given Reads[FreeText] = Json.valueReads[FreeText].flatMapResult {
-    case freeText if freeText.value.isEmpty        => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case freeText if freeText.value.length > 32767 => JsError(Reason.INVALID_FORMAT.toString)
-    case freeText                                  => JsSuccess(freeText)
+    case freeText if freeText.value.isEmpty                    => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case freeText if freeText.value.length > maxFreeTextLength => JsError(Reason.INVALID_FORMAT.toString)
+    case freeText                                              => JsSuccess(freeText)
   }
   given Writes[FreeText] = Json.valueWrites
+
+  val maxFreeTextLength: Int = 32767
 }

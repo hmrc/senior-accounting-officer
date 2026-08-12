@@ -23,9 +23,12 @@ final case class Crn(value: String) extends AnyVal
 
 object Crn {
   given Reads[Crn] = Json.valueReads[Crn].flatMapResult {
-    case crn if crn.value.isEmpty    => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case crn if crn.value.length > 8 => JsError(Reason.INVALID_FORMAT.toString)
-    case crn                         => JsSuccess(crn)
+    case crn if crn.value.isEmpty               => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case crn if crn.value.length > maxCrnLength => JsError(Reason.INVALID_FORMAT.toString)
+    case crn                                    => JsSuccess(crn)
   }
   given Writes[Crn] = Json.valueWrites
+
+  val maxCrnLength: Int = 8
+
 }
