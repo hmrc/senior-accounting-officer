@@ -1,0 +1,57 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.senioraccountingofficer.controllers
+
+import play.api.Logging
+import play.api.mvc.Action
+import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.toLog
+import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
+
+import scala.concurrent.ExecutionContext
+import scala.util.*
+
+import javax.inject.Inject
+import play.api.mvc.AnyContent
+
+class SdesCallbackController @Inject() (
+    cc: ControllerComponents
+)(using ExecutionContext)
+    extends BaseController(cc)
+    with Logging {
+
+  def callback: Action[AnyContent] = Action { implicit request =>
+    (for
+      json         <- request.body.asJson
+      notification <- Try(json.as[SdesFileNotification]).toOption
+    yield notification).fold {
+      logger.warn("[SDES Callback][MALFORMED_REQUEST]")
+      BadRequest
+    } { notification =>
+      logger.warn(notification.toLog)
+      NoContent
+    }
+  }
+}
+
+object SdesCallbackController {
+  extension (sdesFileNotification: SdesFileNotification) {
+    def toLog: String = {
+      s"[SDES Callback][${sdesFileNotification.notification}]correlationId=${sdesFileNotification.correlationID}"
+    }
+  }
+}
