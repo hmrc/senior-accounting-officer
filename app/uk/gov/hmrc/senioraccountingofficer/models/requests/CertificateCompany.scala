@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsCompany
 
 final case class CertificateCompany(
-    crn: Option[String],
-    utr: String,
-    name: String,
+    crn: Option[Crn],
+    utr: Utr,
+    name: CompanyName,
     accPeriodEnd: String,
-    status: String,
-    `type`: String,
+    status: CompanyStatus,
+    `type`: CompanyType,
     isCorporationTaxQualified: Boolean,
     isVatQualified: Boolean,
     isPayeQualified: Boolean,
@@ -36,21 +36,22 @@ final case class CertificateCompany(
     isCustomsDutiesQualified: Boolean,
     isExciseDutiesQualified: Boolean,
     isBankLevyQualified: Boolean,
-    qualificationStatement: Option[String]
+    qualificationStatement: Option[FreeText]
 )
 
 object CertificateCompany {
   given OFormat[CertificateCompany] = Json.format[CertificateCompany]
 
   extension (certificateCompany: CertificateCompany) {
+
     def toDpsCertificateCompany: CertificateDpsCompany = {
       CertificateDpsCompany(
-        crn = certificateCompany.crn,
-        utr = certificateCompany.utr,
-        name = certificateCompany.name,
+        crn = certificateCompany.crn.map(_.value),
+        utr = certificateCompany.utr.value,
+        name = certificateCompany.name.value,
         accPeriodEnd = certificateCompany.accPeriodEnd,
-        status = certificateCompany.status,
-        `type` = certificateCompany.`type`,
+        status = certificateCompany.status.value,
+        `type` = certificateCompany.`type`.toString,
         isCorporationTaxQualified = certificateCompany.isCorporationTaxQualified,
         isVatQualified = certificateCompany.isVatQualified,
         isPayeQualified = certificateCompany.isPayeQualified,
@@ -61,8 +62,9 @@ object CertificateCompany {
         isCustomsDutiesQualified = certificateCompany.isCustomsDutiesQualified,
         isExciseDutiesQualified = certificateCompany.isExciseDutiesQualified,
         isBankLevyQualified = certificateCompany.isBankLevyQualified,
-        qualificationStatement = certificateCompany.qualificationStatement
+        qualificationStatement = certificateCompany.qualificationStatement.map(_.value)
       )
     }
   }
+
 }

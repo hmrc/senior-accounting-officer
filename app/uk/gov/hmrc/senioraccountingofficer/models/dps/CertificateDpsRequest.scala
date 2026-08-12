@@ -17,7 +17,6 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
 import java.time.LocalDate
@@ -26,7 +25,7 @@ final case class CertificateDpsRequest(
     submitterName: Option[String],
     saoName: String,
     saoEmail: String,
-    companies: List[CertificateCompany],
+    companies: List[CertificateDpsCompany],
     remarks: Option[String] = None,
     staffPid: Option[String] = None,
     customerId: Option[String] = None
@@ -35,7 +34,7 @@ final case class CertificateDpsRequest(
 object CertificateDpsRequest {
   given OFormat[CertificateDpsRequest] = Json.format[CertificateDpsRequest]
 
-  def toPdfCertificateCompany(certificateCompany: List[CertificateCompany]): Seq[Certificate.Row] = {
+  def toPdfCertificateCompany(certificateCompany: List[CertificateDpsCompany]): Seq[Certificate.Row] = {
     certificateCompany.map(company => {
 
       val taxRegimes = TaxRegimes(

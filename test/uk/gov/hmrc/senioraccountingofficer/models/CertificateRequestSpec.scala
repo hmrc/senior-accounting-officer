@@ -19,9 +19,8 @@ package uk.gov.hmrc.senioraccountingofficer.models
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany as CertificateDpsCompany
 import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsCompany, CertificateDpsRequest}
 
 import java.time.LocalDate
 

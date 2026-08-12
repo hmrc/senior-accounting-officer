@@ -48,6 +48,12 @@ object ApiError {
   object Reason {
     given Reads[Reason]  = JsPath.read[String].map(name => Reason.valueOf(name))
     given Writes[Reason] = Writes[Reason](r => JsString(r.toString))
+
+    def fromErrorMessage(err: String): Reason = err match {
+      case "error.path.missing"      => Reason.MISSING_REQUIRED_FIELD
+      case "error.expected.jsstring" => Reason.INVALID_DATA_TYPE
+      case _                         => Reason.valueOf(err)
+    }
   }
 
   given OFormat[ApiError] = Json.format[ApiError]
