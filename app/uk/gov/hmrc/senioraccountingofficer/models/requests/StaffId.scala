@@ -19,18 +19,16 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-import scala.util.Try
+final case class StaffId(value: String) extends AnyVal
 
-enum CompanyType {
-  case PLC, LTD
-}
+object StaffId {
+  given Reads[StaffId] = Json.valueReads[StaffId].flatMapResult {
+    case id if id.value.isEmpty                   => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case id if id.value.length > maxStaffIdLength => JsError(Reason.INVALID_FORMAT.toString)
+    case id                                       => JsSuccess(id)
+  }
+  given Writes[StaffId] = Json.valueWrites
 
-object CompanyType {
-  given Reads[CompanyType] = JsPath
-    .read[String]
-    .flatMapResult(name =>
-      Try(CompanyType.valueOf(name)).toOption
-        .fold(JsError(Reason.INVALID_ENUM_VALUE.toString))(companyType => JsSuccess(companyType))
-    )
-  given Writes[CompanyType] = Writes[CompanyType](r => JsString(r.toString))
+  val maxStaffIdLength: Int = 30
+
 }

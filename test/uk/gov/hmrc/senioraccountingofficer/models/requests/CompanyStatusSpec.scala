@@ -19,49 +19,39 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
 
-class CrnSpec extends AnyWordSpec with Matchers {
+class CompanyStatusSpec extends AnyWordSpec with Matchers {
 
-  case class Test(crn: Crn)
+  case class Test(cs: CompanyStatus)
+
   object Test {
     given OFormat[Test] = Json.format
   }
 
-  "Json reader for Crn" must {
-    "return a Crn when the value is valid" in {
-      val testCrn = generateCrn
-      val result  = Json
-        .parse(s"""
-          |{
-          | "crn" : "$testCrn"
-          |}""".stripMargin)
-        .validate[Test]
+  "Json reader for CompanyStatus" must {
+    CompanyStatus.values.foreach { companyStatus =>
+      s"return a CompanyStatus when the value is $companyStatus" in {
+        val result = Json
+          .parse(s"""
+               |{
+               | "cs" : "$companyStatus"
+               |}""".stripMargin)
+          .validate[Test]
 
-      result.asEither mustBe Right(Test(Crn(testCrn)))
+        result.asEither mustBe Right(Test(companyStatus))
+      }
     }
 
     "return an error" when {
-      "the value is too short with message CANNOT_BE_EMPTY" in {
+      "the value is not one of the enum value with message INVALID_ENUM_VALUE" in {
         val result = Json
           .parse("""
               |{
-              | "crn" : ""
+              | "cs" : "123456789"
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
-      }
-
-      "the value is too long with message INVALID_FORMAT" in {
-        val result = Json
-          .parse("""
-              |{
-              | "crn" : "123456789"
-              |}""".stripMargin)
-          .validate[Test]
-
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("INVALID_FORMAT")))))
+        result.asEither mustBe Left(List((JsPath.\("cs"), List(JsonValidationError("INVALID_ENUM_VALUE")))))
       }
     }
   }

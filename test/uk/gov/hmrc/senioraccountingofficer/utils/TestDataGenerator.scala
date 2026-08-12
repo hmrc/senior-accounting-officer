@@ -30,4 +30,8 @@ object TestDataGenerator {
     val seed = Random.nextInt
     SaUtrGenerator(seed).nextSaUtr.utr
   }
+
+  def generateAlphanumeric(length: Int): String = {
+    String(Random.alphanumeric.take(length).toArray)
+  }
 }

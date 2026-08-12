@@ -19,26 +19,29 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateAlphanumeric
 
-class CrnSpec extends AnyWordSpec with Matchers {
+class EmailSpec extends AnyWordSpec with Matchers {
 
-  case class Test(crn: Crn)
+  case class Test(email: Email)
+
   object Test {
     given OFormat[Test] = Json.format
   }
 
-  "Json reader for Crn" must {
-    "return a Crn when the value is valid" in {
-      val testCrn = generateCrn
-      val result  = Json
+  "Json reader for Email" must {
+    "return a Email when the value is valid" in {
+      val testEmail = s"${generateAlphanumeric(252)}@a"
+      assert(testEmail.length == 254, "invalid test case, must be a valid email with 254 characters")
+
+      val result = Json
         .parse(s"""
-          |{
-          | "crn" : "$testCrn"
-          |}""".stripMargin)
+             |{
+             | "email" : "$testEmail"
+             |}""".stripMargin)
         .validate[Test]
 
-      result.asEither mustBe Right(Test(Crn(testCrn)))
+      result.asEither mustBe Right(Test(Email(testEmail)))
     }
 
     "return an error" when {
@@ -46,22 +49,25 @@ class CrnSpec extends AnyWordSpec with Matchers {
         val result = Json
           .parse("""
               |{
-              | "crn" : ""
+              | "email" : ""
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
+        result.asEither mustBe Left(List((JsPath.\("email"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
       }
 
       "the value is too long with message INVALID_FORMAT" in {
+        val testEmail = s"${generateAlphanumeric(253)}@a"
+        assert(testEmail.length == 255, "invalid test case, must be a valid email with 255 characters")
+
         val result = Json
-          .parse("""
-              |{
-              | "crn" : "123456789"
-              |}""".stripMargin)
+          .parse(s"""
+               |{
+               | "email" : "$testEmail"
+               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("INVALID_FORMAT")))))
+        result.asEither mustBe Left(List((JsPath.\("email"), List(JsonValidationError("INVALID_FORMAT")))))
       }
     }
   }

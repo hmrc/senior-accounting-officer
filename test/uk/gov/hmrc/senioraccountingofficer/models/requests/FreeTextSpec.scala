@@ -19,26 +19,27 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateAlphanumeric
 
-class CrnSpec extends AnyWordSpec with Matchers {
+class FreeTextSpec extends AnyWordSpec with Matchers {
 
-  case class Test(crn: Crn)
+  case class Test(text: FreeText)
+
   object Test {
     given OFormat[Test] = Json.format
   }
 
-  "Json reader for Crn" must {
-    "return a Crn when the value is valid" in {
-      val testCrn = generateCrn
-      val result  = Json
+  "Json reader for FreeText" must {
+    "return a FreeText when the value is valid" in {
+      val testText = generateAlphanumeric(32767)
+      val result   = Json
         .parse(s"""
-          |{
-          | "crn" : "$testCrn"
-          |}""".stripMargin)
+             |{
+             | "text" : "$testText"
+             |}""".stripMargin)
         .validate[Test]
 
-      result.asEither mustBe Right(Test(Crn(testCrn)))
+      result.asEither mustBe Right(Test(FreeText(testText)))
     }
 
     "return an error" when {
@@ -46,22 +47,22 @@ class CrnSpec extends AnyWordSpec with Matchers {
         val result = Json
           .parse("""
               |{
-              | "crn" : ""
+              | "text" : ""
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
+        result.asEither mustBe Left(List((JsPath.\("text"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
       }
 
       "the value is too long with message INVALID_FORMAT" in {
         val result = Json
-          .parse("""
-              |{
-              | "crn" : "123456789"
-              |}""".stripMargin)
+          .parse(s"""
+               |{
+               | "text" : "${generateAlphanumeric(32768)}"
+               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("INVALID_FORMAT")))))
+        result.asEither mustBe Left(List((JsPath.\("text"), List(JsonValidationError("INVALID_FORMAT")))))
       }
     }
   }

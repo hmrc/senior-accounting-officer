@@ -19,49 +19,53 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateAlphanumeric
 
-class CrnSpec extends AnyWordSpec with Matchers {
+class StaffIdSpec extends AnyWordSpec with Matchers {
 
-  case class Test(crn: Crn)
+  case class Test(id: StaffId)
+
   object Test {
     given OFormat[Test] = Json.format
   }
 
-  "Json reader for Crn" must {
-    "return a Crn when the value is valid" in {
-      val testCrn = generateCrn
-      val result  = Json
-        .parse(s"""
-          |{
-          | "crn" : "$testCrn"
-          |}""".stripMargin)
+  "Json reader for StaffId" must {
+    "return a StaffId when the value is valid" in {
+      val testStaffId = generateAlphanumeric(30)
+      val result = Json
+        .parse(
+          s"""
+             |{
+             | "id" : "$testStaffId"
+             |}""".stripMargin)
         .validate[Test]
 
-      result.asEither mustBe Right(Test(Crn(testCrn)))
+      result.asEither mustBe Right(Test(StaffId(testStaffId)))
     }
 
     "return an error" when {
       "the value is too short with message CANNOT_BE_EMPTY" in {
         val result = Json
-          .parse("""
+          .parse(
+            """
               |{
-              | "crn" : ""
+              | "id" : ""
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
+        result.asEither mustBe Left(List((JsPath.\("id"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
       }
 
       "the value is too long with message INVALID_FORMAT" in {
         val result = Json
-          .parse("""
+          .parse(
+            s"""
               |{
-              | "crn" : "123456789"
+              | "id" : "${generateAlphanumeric(31)}"
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("INVALID_FORMAT")))))
+        result.asEither mustBe Left(List((JsPath.\("id"), List(JsonValidationError("INVALID_FORMAT")))))
       }
     }
   }

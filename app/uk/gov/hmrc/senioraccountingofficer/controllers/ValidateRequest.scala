@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import play.api.libs.json.{JsPath, Json, JsonValidationError, Reads}
+import play.api.libs.json.*
 import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError

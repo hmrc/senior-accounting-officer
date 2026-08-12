@@ -19,26 +19,27 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateCrn
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 
-class CrnSpec extends AnyWordSpec with Matchers {
+class UtrSpec extends AnyWordSpec with Matchers {
 
-  case class Test(crn: Crn)
+  case class Test(utr: Utr)
+
   object Test {
     given OFormat[Test] = Json.format
   }
 
-  "Json reader for Crn" must {
-    "return a Crn when the value is valid" in {
-      val testCrn = generateCrn
+  "Json reader for Utr" must {
+    "return a Utr when the value is valid" in {
+      val testUtr = generateUtr
       val result  = Json
         .parse(s"""
-          |{
-          | "crn" : "$testCrn"
-          |}""".stripMargin)
+            |{
+            | "utr" : "$testUtr"
+            |}""".stripMargin)
         .validate[Test]
 
-      result.asEither mustBe Right(Test(Crn(testCrn)))
+      result.asEither mustBe Right(Test(Utr(testUtr)))
     }
 
     "return an error" when {
@@ -46,22 +47,22 @@ class CrnSpec extends AnyWordSpec with Matchers {
         val result = Json
           .parse("""
               |{
-              | "crn" : ""
+              | "utr" : ""
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
+        result.asEither mustBe Left(List((JsPath.\("utr"), List(JsonValidationError("CANNOT_BE_EMPTY")))))
       }
 
       "the value is too long with message INVALID_FORMAT" in {
         val result = Json
           .parse("""
               |{
-              | "crn" : "123456789"
+              | "utr" : "12345678901"
               |}""".stripMargin)
           .validate[Test]
 
-        result.asEither mustBe Left(List((JsPath.\("crn"), List(JsonValidationError("INVALID_FORMAT")))))
+        result.asEither mustBe Left(List((JsPath.\("utr"), List(JsonValidationError("INVALID_FORMAT")))))
       }
     }
   }
