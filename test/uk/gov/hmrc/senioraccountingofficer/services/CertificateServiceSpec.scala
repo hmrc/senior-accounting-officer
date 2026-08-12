@@ -40,10 +40,13 @@ import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackage
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.{ExecutionContext, Future}
-
-import java.util.UUID
-
+import java.util.{Locale, UUID}
+import uk.gov.hmrc.senioraccountingofficer.models.{CertificateEmail, CertificateEmailParameters, Email}
 import CertificateService.PostCertificateResponse.*
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.CertificateConfirmationSAO
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 class CertificateServiceSpec
     extends AnyFreeSpec
     with Matchers
@@ -62,6 +65,7 @@ class CertificateServiceSpec
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
+  val mockEmailService: EmailService                         = mock[EmailService]
 
   val service =
     new CertificateService(
@@ -69,7 +73,8 @@ class CertificateServiceSpec
       mockCrmmConnector,
       mockCertificateDpsConnector,
       mockDocumentumPackageService,
-      mockPdfService
+      mockPdfService,
+      mockEmailService
     )
 
   override def beforeEach(): Unit = {
@@ -79,6 +84,7 @@ class CertificateServiceSpec
     reset(mockCrmmConnector)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
+    //reset(mockEmailService)
   }
 
   def configureSubscriptionResponse(
@@ -156,6 +162,17 @@ class CertificateServiceSpec
 
   def configurePdfGeneration(): Unit = {
     when(mockPdfService.generateCertificatePdf(any(), any())).thenReturn(objectStoreFileContent)
+  }
+
+  def configureConfirmationEmail(httpStatusCode: Int = 200,
+                                 responseBody: String = Json.stringify(
+                                   Json.toJson(
+                                     CertificateEmail(to = List(expectedSaoEmail),
+                                       templateId = CertificateConfirmationSAO,
+                                       parameters = exampleEmailParameters)
+                                   )
+                                 )): Unit = {
+    when(mockEmailService.sendSAOCertificateEmail(meq(exampleCertificateReference), meq(expectedSaoName), meq(expectedSaoEmail), meq(exampleCompanyName))(using any())).thenReturn(Future.successful(()))
   }
 
   "postCertificate" - {
@@ -540,11 +557,24 @@ object CertificateServiceSpec {
       companies = List.empty
     )
 
+  val exampleEmailParameters: CertificateEmailParameters =
+    CertificateEmailParameters(companyName = Option("company name"),
+    recipientName = "Rachel Wilson",
+    submitterName = Option("Rachel Wilson"),
+    saoName = Option("Jack Paul"),
+    submittedDateTime = dateTime,
+    referenceId = "CRT0123456789")
+
+  val dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH))
+
+
   val exampleSubscriptionId       = "123"
   val exampleCertificateReference = "CRT0123456789"
   val exampleUtr                  = generateUtr
   val exampleCrn                  = generateCrn
   val exampleCompanyName          = "company name"
+  val exampleRecipientName        = "Rachel Wilson"
+  val exampleSubmiiterName        = "Rachel Wilson"
   val exampleSafeId               = "safe id"
   val exampleCustomerId           = "customer id"
   val expectedSaoName             = "Firstname Lastname"

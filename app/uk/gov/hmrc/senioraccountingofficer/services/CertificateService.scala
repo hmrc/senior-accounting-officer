@@ -43,7 +43,8 @@ class CertificateService @Inject() (
     crmmConnector: CrmmConnector,
     certificateConnector: CertificateConnector,
     documentumPackageService: DocumentumPackageService,
-    pdfService: PdfService
+    pdfService: PdfService,
+    emailService: EmailService
 )(using ExecutionContext) {
 
   def postCertificate(subscriptionId: String, request: CertificateDpsRequest)(using
@@ -53,13 +54,20 @@ class CertificateService @Inject() (
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       dpsResult  <- postCertificateDps(subscriptionId, request)
-      _          <- packageAndSubmitDocumentumFile(
+      documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
         dpsResult.certificateRef,
         request
       )
-    } yield Success(certificateReference = dpsResult.certificateRef)
+    } yield {
+     //emailService.sendSubmitterCertificateEmail(dpsSubscription.contacts, dpsResult.certificateRef, dpsSubscription.contacts(0).name, request.submitterName.getOrElse(request.saoName), request.saoName)
+      //emailService.sendSAOCertificateEmail(dpsResult.certificateRef, request.saoName, request.saoEmail, dpsSubscription.nominatedCompany.name)
+      emailService.sendSAOCertificateEmail(dpsSubscription, request, dpsResult)
+      emailService.sendSubmitterCertificateEmail(dpsSubscription, request, dpsResult)
+
+      Success(certificateReference = dpsResult.certificateRef)
+    }
   }.merge
 
   private def getSubscriptionDps(
