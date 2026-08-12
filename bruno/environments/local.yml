@@ -8,5 +8,5 @@ variables:
     value: http://localhost:10056/senior-accounting-officer
   - name: submissionFrontendBaseUrl
     value: http://localhost:10058
-  - name: authorization
-    value: GNAP dummy-8db86df5126d49588a6c4df84ac2a652,Bearer BXQ3/Treo4kQCZvVcCqKPn6swQn9Ai7nmjmySiLtpBwhF4k/26DkAyPztxkGw8JdH/mEQkMas0ZJKqLzetmFNIzq2t4jZRPw4YygkM2DNItj1y+YtXiH9sEc9j5EfROG4BGVQBZ5qiLONk7oyqCs2cRLTPLLscRa52pz7B92fpE8LT4sY+HsJeE5VMKcY/pQ/SsCJHiDyv5jJQREo7nuFQ==
+  - secret: true
+    name: authorization

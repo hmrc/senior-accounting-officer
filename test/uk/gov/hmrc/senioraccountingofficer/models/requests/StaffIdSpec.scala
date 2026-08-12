@@ -32,9 +32,8 @@ class StaffIdSpec extends AnyWordSpec with Matchers {
   "Json reader for StaffId" must {
     "return a StaffId when the value is valid" in {
       val testStaffId = generateAlphanumeric(30)
-      val result = Json
-        .parse(
-          s"""
+      val result      = Json
+        .parse(s"""
              |{
              | "id" : "$testStaffId"
              |}""".stripMargin)
@@ -46,8 +45,7 @@ class StaffIdSpec extends AnyWordSpec with Matchers {
     "return an error" when {
       "the value is too short with message CANNOT_BE_EMPTY" in {
         val result = Json
-          .parse(
-            """
+          .parse("""
               |{
               | "id" : ""
               |}""".stripMargin)
@@ -58,8 +56,7 @@ class StaffIdSpec extends AnyWordSpec with Matchers {
 
       "the value is too long with message INVALID_FORMAT" in {
         val result = Json
-          .parse(
-            s"""
+          .parse(s"""
               |{
               | "id" : "${generateAlphanumeric(31)}"
               |}""".stripMargin)
