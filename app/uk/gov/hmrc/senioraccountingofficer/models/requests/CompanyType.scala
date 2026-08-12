@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.utils
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
-import uk.gov.hmrc.domain.SaUtrGenerator
+import play.api.libs.json.*
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-import scala.util.Random
+import scala.util.Try
 
-object TestDataGenerator {
-  def generateCrn: String = {
-    val num = Random.nextInt(1000000)
-    f"$num%08d"
-  }
+enum CompanyType {
+  case PLC, LTD
+}
 
-  def generateUtr: String = {
-    val seed = Random.nextInt
-    SaUtrGenerator(seed).nextSaUtr.utr
-  }
-
-  def generateAlphanumeric(length: Int): String = {
-    String(Random.alphanumeric.take(length).toArray)
-  }
+object CompanyType {
+  given Reads[CompanyType] = JsPath
+    .read[String]
+    .flatMapResult(name =>
+      Try(CompanyType.valueOf(name)).toOption
+        .fold(JsError(Reason.INVALID_ENUM_VALUE.toString))(companyType => JsSuccess(companyType))
+    )
+  given Writes[CompanyType] = Writes[CompanyType](r => JsString(r.toString))
 }

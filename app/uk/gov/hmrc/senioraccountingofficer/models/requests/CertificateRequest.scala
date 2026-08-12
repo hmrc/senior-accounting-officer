@@ -14,34 +14,34 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
 
 final case class CertificateRequest(
-    submitterName: Option[String],
-    saoName: String,
-    saoEmail: String,
-    staffPid: Option[String],
-    customerId: Option[String],
-    companies: List[CertificateCompany],
-    remarks: Option[String]
+    submitterName: Option[PersonName],
+    saoName: PersonName,
+    saoEmail: Email,
+    staffPid: Option[StaffId],
+    companies: CertificateCompanies,
+    remarks: Option[FreeText]
 )
 
 object CertificateRequest {
-  given Format[CertificateRequest] = Json.format[CertificateRequest]
+
+  given OFormat[CertificateRequest] = Json.format[CertificateRequest]
 
   extension (certificateRequest: CertificateRequest) {
     def toCertificateDpsRequest: CertificateDpsRequest = {
       CertificateDpsRequest(
-        submitterName = certificateRequest.submitterName,
-        saoName = certificateRequest.saoName,
-        saoEmail = certificateRequest.saoEmail,
-        companies = certificateRequest.companies.map(_.toCertificateCompany),
-        remarks = certificateRequest.remarks,
-        staffPid = certificateRequest.staffPid,
-        customerId = certificateRequest.customerId
+        submitterName = certificateRequest.submitterName.map(_.value),
+        saoName = certificateRequest.saoName.value,
+        saoEmail = certificateRequest.saoEmail.value,
+        companies = certificateRequest.companies.value.map(_.toDpsCertificateCompany),
+        remarks = certificateRequest.remarks.map(_.value),
+        staffPid = certificateRequest.staffPid.map(_.value),
+        customerId = None
       )
     }
   }

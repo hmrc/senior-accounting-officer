@@ -19,19 +19,22 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateCompany
-import uk.gov.hmrc.senioraccountingofficer.models.CertificateRequestSpec.*
+import uk.gov.hmrc.senioraccountingofficer.models.requests.*
+
+import java.time.LocalDate
+
+import CertificateDpsRequestSpec.*
 
 class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionValues {
 
   val certificateCompanyWithOptionalFields: CertificateCompany =
     CertificateCompany(
-      crn = Some(crn),
-      utr = utr,
-      name = companyName,
-      accPeriodEnd = accPeriodEnd,
-      status = status,
-      `type` = companyType,
+      crn = Some(Crn(crn)),
+      utr = Utr(utr),
+      name = CompanyName(companyName),
+      accPeriodEnd = LocalDate.parse(accPeriodEnd),
+      status = CompanyStatus.valueOf(status),
+      `type` = CompanyType.valueOf(companyType),
       isCorporationTaxQualified = true,
       isVatQualified = true,
       isPayeQualified = false,
@@ -42,17 +45,17 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       isCustomsDutiesQualified = false,
       isExciseDutiesQualified = false,
       isBankLevyQualified = false,
-      qualificationStatement = Some(qualificationStatement)
+      qualificationStatement = Some(FreeText(qualificationStatement))
     )
 
   val certificateCompanyWithoutOptionalFields: CertificateCompany =
     CertificateCompany(
       crn = None,
-      utr = utr,
-      name = companyName,
-      accPeriodEnd = accPeriodEnd,
-      status = status,
-      `type` = companyType,
+      utr = Utr(utr),
+      name = CompanyName(companyName),
+      accPeriodEnd = LocalDate.parse(accPeriodEnd),
+      status = CompanyStatus.valueOf(status),
+      `type` = CompanyType.valueOf(companyType),
       isCorporationTaxQualified = true,
       isVatQualified = true,
       isPayeQualified = false,
@@ -127,9 +130,9 @@ object CertificateDpsRequestSpec {
   val crn                    = "example crn"
   val utr                    = "example utr"
   val companyName            = "example company name"
-  val accPeriodEnd           = "example accPeriodEnd"
-  val status                 = "example status"
-  val companyType            = "example type"
+  val accPeriodEnd           = "2020-12-31"
+  val status                 = "ACTIVE"
+  val companyType            = "PLC"
   val qualificationStatement = "example qualification statement"
 
 }

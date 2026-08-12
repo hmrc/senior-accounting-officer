@@ -18,6 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.Logging
 import play.api.mvc.Action
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.toLog
 import uk.gov.hmrc.senioraccountingofficer.models.sdes.SdesFileNotification
@@ -26,7 +27,6 @@ import scala.concurrent.ExecutionContext
 import scala.util.*
 
 import javax.inject.Inject
-import play.api.mvc.AnyContent
 
 class SdesCallbackController @Inject() (
     cc: ControllerComponents

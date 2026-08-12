@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.utils
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
-import uk.gov.hmrc.domain.SaUtrGenerator
+import play.api.libs.json.*
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-import scala.util.Random
+final case class Utr(value: String) extends AnyVal
 
-object TestDataGenerator {
-  def generateCrn: String = {
-    val num = Random.nextInt(1000000)
-    f"$num%08d"
+object Utr {
+  val maxUtrLength: Int = 10
+
+  given Reads[Utr] = Json.valueReads[Utr].flatMapResult {
+    case utr if utr.value.isEmpty               => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case utr if utr.value.length > maxUtrLength => JsError(Reason.INVALID_FORMAT.toString)
+    case utr                                    => JsSuccess(utr)
   }
+  given Writes[Utr] = Json.valueWrites
 
-  def generateUtr: String = {
-    val seed = Random.nextInt
-    SaUtrGenerator(seed).nextSaUtr.utr
-  }
-
-  def generateAlphanumeric(length: Int): String = {
-    String(Random.alphanumeric.take(length).toArray)
-  }
 }

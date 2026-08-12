@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.utils
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
-import uk.gov.hmrc.domain.SaUtrGenerator
+import play.api.libs.json.*
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-import scala.util.Random
+final case class CertificateCompanies(value: List[CertificateCompany]) extends AnyVal
 
-object TestDataGenerator {
-  def generateCrn: String = {
-    val num = Random.nextInt(1000000)
-    f"$num%08d"
-  }
+object CertificateCompanies {
+  given Reads[CertificateCompanies] =
+    Json
+      .valueReads[CertificateCompanies]
+      .filter(JsonValidationError(Reason.ARRAY_MIN_ITEMS_NOT_MET.toString))(_.value.nonEmpty)
 
-  def generateUtr: String = {
-    val seed = Random.nextInt
-    SaUtrGenerator(seed).nextSaUtr.utr
-  }
+  given Writes[CertificateCompanies] = Json.valueWrites[CertificateCompanies]
 
-  def generateAlphanumeric(length: Int): String = {
-    String(Random.alphanumeric.take(length).toArray)
-  }
 }
