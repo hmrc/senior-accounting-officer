@@ -81,7 +81,6 @@ class EmailServiceSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
     actualParams.recipientName shouldBe expectedParams.recipientName
     actualParams.companyName shouldBe expectedParams.companyName
 
-    println(actualParams.submittedDateTime)
     Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter)).isSuccess shouldBe true
     actualParams.referenceId shouldBe expectedParams.referenceId
   }
@@ -89,7 +88,7 @@ class EmailServiceSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
   "sendEmail" - {
 
     "send notification email to no contacts" in {
-      when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future(HttpResponse(202)))
+      when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(202)))
       val result: Unit = emailService.sendNotificationEmail(List(), "companyName", "ABC")
 
       verify(mockEmailConnector, Times(0)).postEmail(any[Email])(using any())
@@ -98,7 +97,7 @@ class EmailServiceSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
     "send notification email to one contact" in {
       val expectedEmails                = createNotificationEmails(contacts)
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
-      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future(202))
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(202))
       val result: Unit = emailService.sendNotificationEmail(contacts, "companyName", "abc")
 
       verify(mockEmailConnector, Times(1)).postEmail(
@@ -114,7 +113,7 @@ class EmailServiceSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
       val expectedEmails                = createNotificationEmails(twoContacts)
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
-      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future(202))
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(202))
       val result: Unit = emailService.sendNotificationEmail(twoContacts, "companyName", "abc")
 
       verify(mockEmailConnector, Times(2)).postEmail(captor.capture())(using any())
