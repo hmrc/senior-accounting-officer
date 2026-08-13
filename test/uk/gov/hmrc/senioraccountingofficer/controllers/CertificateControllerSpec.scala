@@ -34,8 +34,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.*
-import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
@@ -43,6 +42,7 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
+import java.time.LocalDate
 import java.util.UUID
 
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with BeforeAndAfterEach {
@@ -95,39 +95,40 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       status(result) shouldBe Status.CREATED
       contentAsJson(result) shouldBe Json.obj("certificateRef" -> "CRT0001234567")
 
-      val expectedDpsRequest =
-        CertificateDpsRequest(
-          submitterName = Some("submitterName"),
-          saoName = "saoName",
-          saoEmail = "Firstname.Lastname@example.com",
-          companies = List(
-            CertificateDpsCompany(
-              crn = Some(crn),
-              utr = utr,
-              name = "Example Subsidiary Ltd",
-              accPeriodEnd = "2025-03-31",
-              status = CompanyStatus.Active,
-              `type` = CompanyType.LTD,
-              isCorporationTaxQualified = true,
-              isVatQualified = true,
-              isPayeQualified = true,
-              isInsurancePremiumTaxQualified = false,
-              isStampDutyLandTaxQualified = false,
-              isStampDutyReserveTaxQualified = false,
-              isPetroleumRevenueTaxQualified = false,
-              isCustomsDutiesQualified = false,
-              isExciseDutiesQualified = false,
-              isBankLevyQualified = false,
-              qualificationStatement = None
+      val expectedRequest =
+        CertificateRequest(
+          submitterName = Some(PersonName("submitterName")),
+          saoName = PersonName("saoName"),
+          saoEmail = Email("Firstname.Lastname@example.com"),
+          companies = CertificateCompanies(
+            List(
+              CertificateCompany(
+                crn = Some(Crn(crn)),
+                utr = Utr(utr),
+                name = CompanyName("Example Subsidiary Ltd"),
+                accPeriodEnd = LocalDate.parse("2025-03-31"),
+                status = CompanyStatus.Active,
+                `type` = CompanyType.LTD,
+                isCorporationTaxQualified = true,
+                isVatQualified = true,
+                isPayeQualified = true,
+                isInsurancePremiumTaxQualified = false,
+                isStampDutyLandTaxQualified = false,
+                isStampDutyReserveTaxQualified = false,
+                isPetroleumRevenueTaxQualified = false,
+                isCustomsDutiesQualified = false,
+                isExciseDutiesQualified = false,
+                isBankLevyQualified = false,
+                qualificationStatement = None
+              )
             )
           ),
           remarks = None,
-          staffPid = None,
-          customerId = None
+          staffPid = None
         )
 
-      verify(mockCertificateService, times(1)).postCertificate(meq(testSaoSubscriptionId), meq(expectedDpsRequest))(
-        using any()
+      verify(mockCertificateService, times(1)).postCertificate(meq(testSaoSubscriptionId), meq(expectedRequest))(using
+        any()
       )
     }
 

@@ -34,6 +34,7 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, Crm
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
+import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
@@ -279,7 +280,8 @@ class CertificateServiceSpec
                   submitterName = Some("Firstname Lastname"),
                   saoName = expectedSaoName,
                   saoEmail = expectedSaoEmail,
-                  companies = Nil
+                  companies = Nil,
+                  customerId = Some(expectedCustomerId)
                 )
               )
             )(using
@@ -426,7 +428,7 @@ class CertificateServiceSpec
 
     "DPS post certificate customer endpoint response is" - {
       "201 Created" - {
-        "Valid repsonse; Continue down happy path" in {
+        "Valid response; Continue down happy path" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
           configureDpsResponse(201, validDpsResponseBody)
@@ -437,11 +439,16 @@ class CertificateServiceSpec
 
           result mustBe Success(exampleCertificateReference)
 
+          val expectedDpsRequest = baseDpsRequest.copy(customerId = Some(exampleCustomerId))
+
+          verify(mockCertificateDpsConnector)
+            .postCertificate(meq(exampleSubscriptionId), meq(expectedDpsRequest))(using any())
+
           verify(mockDocumentumPackageService)
             .packageAndSubmit(
               meq(
                 DocumentumPackageContext
-                  .certificate(exampleCertificateReference, exampleSubscriptionId, incomingRequest)
+                  .certificate(exampleCertificateReference, exampleSubscriptionId, expectedDpsRequest)
               ),
               meq(objectStoreFileContent)
             )(using any())
@@ -532,8 +539,17 @@ class CertificateServiceSpec
 }
 
 object CertificateServiceSpec {
-  val requestId                              = "123"
-  val incomingRequest: CertificateDpsRequest =
+  val requestId                           = "123"
+  val incomingRequest: CertificateRequest =
+    CertificateRequest(
+      submitterName = Some(PersonName("Firstname Lastname")),
+      saoName = PersonName("Firstname Lastname"),
+      saoEmail = Email("firstname.lastname@example.com"),
+      companies = CertificateCompanies(List.empty),
+      remarks = None,
+      staffPid = None
+    )
+  val baseDpsRequest: CertificateDpsRequest =
     CertificateDpsRequest(
       submitterName = Some("Firstname Lastname"),
       saoName = "Firstname Lastname",
