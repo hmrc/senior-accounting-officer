@@ -29,6 +29,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   GetSubscriptionDpsResponse
 }
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
@@ -44,7 +45,8 @@ class CertificateService @Inject() (
     crmmConnector: CrmmConnector,
     certificateConnector: CertificateConnector,
     documentumPackageService: DocumentumPackageService,
-    pdfService: PdfService
+    pdfService: PdfService,
+    emailService: EmailService
 )(using ExecutionContext) {
 
   def postCertificate(subscriptionId: String, request: CertificateRequest)(using
@@ -55,7 +57,8 @@ class CertificateService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toCertificateDpsRequest(customerId)
       dpsResult <- postCertificateDps(subscriptionId, requestWithCustomerId)
-      _         <- packageAndSubmitDocumentumFile(
+      _ = sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
+      _ <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
         dpsResult.certificateRef,
@@ -140,6 +143,37 @@ class CertificateService @Inject() (
       case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(DownstreamServiceUnavailable(DPS))
       case HttpResponse(status, _, _)                => Left(UnknownFailure(DPS, status))
     })
+  }
+
+  private def sendCertificateConfirmationEmail(
+      dpsSubscription: GetSubscriptionDpsResponse,
+      certificateReference: String,
+      request: CertificateDpsRequest
+  )(using HeaderCarrier): Unit = {
+    request.submitterName match {
+      case Some(submitterName) =>
+        dpsSubscription.contacts.foreach { contact =>
+          emailService.sendCertificateEmail(
+            emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
+            email = contact.email,
+            recipientName = contact.name,
+            companyName = dpsSubscription.nominatedCompany.name,
+            referenceId = certificateReference,
+            submitterName = submitterName,
+            saoName = Some(request.saoName)
+          )
+        }
+      case None =>
+        emailService.sendCertificateEmail(
+          emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+          email = request.saoEmail,
+          recipientName = request.saoName,
+          companyName = dpsSubscription.nominatedCompany.name,
+          referenceId = certificateReference,
+          submitterName = request.saoName,
+          saoName = None
+        )
+    }
   }
 
   private def packageAndSubmitDocumentumFile(

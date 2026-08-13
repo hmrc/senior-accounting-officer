@@ -64,6 +64,7 @@ class CertificateServiceSpec
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
+  val mockEmailService: EmailService                         = mock[EmailService]
 
   val service =
     new CertificateService(
@@ -71,7 +72,8 @@ class CertificateServiceSpec
       mockCrmmConnector,
       mockCertificateDpsConnector,
       mockDocumentumPackageService,
-      mockPdfService
+      mockPdfService,
+      mockEmailService
     )
 
   override def beforeEach(): Unit = {
@@ -81,6 +83,7 @@ class CertificateServiceSpec
     reset(mockCrmmConnector)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
+    reset(mockEmailService)
   }
 
   def configureSubscriptionResponse(
