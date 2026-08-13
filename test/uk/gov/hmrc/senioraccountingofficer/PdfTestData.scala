@@ -18,6 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer
 
 import org.apache.pekko.stream.Materializer
 import uk.gov.hmrc.domain.SaUtrGenerator
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
 import scala.annotation.tailrec
@@ -41,8 +42,8 @@ object PdfTestData {
         "TEST NAME OF THE COMPANY WITH THE LONGEST NAME SO FAR INCORPORATED AT THE REGISTRY OF COMPANIES IN ENGLAND AND WALES AND ENCOMPASSING THE REGISTRIES BASED IN SCOTLAND $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Administration,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Administration,
       financialYearEndDate = "31 Jan 2025",
       qualifiedRegimes = TaxRegimes(
         corporationTax = true,
@@ -61,8 +62,8 @@ object PdfTestData {
       companyName = "Test Company $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Jan 2025",
       qualifiedRegimes = TaxRegimes(
         corporationTax = true,
@@ -74,24 +75,24 @@ object PdfTestData {
       companyName = "Test Halcyon Merchants International $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Pinnacle Freight and Forwarding Solutions $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      status = Status.Administration,
+      companyType = CompanyType.PLC,
+      status = CompanyStatus.Administration,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Arkwright and Co $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025",
       qualifiedRegimes = TaxRegimes(
         vat = true
@@ -101,216 +102,216 @@ object PdfTestData {
       companyName = "Test Vortex Supply Co $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Nexora Trading $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Caldwell Imports and Distribution Partners $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Stratos Ventures $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Dormant,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Dormant,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Ironclad Exports $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Luminary Goods and Global Trade Services $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Administration,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Administration,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Tesseract Cargo $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Drift and Sons $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Dormant,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Dormant,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Orizon Distributers $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Meridian Haulers International Freight $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Cobalt Solutions $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Administration,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Administration,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Farpoint Trading $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Verity Logistics and Supply Chain Management $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Quantum Carriers $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Dormant,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Dormant,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Solace Freight $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Templar Supplies and Procurement Solutions $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Liquidation,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Liquidation,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Echelon Brokers $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Silverline Cargo $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Wavecrest Imports $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Dormant,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Dormant,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Crestview Partners and Associated Trading $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Novaline Exports $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Tangent Wholesale $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Liquidation,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Liquidation,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Fieldstone Commerce and Overseas Distribution $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Auris Distribution $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Stellarex Holdings $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      status = Status.Dormant,
+      companyType = CompanyType.LTD,
+      status = CompanyStatus.Dormant,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Ravenport Traders and International Brokers $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Ltd,
-      Status.Active,
+      companyType = CompanyType.LTD,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     ),
     Certificate.Row(
       companyName = "Test Ironveil Ventures $index",
       utr = generateUtr,
       crn = generateCrn,
-      companyType = CompanyType.Plc,
-      Status.Active,
+      companyType = CompanyType.PLC,
+      CompanyStatus.Active,
       financialYearEndDate = "31 Mar 2025"
     )
   )

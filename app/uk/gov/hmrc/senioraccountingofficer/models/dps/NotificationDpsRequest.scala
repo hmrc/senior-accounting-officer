@@ -56,8 +56,8 @@ object NotificationDpsRequest {
         companyName = company.name.value,
         utr = company.utr.value,
         crn = company.crn.fold("Not Provided")(_.value),
-        companyType = company.`type`.toPdfCompanyType,
-        status = company.status.toPdfCompanyStatus,
+        companyType = company.`type`,
+        status = company.status,
         financialYearEndDate = company.accPeriodEnd.format(dateFormatter)
       )
     })

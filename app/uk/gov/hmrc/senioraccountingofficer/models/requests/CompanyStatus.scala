@@ -18,7 +18,6 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 
 import scala.util.Try
 
@@ -35,15 +34,5 @@ object CompanyStatus {
     )
 
   given Writes[CompanyStatus] = Writes(r => JsString(r.toString))
-
-  extension (status: CompanyStatus) {
-
-    def toPdfCompanyStatus: PdfService.Status = status match {
-      case Active         => PdfService.Status.Active
-      case Dormant        => PdfService.Status.Dormant
-      case Administration => PdfService.Status.Administration
-      case Liquidation    => PdfService.Status.Liquidation
-    }
-  }
 
 }

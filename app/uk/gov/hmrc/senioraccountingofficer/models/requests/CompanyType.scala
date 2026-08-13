@@ -18,7 +18,6 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 
 import scala.util.Try
 
@@ -35,10 +34,4 @@ object CompanyType {
     )
   given Writes[CompanyType] = Writes[CompanyType](r => JsString(r.toString))
 
-  extension (companyType: CompanyType) {
-    def toPdfCompanyType: PdfService.CompanyType = companyType match {
-      case PLC => PdfService.CompanyType.Plc
-      case LTD => PdfService.CompanyType.Ltd
-    }
-  }
 }

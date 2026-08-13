@@ -54,8 +54,8 @@ object CertificateDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.fold("")(identity),
-        companyType = company.`type`.toPdfCompanyType,
-        status = company.status.toPdfCompanyStatus,
+        companyType = company.`type`,
+        status = company.status,
         financialYearEndDate = company.accPeriodEnd,
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement
