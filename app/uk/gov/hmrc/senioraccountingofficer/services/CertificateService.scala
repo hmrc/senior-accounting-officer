@@ -28,6 +28,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   CertificateDpsResponse,
   GetSubscriptionDpsResponse
 }
+import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
@@ -46,18 +47,19 @@ class CertificateService @Inject() (
     pdfService: PdfService
 )(using ExecutionContext) {
 
-  def postCertificate(subscriptionId: String, request: CertificateDpsRequest)(using
+  def postCertificate(subscriptionId: String, request: CertificateRequest)(using
       HeaderCarrier
   ): Future[PostCertificateResponse] = {
     for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
-      dpsResult  <- postCertificateDps(subscriptionId, request)
-      _          <- packageAndSubmitDocumentumFile(
+      requestWithCustomerId = request.toCertificateDpsRequest(customerId)
+      dpsResult <- postCertificateDps(subscriptionId, requestWithCustomerId)
+      _         <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
         dpsResult.certificateRef,
-        request
+        requestWithCustomerId
       )
     } yield Success(certificateReference = dpsResult.certificateRef)
   }.merge

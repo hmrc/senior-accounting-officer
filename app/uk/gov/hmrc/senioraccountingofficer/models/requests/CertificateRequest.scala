@@ -33,7 +33,7 @@ object CertificateRequest {
   given OFormat[CertificateRequest] = Json.format[CertificateRequest]
 
   extension (certificateRequest: CertificateRequest) {
-    def toCertificateDpsRequest: CertificateDpsRequest = {
+    def toCertificateDpsRequest(customerId: Option[String]): CertificateDpsRequest = {
       CertificateDpsRequest(
         submitterName = certificateRequest.submitterName.map(_.value),
         saoName = certificateRequest.saoName.value,
@@ -41,7 +41,7 @@ object CertificateRequest {
         companies = certificateRequest.companies.value.map(_.toDpsCertificateCompany),
         remarks = certificateRequest.remarks.map(_.value),
         staffPid = certificateRequest.staffPid.map(_.value),
-        customerId = None
+        customerId = customerId
       )
     }
   }

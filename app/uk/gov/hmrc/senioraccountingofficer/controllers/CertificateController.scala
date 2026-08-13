@@ -43,11 +43,8 @@ class CertificateController @Inject() (
   def postCertificate(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
     implicit request =>
       ValidateRequest.as[CertificateRequest] { certificateRequest =>
-        // TODO this need to be delayed till certificateService.postCertificate, otherwise we're not adding the CRMM ID
-        val dpsRequest = certificateRequest.toCertificateDpsRequest
-
         certificateService
-          .postCertificate(request.saoSubscriptionId, dpsRequest)
+          .postCertificate(request.saoSubscriptionId, certificateRequest)
           .map {
             case Success(certificateRef) =>
               Created(Json.toJson(CertificateResponse(certificateRef)))
