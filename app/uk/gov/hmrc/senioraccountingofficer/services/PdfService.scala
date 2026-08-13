@@ -22,6 +22,7 @@ import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
 import org.apache.pekko.util.ByteString
 import play.api.Logger
 import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
@@ -57,19 +58,6 @@ class PdfService @Inject() (
 
 object PdfService {
 
-  enum Status:
-    case Active, Dormant, Administration, Liquidation
-
-  def toStatus(status: String): Either[String, Status] = {
-    Status.values.find(_.toString.toLowerCase == status.toLowerCase).toRight(s"Unknown status: $status")
-  }
-
-  enum CompanyType:
-    case Plc, Ltd
-
-  def toCompanyType(`type`: String): Either[String, CompanyType] = {
-    CompanyType.values.find(_.toString.toLowerCase == `type`.toLowerCase).toRight(s"Unknown company type: ${`type`}")
-  }
   val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
 
   final case class Certificate(
@@ -88,7 +76,7 @@ object PdfService {
         utr: String,
         crn: String,
         companyType: CompanyType,
-        status: Status,
+        status: CompanyStatus,
         financialYearEndDate: String,
         qualifiedRegimes: TaxRegimes = TaxRegimes(),
         additionalInformation: Option[String] = None
@@ -152,7 +140,7 @@ object PdfService {
         utr: String,
         crn: String,
         companyType: CompanyType,
-        status: Status,
+        status: CompanyStatus,
         financialYearEndDate: String
     )
 

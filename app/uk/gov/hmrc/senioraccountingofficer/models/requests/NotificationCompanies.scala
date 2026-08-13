@@ -19,20 +19,14 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-import scala.util.Try
+final case class NotificationCompanies(value: List[NotificationCompany]) extends AnyVal
 
-enum CompanyStatus {
-  case Active, Dormant, Administration, Liquidation
-}
+object NotificationCompanies {
+  given Reads[NotificationCompanies] =
+    Json
+      .valueReads[NotificationCompanies]
+      .filter(JsonValidationError(Reason.ARRAY_MIN_ITEMS_NOT_MET.toString))(_.value.nonEmpty)
 
-object CompanyStatus {
-  given Reads[CompanyStatus] = JsPath
-    .read[String]
-    .flatMapResult(name =>
-      Try(CompanyStatus.valueOf(name)).toOption
-        .fold(JsError(Reason.INVALID_ENUM_VALUE.toString))(status => JsSuccess(status))
-    )
-
-  given Writes[CompanyStatus] = Writes(r => JsString(r.toString))
+  given Writes[NotificationCompanies] = Json.valueWrites[NotificationCompanies]
 
 }

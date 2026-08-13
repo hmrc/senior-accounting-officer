@@ -33,8 +33,8 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       utr = Utr(utr),
       name = CompanyName(companyName),
       accPeriodEnd = LocalDate.parse(accPeriodEnd),
-      status = CompanyStatus.valueOf(status),
-      `type` = CompanyType.valueOf(companyType),
+      status = status,
+      `type` = companyType,
       isCorporationTaxQualified = true,
       isVatQualified = true,
       isPayeQualified = false,
@@ -54,8 +54,8 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
       utr = Utr(utr),
       name = CompanyName(companyName),
       accPeriodEnd = LocalDate.parse(accPeriodEnd),
-      status = CompanyStatus.valueOf(status),
-      `type` = CompanyType.valueOf(companyType),
+      status = status,
+      `type` = companyType,
       isCorporationTaxQualified = true,
       isVatQualified = true,
       isPayeQualified = false,
@@ -131,8 +131,8 @@ object CertificateDpsRequestSpec {
   val utr                    = "example utr"
   val companyName            = "example company name"
   val accPeriodEnd           = "2020-12-31"
-  val status                 = "ACTIVE"
-  val companyType            = "PLC"
+  val status                 = CompanyStatus.Active
+  val companyType            = CompanyType.LTD
   val qualificationStatement = "example qualification statement"
 
 }

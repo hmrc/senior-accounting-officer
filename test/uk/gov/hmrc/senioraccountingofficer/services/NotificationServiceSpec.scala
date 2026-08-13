@@ -31,10 +31,10 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
+import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
@@ -537,8 +537,8 @@ class NotificationServiceSpec
 object NotificationServiceSpec {
   val incomingRequest: NotificationRequest =
     NotificationRequest(
-      List.empty,
-      List.empty,
+      NotificationCompanies(List.empty),
+      Saos(List.empty),
       None
     )
 

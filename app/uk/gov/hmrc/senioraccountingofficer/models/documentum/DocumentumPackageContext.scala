@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 
 enum SubmissionType(val documentumName: String) {
   case Notification extends SubmissionType("Notification")
@@ -50,8 +50,9 @@ object DocumentumPackageContext {
       submissionType = SubmissionType.Notification,
       saoSubscriptionId = saoSubscriptionId,
       customerId = None,
-      companies =
-        request.companies.map(company => DocumentumCompany(utr = company.utr, name = company.name, crn = company.crn))
+      companies = request.companies.value.map(company =>
+        DocumentumCompany(utr = company.utr.value, name = company.name.value, crn = company.crn.map(_.value))
+      )
     )
 
   def certificate(

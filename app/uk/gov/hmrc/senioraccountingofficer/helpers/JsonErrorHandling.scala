@@ -16,115 +16,18 @@
 
 package uk.gov.hmrc.senioraccountingofficer.helpers
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.networknt.schema.*
-import com.networknt.schema.keyword.KeywordType
-import com.networknt.schema.path.PathType
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 
-import scala.io.Source
-import scala.jdk.CollectionConverters.*
-import scala.util.Try
-
 object JsonErrorHandling {
 
-  def parseJson(body: String): Either[Result, JsValue] =
-    Try(Json.parse(body)).toEither.left.map(_ => malformedRequest)
-
-  private def malformedRequest: Result =
+  def malformedRequest: Result =
     badRequest(Seq(ApiError(reason = Reason.MALFORMED_REQUEST)))
 
   def badRequest(errors: Seq[ApiError]): Result =
     BadRequest(Json.toJson(errors))
 
-  object Validators {
-
-    private val schemaRegistry = SchemaRegistry.withDefaultDialect(
-      SpecificationVersion.DRAFT_2020_12,
-      builder =>
-        builder.schemaRegistryConfig(
-          SchemaRegistryConfig.builder().pathType(PathType.LEGACY).formatAssertionsEnabled(true).build()
-        )
-    )
-
-    def validateNotification(json: JsValue): Seq[ApiError] =
-      validate(notificationSchema, json, rootPrefix = None)
-
-    private def validate(schema: Schema, json: JsValue, rootPrefix: Option[String]): Seq[ApiError] =
-      schema
-        .validate(toJackson(json))
-        .asScala
-        .toSeq
-        .map(toApiError(_, rootPrefix))
-        .sortBy(_.path.getOrElse(""))
-
-    private def toJackson(json: JsValue): JsonNode =
-      Json.parse(json.toString()).as[JsonNode]
-
-    private def toApiError(error: Error, rootPrefix: Option[String]): ApiError = {
-      val keyword = KeywordType.fromValue(error.getKeyword)
-      val reason  = keyword match {
-        case KeywordType.REQUIRED                           => Reason.MISSING_REQUIRED_FIELD
-        case KeywordType.TYPE                               => Reason.INVALID_DATA_TYPE
-        case KeywordType.ADDITIONAL_PROPERTIES              => Reason.INVALID_DATA_TYPE
-        case KeywordType.PATTERN                            => Reason.INVALID_FORMAT
-        case KeywordType.FORMAT                             => Reason.INVALID_FORMAT
-        case KeywordType.ENUM                               => Reason.INVALID_ENUM_VALUE
-        case KeywordType.MIN_ITEMS                          => Reason.ARRAY_MIN_ITEMS_NOT_MET
-        case KeywordType.MAX_ITEMS                          => Reason.LENGTH_OUT_OF_BOUNDS
-        case KeywordType.MAX_LENGTH                         => Reason.LENGTH_OUT_OF_BOUNDS
-        case KeywordType.MIN_LENGTH if isEmptyString(error) => Reason.CANNOT_BE_EMPTY
-        case KeywordType.MIN_LENGTH                         => Reason.LENGTH_OUT_OF_BOUNDS
-        case _                                              => Reason.INVALID_DATA_TYPE
-      }
-      ApiError(reason = reason, path = pathFor(error, rootPrefix))
-    }
-
-    private def pathFor(error: Error, rootPrefix: Option[String]): Option[String] = {
-      val basePath = applyRootPrefix(normalizePath(error.getInstanceLocation.toString), rootPrefix)
-      KeywordType.fromValue(error.getKeyword) match {
-        case KeywordType.REQUIRED =>
-          val property = Option(error.getProperty)
-          Some(property.fold(basePath)(appendPath(basePath, _)))
-        case KeywordType.ADDITIONAL_PROPERTIES =>
-          val property = Option(error.getProperty)
-          Some(property.fold(basePath)(appendPath(basePath, _)))
-        case _ if basePath.isEmpty =>
-          Some("body")
-        case _ =>
-          Some(basePath)
-      }
-    }
-
-    private def normalizePath(path: String): String =
-      path.stripPrefix("$").stripPrefix(".")
-
-    private def applyRootPrefix(path: String, rootPrefix: Option[String]): String =
-      rootPrefix match {
-        case Some(prefix) if path.isEmpty => prefix
-        case Some(prefix)                 => s"$prefix.$path"
-        case None                         => path
-      }
-
-    private def appendPath(base: String, child: String): String =
-      if base.isEmpty then child else s"$base.$child"
-
-    private def isEmptyString(error: Error): Boolean =
-      Option(error.getInstanceNode).exists(node => node.isTextual && node.textValue().isEmpty)
-
-    private lazy val notificationSchema = loadSchema("schemas/notification-request-schema.yaml")
-
-    private def loadSchema(path: String): Schema = {
-      val resource = Option(getClass.getClassLoader.getResourceAsStream(path))
-        .getOrElse(throw new IllegalStateException(s"Missing schema resource: $path"))
-      val yaml =
-        try Source.fromInputStream(resource).mkString
-        finally resource.close()
-      schemaRegistry.getSchema(yaml, InputFormat.YAML)
-    }
-  }
 }

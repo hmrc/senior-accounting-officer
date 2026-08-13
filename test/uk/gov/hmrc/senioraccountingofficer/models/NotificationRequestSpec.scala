@@ -21,6 +21,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequestSpec.*
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company as DpsCompany, NotificationDpsRequest, Sao as DpsSao}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.*
+import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import java.time.LocalDate
 
@@ -28,18 +30,20 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
   "toNotificationDpsRequest" should {
     "map from NotificationRequest to NotificationDpsRequest" in {
       val sut = NotificationRequest(
-        companies = List(
-          Company(
-            crn = Some(crn),
-            utr = utr,
-            name = companyName,
-            accPeriodEnd = accPeriodEnd,
-            status = status,
-            `type` = companyType
+        companies = NotificationCompanies(
+          List(
+            NotificationCompany(
+              crn = Some(Crn(crn)),
+              utr = Utr(utr),
+              name = CompanyName(companyName),
+              accPeriodEnd = accPeriodEnd,
+              status = status,
+              `type` = companyType
+            )
           )
         ),
-        saos = List(Sao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
-        remarks = Some(remarks)
+        saos = Saos(List(Sao(name = PersonName(saoName), fromDate = Some(fromDate), toDate = Some(toDate)))),
+        remarks = Some(FreeText(remarks))
       )
 
       val expected = NotificationDpsRequest(
@@ -48,13 +52,13 @@ class NotificationRequestSpec extends AnyWordSpec with Matchers with OptionValue
             crn = Some(crn),
             utr = utr,
             name = companyName,
-            accPeriodEnd = accPeriodEnd,
+            accPeriodEnd = accPeriodEnd.toString,
             status = status,
             `type` = companyType
           )
         ),
         customerId = None,
-        saos = List(DpsSao(name = saoName, fromDate = Some(fromDate), email = Some(email), toDate = Some(toDate))),
+        saos = List(DpsSao(name = saoName, fromDate = Some(fromDate.toString), toDate = Some(toDate.toString))),
         remarks = Some(remarks),
         staffPID = None
       )
@@ -68,15 +72,15 @@ object NotificationRequestSpec {
   val subscriptionId = "example subscription id"
   val remarks        = "example additional information"
 
-  val crn          = "example crn"
-  val utr          = "example utr"
-  val companyName  = "example company name"
-  val accPeriodEnd = "example accPeriodEnd"
-  val status       = "example status"
-  val companyType  = "example type"
+  val crn                     = generateCrn
+  val utr                     = generateUtr
+  val companyName             = "example company name"
+  val accPeriodEnd: LocalDate = LocalDate.parse("2026-02-01")
+  val status                  = CompanyStatus.Active
+  val companyType             = CompanyType.LTD
 
-  val saoName          = "example sao name"
-  val fromDate: String = LocalDate.parse("2026-01-01").toString()
-  val email            = "example email"
-  val toDate: String   = LocalDate.parse("2026-03-01").toString()
+  val saoName             = "example sao name"
+  val fromDate: LocalDate = LocalDate.parse("2026-01-01")
+  val email               = "example email"
+  val toDate: LocalDate   = LocalDate.parse("2026-03-01")
 }

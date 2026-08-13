@@ -17,17 +17,17 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.Logging
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.Json
 import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 import uk.gov.hmrc.senioraccountingofficer.models.notification.*
-import uk.gov.hmrc.senioraccountingofficer.models.{ApiError, NotificationRequest}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 import javax.inject.Inject
 
@@ -42,42 +42,34 @@ class NotificationController @Inject() (
 
   def postNotification(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
     implicit request =>
-      JsonErrorHandling.parseJson(request.body) match {
-        case Right(json) =>
-          val errors = JsonErrorHandling.Validators.validateNotification(json)
-          if errors.nonEmpty then Future.successful(JsonErrorHandling.badRequest(errors))
-          else {
-            val notificationRequest = json.as[NotificationRequest]
-            notificationService
-              .postNotification(request.saoSubscriptionId, notificationRequest)
-              .map {
-                case Success(notificationId, isPdfAvailable) =>
-                  Ok(Json.toJson(NotificationResponse(notificationId, isPdfAvailable)))
-                case Misalignment(downstreamService) =>
-                  logger.warn(s"[Notification][$downstreamService][MISALIGNMENT]")
-                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-                case MalformedResponse(downstreamService) =>
-                  logger.warn(s"[Notification][$downstreamService][MalformedResponse]")
-                  InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-                case Misconfiguration(downstreamService, status) =>
-                  logger.warn(s"[Notification][$downstreamService][MISCONFIGURATION]status=$status")
-                  InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-                case NotFoundFailure(downstreamService) =>
-                  logger.warn(s"[Notification][$downstreamService][NOT_FOUND]")
-                  InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))
-                case DownstreamServiceError(downstreamService) =>
-                  logger.warn(s"[Notification][$downstreamService][INTERNAL_SERVER_ERROR]")
-                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
-                case DownstreamServiceUnavailable(downstreamService) =>
-                  logger.warn(s"[Notification][$downstreamService][SERVICE_UNAVAILABLE]")
-                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
-                case UnknownFailure(downstreamService, status) =>
-                  logger.warn(s"[Notification][$downstreamService][Unknown]status=$status")
-                  BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-              }
+      ValidateRequest.as[NotificationRequest] { notificationRequest =>
+        notificationService
+          .postNotification(request.saoSubscriptionId, notificationRequest)
+          .map {
+            case Success(notificationId, isPdfAvailable) =>
+              Ok(Json.toJson(NotificationResponse(notificationId, isPdfAvailable)))
+            case Misalignment(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][MISALIGNMENT]")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+            case MalformedResponse(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][MalformedResponse]")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+            case Misconfiguration(downstreamService, status) =>
+              logger.warn(s"[Notification][$downstreamService][MISCONFIGURATION]status=$status")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
+            case NotFoundFailure(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][NOT_FOUND]")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))
+            case DownstreamServiceError(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][INTERNAL_SERVER_ERROR]")
+              BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
+            case DownstreamServiceUnavailable(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][SERVICE_UNAVAILABLE]")
+              BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
+            case UnknownFailure(downstreamService, status) =>
+              logger.warn(s"[Notification][$downstreamService][Unknown]status=$status")
+              BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
           }
-        case Left(errorResult) =>
-          Future.successful(errorResult)
       }
   }
 }

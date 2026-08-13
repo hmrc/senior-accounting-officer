@@ -151,7 +151,7 @@ class CertificateService @Inject() (
     EitherT.right[PostCertificateResponse with Failure](
       documentumPackageService.packageAndSubmit(
         DocumentumPackageContext.certificate(certificateReference, subscriptionId, request),
-        pdfService.generateCertificatePdf(CertificateDpsRequest.toCertificate(request), dpsSubscription)
+        pdfService.generateCertificatePdf(CertificateDpsRequest.toPdfCertificate(request), dpsSubscription)
       )
     )
 }

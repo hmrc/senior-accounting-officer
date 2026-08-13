@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.senioraccountingofficer.models.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType, NotificationRequest}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
@@ -36,40 +36,45 @@ final case class Company(
     utr: String,
     name: String,
     accPeriodEnd: String,
-    status: String,
-    `type`: String
+    status: CompanyStatus,
+    `type`: CompanyType
 )
 
 final case class Sao(
     name: String,
     fromDate: Option[String],
-    email: Option[String] = None,
     toDate: Option[String]
 )
 
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 
-  def toNotification(notificationRef: String, request: NotificationRequest, companyName: String): Notification = {
-    val companies = request.companies.map(company => {
+  def toPdfNotification(notificationRef: String, request: NotificationRequest, companyName: String): Notification = {
+    val companies = request.companies.value.map(company => {
 
       Notification.Row(
-        companyName = company.name,
-        utr = company.utr,
-        crn = company.crn.fold("")(identity),
-        companyType = toCompanyType(company.`type`).fold(err => throw new IllegalArgumentException(err), identity),
-        status = toStatus(company.status).fold(err => throw new IllegalArgumentException(err), identity),
-        financialYearEndDate = company.accPeriodEnd
+        companyName = company.name.value,
+        utr = company.utr.value,
+        crn = company.crn.fold("Not Provided")(_.value),
+        companyType = company.`type`,
+        status = company.status,
+        financialYearEndDate = company.accPeriodEnd.format(dateFormatter)
       )
     })
-    val saos = request.saos.map(sao => SaoTenure(name = sao.name, startDate = sao.fromDate, endDate = sao.toDate))
+    val saos = request.saos.value.map(sao =>
+      SaoTenure(
+        name = sao.name.value,
+        startDate = sao.fromDate.map(_.format(dateFormatter)),
+        endDate = sao.toDate.map(_.format(dateFormatter))
+      )
+    )
     Notification(
       companyName = companyName,
       submissionDate = LocalDate.now().format(dateFormatter),
       submissionId = notificationRef,
       saoHistory = saos,
       companies = companies,
-      additionalInformation = request.remarks
+      additionalInformation = request.remarks.map(_.value)
     )
   }
 }

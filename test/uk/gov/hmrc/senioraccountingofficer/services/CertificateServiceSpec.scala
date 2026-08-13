@@ -44,6 +44,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.util.UUID
 
 import CertificateService.PostCertificateResponse.*
+
 class CertificateServiceSpec
     extends AnyFreeSpec
     with Matchers

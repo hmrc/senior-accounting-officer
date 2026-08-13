@@ -33,4 +33,5 @@ object CompanyType {
         .fold(JsError(Reason.INVALID_ENUM_VALUE.toString))(companyType => JsSuccess(companyType))
     )
   given Writes[CompanyType] = Writes[CompanyType](r => JsString(r.toString))
+
 }

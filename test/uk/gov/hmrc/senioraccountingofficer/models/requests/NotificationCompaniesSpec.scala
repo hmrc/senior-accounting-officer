@@ -21,58 +21,34 @@ import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateAlphanumeric, generateCrn, generateUtr}
 
-import scala.util.Random
-
 import java.time.LocalDate
 
-class CertificateCompaniesSpec extends AnyWordSpec with Matchers {
+class NotificationCompaniesSpec extends AnyWordSpec with Matchers {
 
-  case class Test(companies: CertificateCompanies)
+  case class Test(companies: NotificationCompanies)
 
   object Test {
     given OFormat[Test] = Json.format
   }
 
-  "Json reader for CertificateCompanies" must {
-    "return a CertificateCompanies when the value is valid" in {
-      val testCompany1 = CertificateCompany(
+  "Json reader for NotificationCompanies" must {
+    "return a NotificationCompanies when the value is valid" in {
+      val testCompany1 = NotificationCompany(
         crn = Some(Crn(generateCrn)),
         utr = Utr(generateUtr),
         name = CompanyName(generateAlphanumeric(CompanyName.maxCompanyNameLength)),
         accPeriodEnd = LocalDate.now(),
         status = CompanyStatus.Active,
-        `type` = CompanyType.PLC,
-        isCorporationTaxQualified = Random.nextBoolean,
-        isVatQualified = Random.nextBoolean,
-        isPayeQualified = Random.nextBoolean,
-        isInsurancePremiumTaxQualified = Random.nextBoolean,
-        isStampDutyLandTaxQualified = Random.nextBoolean,
-        isStampDutyReserveTaxQualified = Random.nextBoolean,
-        isPetroleumRevenueTaxQualified = Random.nextBoolean,
-        isCustomsDutiesQualified = Random.nextBoolean,
-        isExciseDutiesQualified = Random.nextBoolean,
-        isBankLevyQualified = Random.nextBoolean,
-        qualificationStatement = Some(FreeText(generateAlphanumeric(FreeText.maxFreeTextLength)))
+        `type` = CompanyType.PLC
       )
 
-      val testCompany2 = CertificateCompany(
+      val testCompany2 = NotificationCompany(
         crn = None,
         utr = Utr(generateUtr),
         name = CompanyName(generateAlphanumeric(CompanyName.maxCompanyNameLength)),
         accPeriodEnd = LocalDate.now(),
         status = CompanyStatus.Active,
-        `type` = CompanyType.PLC,
-        isCorporationTaxQualified = Random.nextBoolean,
-        isVatQualified = Random.nextBoolean,
-        isPayeQualified = Random.nextBoolean,
-        isInsurancePremiumTaxQualified = Random.nextBoolean,
-        isStampDutyLandTaxQualified = Random.nextBoolean,
-        isStampDutyReserveTaxQualified = Random.nextBoolean,
-        isPetroleumRevenueTaxQualified = Random.nextBoolean,
-        isCustomsDutiesQualified = Random.nextBoolean,
-        isExciseDutiesQualified = Random.nextBoolean,
-        isBankLevyQualified = Random.nextBoolean,
-        qualificationStatement = None
+        `type` = CompanyType.PLC
       )
 
       val testCompanies = Json.arr(testCompany1, testCompany2)
@@ -83,7 +59,7 @@ class CertificateCompaniesSpec extends AnyWordSpec with Matchers {
              |}""".stripMargin)
         .validate[Test]
 
-      result.asEither mustBe Right(Test(CertificateCompanies(List(testCompany1, testCompany2))))
+      result.asEither mustBe Right(Test(NotificationCompanies(List(testCompany1, testCompany2))))
     }
 
     "return an error" when {

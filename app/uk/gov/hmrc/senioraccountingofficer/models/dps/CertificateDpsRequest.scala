@@ -54,15 +54,16 @@ object CertificateDpsRequest {
         companyName = company.name,
         utr = company.utr,
         crn = company.crn.fold("")(identity),
-        companyType = toCompanyType(company.`type`).fold(err => throw new IllegalArgumentException(err), identity),
-        status = toStatus(company.status).fold(err => throw new IllegalArgumentException(err), identity),
+        companyType = company.`type`,
+        status = company.status,
         financialYearEndDate = company.accPeriodEnd,
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement
       )
     })
   }
-  def toCertificate(request: CertificateDpsRequest): Certificate = {
+
+  def toPdfCertificate(request: CertificateDpsRequest): Certificate = {
     val companies = toPdfCertificateCompany(request.companies)
     Certificate(
       saoName = request.saoName,

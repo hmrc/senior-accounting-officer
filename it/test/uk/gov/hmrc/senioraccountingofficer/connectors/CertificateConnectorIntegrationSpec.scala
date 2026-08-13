@@ -23,6 +23,7 @@ import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsCompany, CertificateDpsRequest}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 
 class CertificateConnectorIntegrationSpec extends ISpecBase {
 
@@ -50,8 +51,8 @@ class CertificateConnectorIntegrationSpec extends ISpecBase {
         utr = "utr",
         name = "Example Subsidiary Ltd",
         accPeriodEnd = "2025-03-31",
-        status = "ACTIVE",
-        `type` = "LTD",
+        status = CompanyStatus.Active,
+        `type` = CompanyType.LTD,
         isCorporationTaxQualified = true,
         isVatQualified = true,
         isPayeQualified = true,

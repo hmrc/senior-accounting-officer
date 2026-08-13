@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package services
+package uk.gov.hmrc.senioraccountingofficer.services
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import org.apache.pekko.actor.ActorSystem
@@ -29,16 +29,13 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.Html
 import uk.gov.hmrc.senioraccountingofficer.PdfTestData
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
-import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
+import uk.gov.hmrc.senioraccountingofficer.services.PdfServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
 import scala.concurrent.ExecutionContext
-
-import PdfServiceSpec.*
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 

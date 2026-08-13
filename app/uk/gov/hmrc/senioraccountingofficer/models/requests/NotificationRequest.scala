@@ -14,31 +14,31 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 
 final case class NotificationRequest(
-    companies: List[Company],
-    saos: List[Sao],
-    remarks: Option[String]
+    companies: NotificationCompanies,
+    saos: Saos,
+    remarks: Option[FreeText]
 )
-
-extension (notificationRequest: NotificationRequest) {
-
-  def toNotificationDpsRequest(customerId: Option[String] = None): NotificationDpsRequest = {
-    NotificationDpsRequest(
-      companies = notificationRequest.companies.map(_.toDpsCompany),
-      customerId = customerId,
-      saos = notificationRequest.saos.map(_.toDpsSao),
-      remarks = notificationRequest.remarks,
-      staffPID = None
-    )
-
-  }
-}
 
 object NotificationRequest {
   given Format[NotificationRequest] = Json.format[NotificationRequest]
+
+  extension (notificationRequest: NotificationRequest) {
+    def toNotificationDpsRequest(customerId: Option[String] = None): NotificationDpsRequest = {
+      NotificationDpsRequest(
+        companies = notificationRequest.companies.value.map(_.toDpsCompany),
+        customerId = customerId,
+        saos = notificationRequest.saos.value.map(_.toDpsSao),
+        remarks = notificationRequest.remarks.map(_.value),
+        staffPID = None
+      )
+
+    }
+  }
+
 }

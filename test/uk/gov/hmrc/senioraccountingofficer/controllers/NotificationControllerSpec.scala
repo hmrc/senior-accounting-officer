@@ -33,7 +33,7 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerSpec.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.models.{NotificationRequest, *}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
@@ -41,6 +41,7 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
+import java.time.LocalDate
 import java.util.UUID
 
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
@@ -100,11 +101,28 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
       val expectedDpsRequest =
         NotificationRequest(
-          companies = List(Company(Some(crn), utr, "Example Ltd", "2024-12-31", "COMPLIANT", "LTD")),
-          saos = List(
-            Sao("Firstname Lastname", Some("2024-04-01"), Some("Firstname.Lastname@example.com"), Some("2025-03-31"))
+          companies = NotificationCompanies(
+            List(
+              NotificationCompany(
+                Some(Crn(crn)),
+                Utr(utr),
+                CompanyName("Example Ltd"),
+                LocalDate.parse("2024-12-31"),
+                CompanyStatus.Active,
+                CompanyType.LTD
+              )
+            )
           ),
-          remarks = Some("non-empty string")
+          saos = Saos(
+            List(
+              Sao(
+                PersonName("Firstname Lastname"),
+                Some(LocalDate.parse("2024-04-01")),
+                Some(LocalDate.parse("2025-03-31"))
+              )
+            )
+          ),
+          remarks = Some(FreeText("non-empty string"))
         )
 
       verify(mockNotificationService, times(1))
@@ -266,13 +284,12 @@ object NotificationControllerSpec {
         "crn"          -> crn,
         "type"         -> "LTD",
         "accPeriodEnd" -> "2024-12-31",
-        "status"       -> "COMPLIANT"
+        "status"       -> "Active"
       )
     ),
     "saos" -> Json.arr(
       Json.obj(
         "name"     -> "Firstname Lastname",
-        "email"    -> "Firstname.Lastname@example.com",
         "fromDate" -> "2024-04-01",
         "toDate"   -> "2025-03-31"
       )

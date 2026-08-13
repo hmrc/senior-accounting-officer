@@ -17,14 +17,15 @@
 package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 
 final case class CertificateDpsCompany(
     crn: Option[String],
     utr: String,
     name: String,
     accPeriodEnd: String,
-    status: String,
-    `type`: String,
+    status: CompanyStatus,
+    `type`: CompanyType,
     isCorporationTaxQualified: Boolean,
     isVatQualified: Boolean,
     isPayeQualified: Boolean,

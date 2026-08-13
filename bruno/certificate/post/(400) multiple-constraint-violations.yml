@@ -23,7 +23,7 @@ http:
             "utr": "1243578",
             "name": "companyname",
             "accPeriodEnd": "0000-00-0",
-            "status": "Active",
+            "status": "ACTIVE",
             "type": "test123",
             "isCorporationTaxQualified": false,
             "isVatQualified": true,

@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models
+package uk.gov.hmrc.senioraccountingofficer.models.requests
 
-import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.Sao as DpsSao
+import play.api.libs.json.*
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 
-final case class Sao(
-    name: String,
-    fromDate: Option[String],
-    email: Option[String],
-    toDate: Option[String]
-)
+final case class Saos(value: List[Sao]) extends AnyVal
 
-object Sao {
-  given Format[Sao] = Json.format[Sao]
-}
+object Saos {
+  given Reads[Saos] =
+    Json
+      .valueReads[Saos]
+      .filter(JsonValidationError(Reason.ARRAY_MIN_ITEMS_NOT_MET.toString))(_.value.nonEmpty)
 
-extension (sao: Sao) {
-  def toDpsSao: DpsSao = {
-    DpsSao(name = sao.name, fromDate = sao.fromDate, email = sao.email, toDate = sao.toDate)
-  }
+  given Writes[Saos] = Json.valueWrites[Saos]
+
 }
