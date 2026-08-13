@@ -65,13 +65,15 @@ class NotificationServiceSpec
   val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
+  val mockEmailService: EmailService                         = mock[EmailService]
 
   val service = new NotificationService(
     mockNotificationDpsConnector,
     mockGetSubscriptionConnector,
     mockCrmmConnector,
     mockDocumentumPackageService,
-    mockPdfService
+    mockPdfService,
+    mockEmailService
   )
 
   override def beforeEach(): Unit = {
@@ -79,6 +81,7 @@ class NotificationServiceSpec
     reset(mockNotificationDpsConnector)
     reset(mockGetSubscriptionConnector)
     reset(mockCrmmConnector)
+    reset(mockEmailService)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
   }
@@ -89,8 +92,8 @@ class NotificationServiceSpec
         Json.toJson(
           GetSubscriptionDpsResponse(
             etmpSafeId = exampleSafeId,
-            nominatedCompany = NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
-            contacts = Nil
+            nominatedCompany = exampleNominatedCompany,
+            contacts = exampleContacts
           )
         )
       )
@@ -172,6 +175,11 @@ class NotificationServiceSpec
 
           service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+          verify(mockEmailService, Times(1)).sendNotificationEmail(
+            exampleContacts,
+            exampleNominatedCompany.name,
+            exampleNotificationReference
+          )
           verify(
             mockCrmmConnector,
             Times(1)
@@ -185,6 +193,7 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+          verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
           result mustBe MalformedResponse(Subscription)
         }
       }
@@ -194,6 +203,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe NotFoundFailure(Subscription)
       }
 
@@ -438,6 +448,11 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+          verify(mockEmailService, Times(1)).sendNotificationEmail(
+            exampleContacts,
+            exampleNominatedCompany.name,
+            exampleNotificationReference
+          )
           result mustBe Success(exampleNotificationReference, true)
 
           verify(mockDocumentumPackageService)
@@ -456,7 +471,7 @@ class NotificationServiceSpec
           configureDpsResponse(201, "{")
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
-
+          verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
           result mustBe MalformedResponse(DPS)
         }
       }
@@ -467,6 +482,7 @@ class NotificationServiceSpec
         configureDpsResponse(400)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
 
         result mustBe Misalignment(DPS)
       }
@@ -478,6 +494,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe Misconfiguration(DPS, 401)
       }
 
@@ -488,6 +505,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe Misconfiguration(DPS, 403)
       }
 
@@ -498,6 +516,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe Misalignment(DPS)
       }
 
@@ -508,6 +527,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe DownstreamServiceError(DPS)
       }
 
@@ -518,6 +538,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe DownstreamServiceUnavailable(DPS)
       }
 
@@ -528,6 +549,7 @@ class NotificationServiceSpec
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
         result mustBe UnknownFailure(DPS, 618)
       }
     }
@@ -558,4 +580,8 @@ object NotificationServiceSpec {
   val examplePdfFilename: String = s"${exampleNotificationReference}_SAO_Notification.pdf"
   val exampleZipFilename: String = s"20260728_${exampleNotificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
 
+  val exampleContacts: List[Contact] =
+    List(Contact("name", "email@ex.com", "en", "ACTIVE"), Contact("name2", "email2@ex.com", "en", "ACTIVE"))
+  val exampleNominatedCompany: NominatedCompany =
+    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr)
 }

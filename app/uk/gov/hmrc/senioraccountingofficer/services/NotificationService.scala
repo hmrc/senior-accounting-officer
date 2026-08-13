@@ -17,10 +17,11 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import cats.data.EitherT
+import play.api.Logging
 import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.{CrmmConnector, GetSubscriptionConnector, NotificationConnector}
+import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{
@@ -44,8 +45,10 @@ class NotificationService @Inject() (
     getSubscriptionConnector: GetSubscriptionConnector,
     crmmConnector: CrmmConnector,
     documentumPackageService: DocumentumPackageService,
-    pdfService: PdfService
-)(using ExecutionContext) {
+    pdfService: PdfService,
+    emailService: EmailService
+)(using ExecutionContext)
+    extends Logging {
 
   def postNotification(subscriptionId: String, request: NotificationRequest)(using
       HeaderCarrier
@@ -54,7 +57,12 @@ class NotificationService @Inject() (
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
-      dpsResult       <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      _ = emailService.sendNotificationEmail(
+        dpsSubscription.contacts,
+        dpsSubscription.nominatedCompany.name,
+        dpsResult.notificationRef
+      )
       documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription.nominatedCompany.name,
