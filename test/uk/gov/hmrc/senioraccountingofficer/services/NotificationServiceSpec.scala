@@ -92,8 +92,8 @@ class NotificationServiceSpec
         Json.toJson(
           GetSubscriptionDpsResponse(
             etmpSafeId = exampleSafeId,
-            nominatedCompany = NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
-            contacts = Nil
+            nominatedCompany = exampleNominatedCompany,
+            contacts = exampleContacts
           )
         )
       )
@@ -175,7 +175,11 @@ class NotificationServiceSpec
 
           service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendNotificationEmail(any(), any(), any())(using any)
+          verify(mockEmailService, Times(1)).sendNotificationEmail(
+            exampleContacts,
+            exampleNominatedCompany.name,
+            exampleNotificationReference
+          )
           verify(
             mockCrmmConnector,
             Times(1)
@@ -444,7 +448,11 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendNotificationEmail(any(), any(), any())(using any)
+          verify(mockEmailService, Times(1)).sendNotificationEmail(
+            exampleContacts,
+            exampleNominatedCompany.name,
+            exampleNotificationReference
+          )
           result mustBe Success(exampleNotificationReference, true)
 
           verify(mockDocumentumPackageService)
@@ -572,4 +580,8 @@ object NotificationServiceSpec {
   val examplePdfFilename: String = s"${exampleNotificationReference}_SAO_Notification.pdf"
   val exampleZipFilename: String = s"20260728_${exampleNotificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
 
+  val exampleContacts: List[Contact] =
+    List(Contact("name", "email@ex.com", "en", "ACTIVE"), Contact("name2", "email2@ex.com", "en", "ACTIVE"))
+  val exampleNominatedCompany: NominatedCompany =
+    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr)
 }

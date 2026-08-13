@@ -71,9 +71,7 @@ class EmailService @Inject() (
         templateId = EmailTemplate.NotificationConfirmation,
         parameters = emailParameters
       )
-      println("email service")
-      println(emailModel)
-      sendEmail(emailModel, "notification")
+      sendEmail(emailModel.asInstanceOf[Email], "notification")
     })
   }
 

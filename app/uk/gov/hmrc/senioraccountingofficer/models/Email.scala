@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.*
 
 sealed trait Email {
   def to: List[String]
@@ -49,7 +49,10 @@ final case class CertificateEmailParameters(
 )
 
 object Email {
-  given OFormat[Email] = Json.format[Email]
+  given OWrites[Email] = OWrites {
+    case notificationEmail: NotificationEmail => Json.toJson(notificationEmail).as[JsObject]
+    case uk.gov.hmrc.senioraccountingofficer.models.CertificateEmail(_, _, _) => ???
+  }
 }
 
 object NotificationEmail {
