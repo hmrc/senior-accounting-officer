@@ -6,7 +6,6 @@ import sbt.*
 object AppDependencies {
 
   private val bootstrapVersion = "10.7.0"
-  private val hmrcMongoVersion = "2.13.0"
   private val pekkoVersion     = "1.1.5"
   private val jacksonVersion   = "2.21.1"
 
@@ -23,8 +22,6 @@ object AppDependencies {
     "io.github.openhtmltopdf"  % "openhtmltopdf-pdfbox"        % "1.1.70",
     "org.apache.pekko"        %% "pekko-connectors-file"       % "1.3.0",
     "uk.gov.hmrc.objectstore" %% "object-store-client-play-30" % "2.6.0"
-    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-play-30"          % hmrcMongoVersion
-
   )
 
   def overrides: Seq[ModuleID] = Seq(

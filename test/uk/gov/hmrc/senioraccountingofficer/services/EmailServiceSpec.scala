@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{reset, verify, when}
 import org.mockito.internal.verification.Times
@@ -26,10 +27,16 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.EmailConnector
-import uk.gov.hmrc.senioraccountingofficer.models.Email
+import uk.gov.hmrc.senioraccountingofficer.models.*
 import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.*
+import scala.util.Try
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class EmailServiceSpec extends AnyFreeSpec with Matchers with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
@@ -38,34 +45,82 @@ class EmailServiceSpec extends AnyFreeSpec with Matchers with MockitoSugar with 
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val emailService: EmailService         = EmailService(mockEmailConnector)
 
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockEmailConnector)
   }
   val contacts: List[Contact] = List(Contact(name = "name", email = "email@example.com", "en", "ACTIVE"))
+
+  private def createNotificationEmails(contacts: List[Contact]) = {
+    val notificationEmails: List[NotificationEmail] = contacts.map(contact => {
+      val parameters = NotificationEmailParameters(
+        recipientName = contact.name,
+        companyName = "companyName",
+        submittedDateTime = "any",
+        referenceId = "abc"
+      )
+      NotificationEmail(
+        to = List(contact.email),
+        templateId = EmailTemplate.NotificationConfirmation,
+        parameters = parameters
+      )
+    })
+    notificationEmails
+  }
+
+  private def assertEmail(actualEmail: NotificationEmail, expectedEmail: NotificationEmail): Unit = {
+
+    val actualParams   = actualEmail.parameters
+    val expectedParams = expectedEmail.parameters
+
+    actualEmail.to shouldBe expectedEmail.to
+    actualEmail.templateId shouldBe EmailTemplate.NotificationConfirmation
+
+    actualParams.recipientName shouldBe expectedParams.recipientName
+    actualParams.companyName shouldBe expectedParams.companyName
+
+    println(actualParams.submittedDateTime)
+    Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter)).isSuccess shouldBe true
+    actualParams.referenceId shouldBe expectedParams.referenceId
+  }
+
   "sendEmail" - {
 
     "send notification email to no contacts" in {
       when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future(HttpResponse(202)))
       val result: Unit = emailService.sendNotificationEmail(List(), "companyName", "ABC")
-      verify(mockEmailConnector, Times(0)).postEmail(any[Email])(using any())
 
+      verify(mockEmailConnector, Times(0)).postEmail(any[Email])(using any())
       result shouldBe ()
     }
     "send notification email to one contact" in {
-      when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future(HttpResponse(202)))
-      val result: Unit = emailService.sendNotificationEmail(contacts, "companyName", "ABC")
-      verify(mockEmailConnector, Times(1)).postEmail(any[Email])(using any())
+      val expectedEmails                = createNotificationEmails(contacts)
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future(202))
+      val result: Unit = emailService.sendNotificationEmail(contacts, "companyName", "abc")
 
+      verify(mockEmailConnector, Times(1)).postEmail(
+        captor.capture()
+      )(using any())
+      val actualEmail: NotificationEmail = captor.getValue.asInstanceOf[NotificationEmail]
+      assertEmail(actualEmail = actualEmail, expectedEmail = expectedEmails(0))
       result shouldBe ()
     }
 
     "send notification email to two contacts" in {
-      val twoContacts = contacts ++ List(Contact("name2", "email2@example.com", "en", "ACTIVE"))
-      when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future(HttpResponse(202)))
-      val result: Unit = emailService.sendNotificationEmail(twoContacts, "companyName", "ABC")
-      verify(mockEmailConnector, Times(2)).postEmail(any[Email])(using any())
+      val twoContacts                   = contacts ++ List(Contact("name2", "email2@example.com", "en", "ACTIVE"))
+      val expectedEmails                = createNotificationEmails(twoContacts)
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future(202))
+      val result: Unit = emailService.sendNotificationEmail(twoContacts, "companyName", "abc")
+
+      verify(mockEmailConnector, Times(2)).postEmail(captor.capture())(using any())
+      val actualEmails = captor.getAllValues.asScala.map(email => email.asInstanceOf[NotificationEmail])
+      assertEmail(actualEmails(0), expectedEmails(0))
+      assertEmail(actualEmails(1), expectedEmails(1))
       result shouldBe ()
     }
   }

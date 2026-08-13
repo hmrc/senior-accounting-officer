@@ -28,7 +28,6 @@ import play.api.Application
 import play.api.http.{HeaderNames, MimeTypes, Status}
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.play.PlayMongoModule
 import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.NotificationConfirmation
 import uk.gov.hmrc.senioraccountingofficer.models.{NotificationEmail, NotificationEmailParameters}
 
@@ -51,7 +50,6 @@ class EmailConnectorSpec
         "microservice.services.email.host"     -> "localhost",
         "microservice.services.email.port"     -> wireMockServer.port()
       )
-      .disable[PlayMongoModule]
       .build()
   }
 

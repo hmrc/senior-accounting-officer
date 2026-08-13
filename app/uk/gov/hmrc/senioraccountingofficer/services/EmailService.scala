@@ -38,7 +38,7 @@ class EmailService @Inject() (
 
   private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
 
-  private def sendEmail(email: Email)(using HeaderCarrier): Unit = {
+  private def sendEmail(email: Email, emailType: String)(using HeaderCarrier): Unit = {
     emailConnector
       .postEmail(email)
       .map {
@@ -49,7 +49,7 @@ class EmailService @Inject() (
           logger.warn(s"Unexpected response from HMRC email service: status=$status")
       }
       .recover { case NonFatal(e) =>
-        logger.warn(s"Unable to send registration confirmation email: ${e.getClass.getSimpleName}")
+        logger.warn(s"Unable to send ${emailType} confirmation email: ${e.getClass.getSimpleName}")
       }
   }
   def sendNotificationEmail(
@@ -71,8 +71,9 @@ class EmailService @Inject() (
         templateId = EmailTemplate.NotificationConfirmation,
         parameters = emailParameters
       )
-
-      sendEmail(emailModel)
+      println("email service")
+      println(emailModel)
+      sendEmail(emailModel, "notification")
     })
   }
 
@@ -87,15 +88,14 @@ class EmailService @Inject() (
   )(using HeaderCarrier): Unit = {
     val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = CertificateEmailParameters(
-      templateId = emailTemplate,
       companyName = companyName,
       submittedDateTime = datetime,
       referenceId = referenceId,
       submitterName = submitterName,
       saoName = saoName
     )
-    val emailModel = CertificateEmail(List(email), emailParameters)
-    sendEmail(emailModel)
+    val emailModel = CertificateEmail(List(email), emailTemplate, emailParameters)
+    sendEmail(emailModel, "certificate")
   }
 
 }

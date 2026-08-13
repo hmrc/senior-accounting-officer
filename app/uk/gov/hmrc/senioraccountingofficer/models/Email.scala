@@ -18,8 +18,9 @@ package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.{Json, OFormat}
 
-sealed trait Email:
+sealed trait Email {
   def to: List[String]
+}
 
 final case class NotificationEmail(
     to: List[String],
@@ -28,6 +29,7 @@ final case class NotificationEmail(
 ) extends Email
 final case class CertificateEmail(
     to: List[String],
+    templateId: EmailTemplate,
     parameters: CertificateEmailParameters
 ) extends Email
 
@@ -39,7 +41,6 @@ final case class NotificationEmailParameters(
 )
 
 final case class CertificateEmailParameters(
-    templateId: EmailTemplate,
     companyName: String,
     submitterName: String,
     saoName: Option[String],
