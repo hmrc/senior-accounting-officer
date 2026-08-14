@@ -21,6 +21,7 @@ import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{
@@ -29,7 +30,6 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   GetSubscriptionDpsResponse
 }
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
