@@ -158,7 +158,6 @@ class CertificateService @Inject() (
           emailService.sendCertificateEmail(
             emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
             email = contact.email,
-            recipientName = contact.name,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
             submitterName = submitterName,
@@ -170,7 +169,6 @@ class CertificateService @Inject() (
         emailService.sendCertificateEmail(
           emailTemplate = EmailTemplate.CertificateConfirmationSAO,
           email = request.saoEmail,
-          recipientName = request.saoName,
           companyName = dpsSubscription.nominatedCompany.name,
           referenceId = certificateReference,
           submitterName = request.saoName,

@@ -86,7 +86,6 @@ class EmailService @Inject() (
   def sendCertificateEmail(
       emailTemplate: EmailTemplate,
       email: String,
-      recipientName: String,
       companyName: String,
       referenceId: String,
       submitterName: String,

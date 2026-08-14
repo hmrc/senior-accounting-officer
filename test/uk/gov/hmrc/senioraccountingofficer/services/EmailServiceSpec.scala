@@ -199,7 +199,6 @@ class EmailServiceSpec
           .sendCertificateEmail(
             emailTemplate = EmailTemplate.CertificateConfirmationSAO,
             email = "email@example.com",
-            recipientName = "name",
             companyName = "companyName",
             referenceId = "abc",
             submitterName = "name",
