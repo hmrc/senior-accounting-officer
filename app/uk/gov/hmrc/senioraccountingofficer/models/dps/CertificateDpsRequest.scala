@@ -63,14 +63,14 @@ object CertificateDpsRequest {
     })
   }
 
-  def toPdfCertificate(request: CertificateDpsRequest): Certificate = {
+  def toPdfCertificate(certificateReference: String, request: CertificateDpsRequest): Certificate = {
     val companies = toPdfCertificateCompany(request.companies)
     Certificate(
       saoName = request.saoName,
       saoEmail = request.saoEmail,
       submitterName = request.submitterName,
       submissionDate = LocalDate.now().format(dateFormatter),
-      submissionId = request.staffPid.fold("")(identity),
+      submissionId = certificateReference,
       companies = companies,
       additionalInformation = request.remarks
     )
