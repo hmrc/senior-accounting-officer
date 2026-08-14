@@ -198,15 +198,6 @@ class NotificationServiceSpec
         }
       }
 
-      "204 No Content; Return subscription not found error" in {
-        configureSubscriptionResponse(204)
-
-        val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
-
-        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
-        result mustBe NotFoundFailure(Subscription)
-      }
-
       "400 Bad Request; Return misalignment error" in {
         configureSubscriptionResponse(400)
 
@@ -215,20 +206,20 @@ class NotificationServiceSpec
         result mustBe Misalignment(Subscription)
       }
 
-      "401 Unauthorized; Return service misconfiguration error" in {
+      "401 Unauthorized; Return downstream unauthorised error" in {
         configureSubscriptionResponse(401)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-        result mustBe Misconfiguration(Subscription, 401)
+        result mustBe DownstreamUnauthorised(Subscription)
       }
 
-      "403 Forbidden; Return service misconfiguration error" in {
+      "403 Forbidden; Return downstream forbidden error" in {
         configureSubscriptionResponse(403)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-        result mustBe Misconfiguration(Subscription, 403)
+        result mustBe DownstreamForbidden(Subscription)
       }
 
       "500 Internal Server Error; Return \"downstream service error\" error" in {
@@ -382,31 +373,22 @@ class NotificationServiceSpec
         result mustBe Misalignment(CRMM)
       }
 
-      "401 Unauthorized; Return service misconfiguration error" in {
+      "401 Unauthorized; Return downstream unauthorised error" in {
         configureSubscriptionResponse(200)
         configureCrmmResponse(401)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-        result mustBe Misconfiguration(CRMM, 401)
+        result mustBe DownstreamUnauthorised(CRMM)
       }
 
-      "403 Forbidden; Return service misconfiguration error" in {
+      "403 Forbidden; Return downstream forbidden error" in {
         configureSubscriptionResponse(200)
         configureCrmmResponse(403)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-        result mustBe Misconfiguration(CRMM, 403)
-      }
-
-      "404 Not Found; Return misalignment error" in {
-        configureSubscriptionResponse(200)
-        configureCrmmResponse(404)
-
-        val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
-
-        result mustBe Misalignment(CRMM)
+        result mustBe DownstreamForbidden(CRMM)
       }
 
       "500 Internal Server Error; Return \"downstream service error\" error" in {
@@ -487,7 +469,7 @@ class NotificationServiceSpec
         result mustBe Misalignment(DPS)
       }
 
-      "401 Unauthorized; Return service misconfiguration error" in {
+      "401 Unauthorized; Return downstream unauthorised error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
         configureDpsResponse(401)
@@ -495,10 +477,10 @@ class NotificationServiceSpec
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
         verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
-        result mustBe Misconfiguration(DPS, 401)
+        result mustBe DownstreamUnauthorised(DPS)
       }
 
-      "403 Forbidden; Return service misconfiguration error" in {
+      "403 Forbidden; Return downstream forbidden error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
         configureDpsResponse(403)
@@ -506,18 +488,7 @@ class NotificationServiceSpec
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
         verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
-        result mustBe Misconfiguration(DPS, 403)
-      }
-
-      "404 Not Found; Return misalignment error" in {
-        configureSubscriptionResponse()
-        configureCrmmResponse()
-        configureDpsResponse(404)
-
-        val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
-
-        verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
-        result mustBe Misalignment(DPS)
+        result mustBe DownstreamForbidden(DPS)
       }
 
       "500 Internal Server Error; Return \"downstream service error\" error" in {
