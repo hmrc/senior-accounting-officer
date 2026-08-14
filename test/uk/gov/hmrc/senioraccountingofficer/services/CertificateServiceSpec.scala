@@ -492,8 +492,19 @@ class CertificateServiceSpec
           }
         }
 
-        "Valid response without submitter; Send SAO confirmation email to SAO" in {
-          configureSubscriptionResponse()
+        "Valid response without submitter; Send SAO confirmation email to SAO and subscription contacts" in {
+          configureSubscriptionResponse(responseBody =
+            Json.stringify(
+              Json.toJson(
+                GetSubscriptionDpsResponse(
+                  etmpSafeId = exampleSafeId,
+                  nominatedCompany =
+                    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
+                  contacts = exampleContacts
+                )
+              )
+            )
+          )
           configureCrmmResponse()
           configureDpsResponse(201, validDpsResponseBody)
           configurePdfGeneration()
@@ -509,6 +520,17 @@ class CertificateServiceSpec
             expectedSaoName,
             None
           )
+
+          exampleContacts.foreach { contact =>
+            verify(mockEmailService, Times(1)).sendCertificateEmail(
+              EmailTemplate.CertificateConfirmationSAO,
+              contact.email,
+              exampleCompanyName,
+              exampleCertificateReference,
+              expectedSaoName,
+              None
+            )
+          }
         }
 
         "Invalid response; Return malformed response error" in {

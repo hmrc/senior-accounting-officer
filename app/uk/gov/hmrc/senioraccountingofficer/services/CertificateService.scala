@@ -166,14 +166,17 @@ class CertificateService @Inject() (
         }
         Future.sequence(emailRequests).map(_ => ())
       case None =>
-        emailService.sendCertificateEmail(
-          emailTemplate = EmailTemplate.CertificateConfirmationSAO,
-          email = request.saoEmail,
-          companyName = dpsSubscription.nominatedCompany.name,
-          referenceId = certificateReference,
-          submitterName = request.saoName,
-          saoName = None
-        )
+        val emailRequests = (request.saoEmail :: dpsSubscription.contacts.map(_.email)).distinct.map { email =>
+          emailService.sendCertificateEmail(
+            emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+            email = email,
+            companyName = dpsSubscription.nominatedCompany.name,
+            referenceId = certificateReference,
+            submitterName = request.saoName,
+            saoName = None
+          )
+        }
+        Future.sequence(emailRequests).map(_ => ())
     }
   }
 
