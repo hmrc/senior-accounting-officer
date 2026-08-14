@@ -16,55 +16,37 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
-import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
 import play.api.http.{HeaderNames, MimeTypes, Status}
-import play.api.inject.guice.GuiceApplicationBuilder
+import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.NotificationConfirmation
-import uk.gov.hmrc.senioraccountingofficer.models.{NotificationEmail, NotificationEmailParameters}
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.{
+  CertificateConfirmationSubmitter,
+  NotificationConfirmation
+}
+import uk.gov.hmrc.senioraccountingofficer.models.{
+  CertificateEmail,
+  CertificateEmailParameters,
+  NotificationEmail,
+  NotificationEmailParameters
+}
 
 import java.util.UUID
 
-class EmailConnectorSpec
-    extends AnyWordSpec
-    with Matchers
-    with ScalaFutures
-    with IntegrationPatience
-    with GuiceOneAppPerSuite
-    with BeforeAndAfterAll {
+class EmailConnectorIntegrationSpec extends ISpecBase {
 
-  private val wireMockServer = WireMockServer(options().dynamicPort())
+  private val connector     = app.injector.instanceOf[EmailConnector]
+  private val correlationId = UUID.randomUUID().toString
 
-  override def fakeApplication(): Application = {
-    wireMockServer.start()
+  implicit val hc: HeaderCarrier = HeaderCarrier(extraHeaders = Seq("correlationId" -> correlationId))
 
-    GuiceApplicationBuilder()
-      .configure(
-        "microservice.services.email.protocol" -> "http",
-        "microservice.services.email.host"     -> "localhost",
-        "microservice.services.email.port"     -> wireMockServer.port()
-      )
-      .build()
-  }
+  override def additionalConfigs: Map[String, Any] = Map(
+    "microservice.services.email.protocol" -> "http",
+    "microservice.services.email.host"     -> wireMockHost,
+    "microservice.services.email.port"     -> wireMockPort
+  )
 
-  override def afterAll(): Unit = {
-    wireMockServer.stop()
-    super.afterAll()
-  }
-
-  private val correlationId   = UUID.randomUUID().toString
-  private given HeaderCarrier = HeaderCarrier(extraHeaders = Seq("correlationId" -> correlationId))
-  private lazy val connector  = app.injector.instanceOf[EmailConnector]
-
-  "postEmail" should {
+  "postEmail" must {
     "post the notification email to the HMRC domain" in {
       val parameters = NotificationEmailParameters(
         recipientName = "name",
@@ -89,14 +71,52 @@ class EmailConnectorSpec
           |  }
           |}""".stripMargin
 
-      wireMockServer.stubFor(
+      stubFor(
         post(urlEqualTo("/hmrc/email"))
           .withHeader(HeaderNames.CONTENT_TYPE, containing(MimeTypes.JSON))
           .withHeader("CorrelationId", equalTo(correlationId))
           .withRequestBody(equalToJson(expectedRequestBody))
           .willReturn(aResponse().withStatus(Status.ACCEPTED))
       )
-      connector.postEmail(request).futureValue.status shouldBe Status.ACCEPTED
+
+      connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
+    }
+
+    "post the certificate email to the HMRC domain" in {
+      val parameters = CertificateEmailParameters(
+        companyName = "companyName",
+        submitterName = "submitter name",
+        saoName = Some("sao name"),
+        submittedDateTime = "17 January 2025 at 11:45am",
+        referenceId = "abc"
+      )
+      val request = CertificateEmail(
+        to = List("email@example.com"),
+        templateId = CertificateConfirmationSubmitter,
+        parameters = parameters
+      )
+
+      val expectedRequestBody = """{
+          |  "to": ["email@example.com"],
+          |  "templateId": "dsao_certificate_confirmation_for_submitter",
+          |  "parameters": {
+          |    "companyName": "companyName",
+          |    "submitterName": "submitter name",
+          |    "saoName": "sao name",
+          |    "submittedDateTime": "17 January 2025 at 11:45am",
+          |    "referenceId": "abc"
+          |  }
+          |}""".stripMargin
+
+      stubFor(
+        post(urlEqualTo("/hmrc/email"))
+          .withHeader(HeaderNames.CONTENT_TYPE, containing(MimeTypes.JSON))
+          .withHeader("CorrelationId", equalTo(correlationId))
+          .withRequestBody(equalToJson(expectedRequestBody))
+          .willReturn(aResponse().withStatus(Status.ACCEPTED))
+      )
+
+      connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
     }
 
     "return the raw response without throwing on a non-202 status" in {
@@ -111,14 +131,14 @@ class EmailConnectorSpec
         )
       )
 
-      wireMockServer.stubFor(
+      stubFor(
         post(urlEqualTo("/hmrc/email"))
           .willReturn(aResponse().withStatus(Status.BAD_REQUEST).withBody("bad request"))
       )
 
       val result = connector.postEmail(request).futureValue
-      result.status shouldBe Status.BAD_REQUEST
-      result.body shouldBe "bad request"
+      result.status mustBe Status.BAD_REQUEST
+      result.body mustBe "bad request"
     }
   }
 }
