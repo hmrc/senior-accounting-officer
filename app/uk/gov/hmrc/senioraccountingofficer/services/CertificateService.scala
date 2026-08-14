@@ -21,6 +21,7 @@ import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{
@@ -44,7 +45,8 @@ class CertificateService @Inject() (
     crmmConnector: CrmmConnector,
     certificateConnector: CertificateConnector,
     documentumPackageService: DocumentumPackageService,
-    pdfService: PdfService
+    pdfService: PdfService,
+    emailService: EmailService
 )(using ExecutionContext) {
 
   def postCertificate(subscriptionId: String, request: CertificateRequest)(using
@@ -55,7 +57,10 @@ class CertificateService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toCertificateDpsRequest(customerId)
       dpsResult <- postCertificateDps(subscriptionId, requestWithCustomerId)
-      _         <- packageAndSubmitDocumentumFile(
+      _         <- EitherT.right[PostCertificateResponse with Failure](
+        sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
+      )
+      _ <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
         dpsResult.certificateRef,
@@ -140,6 +145,39 @@ class CertificateService @Inject() (
       case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(DownstreamServiceUnavailable(DPS))
       case HttpResponse(status, _, _)                => Left(UnknownFailure(DPS, status))
     })
+  }
+
+  private def sendCertificateConfirmationEmail(
+      dpsSubscription: GetSubscriptionDpsResponse,
+      certificateReference: String,
+      request: CertificateDpsRequest
+  )(using HeaderCarrier): Future[Unit] = {
+    request.submitterName match {
+      case Some(submitterName) =>
+        val emailRequests = dpsSubscription.contacts.map { contact =>
+          emailService.sendCertificateEmail(
+            emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
+            email = contact.email,
+            companyName = dpsSubscription.nominatedCompany.name,
+            referenceId = certificateReference,
+            submitterName = Some(submitterName),
+            saoName = request.saoName
+          )
+        }
+        Future.sequence(emailRequests).map(_ => ())
+      case None =>
+        val emailRequests = (request.saoEmail :: dpsSubscription.contacts.map(_.email)).distinct.map { email =>
+          emailService.sendCertificateEmail(
+            emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+            email = email,
+            companyName = dpsSubscription.nominatedCompany.name,
+            referenceId = certificateReference,
+            submitterName = None,
+            saoName = request.saoName
+          )
+        }
+        Future.sequence(emailRequests).map(_ => ())
+    }
   }
 
   private def packageAndSubmitDocumentumFile(

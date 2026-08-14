@@ -84,6 +84,8 @@ class NotificationServiceSpec
     reset(mockEmailService)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
+    when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
   }
 
   def configureSubscriptionResponse(

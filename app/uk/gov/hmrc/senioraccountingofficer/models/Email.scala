@@ -42,8 +42,8 @@ final case class NotificationEmailParameters(
 
 final case class CertificateEmailParameters(
     companyName: String,
-    submitterName: String,
-    saoName: Option[String],
+    submitterName: Option[String],
+    saoName: String,
     submittedDateTime: String,
     referenceId: String
 )
@@ -51,7 +51,7 @@ final case class CertificateEmailParameters(
 object Email {
   given OWrites[Email] = OWrites {
     case notificationEmail: NotificationEmail => Json.toJson(notificationEmail).as[JsObject]
-    case uk.gov.hmrc.senioraccountingofficer.models.CertificateEmail(_, _, _) => ???
+    case certificateEmail: CertificateEmail   => Json.toJson(certificateEmail).as[JsObject]
   }
 }
 
