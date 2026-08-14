@@ -25,6 +25,9 @@ import scala.util.Random
 
 import java.time.LocalDate
 
+import CertificateRequestSpec.*
+import CertificateCompanySpec.genUnqualifiedCompany
+
 class CertificateRequestSpec extends AnyWordSpec with Matchers {
 
   "Json reader for CertificateRequest" must {
@@ -46,7 +49,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         isPetroleumRevenueTaxQualified = Random.nextBoolean,
         isCustomsDutiesQualified = Random.nextBoolean,
         isExciseDutiesQualified = Random.nextBoolean,
-        isBankLevyQualified = Random.nextBoolean,
+        isBankLevyQualified = true,
         qualificationStatement = Some(FreeText(generateAlphanumeric(FreeText.maxFreeTextLength)))
       )
 
@@ -89,16 +92,16 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         accPeriodEnd = LocalDate.now(),
         status = CompanyStatus.Active,
         `type` = CompanyType.PLC,
-        isCorporationTaxQualified = Random.nextBoolean,
-        isVatQualified = Random.nextBoolean,
-        isPayeQualified = Random.nextBoolean,
-        isInsurancePremiumTaxQualified = Random.nextBoolean,
-        isStampDutyLandTaxQualified = Random.nextBoolean,
-        isStampDutyReserveTaxQualified = Random.nextBoolean,
-        isPetroleumRevenueTaxQualified = Random.nextBoolean,
-        isCustomsDutiesQualified = Random.nextBoolean,
-        isExciseDutiesQualified = Random.nextBoolean,
-        isBankLevyQualified = Random.nextBoolean,
+        isCorporationTaxQualified = false,
+        isVatQualified = false,
+        isPayeQualified = false,
+        isInsurancePremiumTaxQualified = false,
+        isStampDutyLandTaxQualified = false,
+        isStampDutyReserveTaxQualified = false,
+        isPetroleumRevenueTaxQualified = false,
+        isCustomsDutiesQualified = false,
+        isExciseDutiesQualified = false,
+        isBankLevyQualified = false,
         qualificationStatement = None
       )
 
@@ -127,6 +130,66 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
       )
     }
 
+    "return an QUALIFICATION_STATEMENT_MISSING error for a qualified certificate" in {
+      val qualifiedCompany = genUnqualifiedCompany.copy(
+        isCorporationTaxQualified = true,
+        isVatQualified = true,
+        isPayeQualified = true,
+        isInsurancePremiumTaxQualified = true,
+        isStampDutyLandTaxQualified = true,
+        isStampDutyReserveTaxQualified = true,
+        isPetroleumRevenueTaxQualified = true,
+        isCustomsDutiesQualified = true,
+        isExciseDutiesQualified = true,
+        isBankLevyQualified = true
+      )
+      val request = genUnqualifiedRequest(qualifiedCompany)
+
+      val result = Json
+        .parse(Json.toJson(request).toString)
+        .validate[CertificateRequest]
+
+      result.asEither mustBe Left(
+        List((JsPath.\("companies")(0), List(JsonValidationError("QUALIFICATION_STATEMENT_MISSING"))))
+      )
+
+    }
+
+    "return an QUALIFICATION_STATEMENT_PROHIBITED error for a qualified certificate" when {
+      s"there is a qualification statement but the entity is unqualified" in {
+        val testCompany = genUnqualifiedCompany.copy(qualificationStatement = Some(FreeText(generateAlphanumeric(1))))
+        val request     = genUnqualifiedRequest(testCompany)
+
+        val result = Json
+          .parse(Json.toJson(request).toString)
+          .validate[CertificateRequest]
+
+        result.asEither mustBe Left(
+          List((JsPath.\("companies")(0), List(JsonValidationError("QUALIFICATION_STATEMENT_PROHIBITED"))))
+        )
+      }
+    }
+
+  }
+
+}
+
+object CertificateRequestSpec {
+
+  def genUnqualifiedRequest(testCompany: CertificateCompany): CertificateRequest = {
+
+    val testCompanies = CertificateCompanies(List(testCompany))
+    val saoName       = generateAlphanumeric(PersonName.maxPersonNameLength)
+    val saoEmail      = s"${generateAlphanumeric(Email.maxEmailLength - 2)}@a"
+
+    CertificateRequest(
+      submitterName = None,
+      saoName = PersonName(saoName),
+      saoEmail = Email(saoEmail),
+      staffPid = None,
+      companies = testCompanies,
+      remarks = None
+    )
   }
 
 }
