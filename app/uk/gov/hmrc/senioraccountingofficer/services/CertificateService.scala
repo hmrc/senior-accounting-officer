@@ -76,10 +76,9 @@ class CertificateService @Inject() (
               .map { _ =>
                 MalformedResponse(Subscription)
               }
-          case HttpResponse(NO_CONTENT, _, _)            => Left(NotFoundFailure(Subscription))
           case HttpResponse(BAD_REQUEST, _, _)           => Left(Misalignment(Subscription))
-          case HttpResponse(UNAUTHORIZED, _, _)          => Left(Misconfiguration(Subscription, UNAUTHORIZED))
-          case HttpResponse(FORBIDDEN, _, _)             => Left(Misconfiguration(Subscription, FORBIDDEN))
+          case HttpResponse(UNAUTHORIZED, _, _)          => Left(DownstreamUnauthorised(Subscription))
+          case HttpResponse(FORBIDDEN, _, _)             => Left(DownstreamForbidden(Subscription))
           case HttpResponse(INTERNAL_SERVER_ERROR, _, _) => Left(DownstreamServiceError(Subscription))
           case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(DownstreamServiceUnavailable(Subscription))
           case HttpResponse(status, _, _)                => Left(UnknownFailure(Subscription, status))
@@ -99,8 +98,8 @@ class CertificateService @Inject() (
           case HttpResponse(OK, body, _)                 => parseCrmmResponse(body)
           case HttpResponse(BAD_REQUEST, _, _)           => Left(Misalignment(CRMM))
           case HttpResponse(INTERNAL_SERVER_ERROR, _, _) => Left(DownstreamServiceError(CRMM))
-          case HttpResponse(UNAUTHORIZED, _, _)          => Left(Misconfiguration(CRMM, UNAUTHORIZED))
-          case HttpResponse(FORBIDDEN, _, _)             => Left(Misconfiguration(CRMM, FORBIDDEN))
+          case HttpResponse(UNAUTHORIZED, _, _)          => Left(DownstreamUnauthorised(CRMM))
+          case HttpResponse(FORBIDDEN, _, _)             => Left(DownstreamForbidden(CRMM))
           case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(DownstreamServiceUnavailable(CRMM))
           case HttpResponse(NOT_FOUND, _, _)             => Left(Misalignment(CRMM))
           case HttpResponse(status, _, _)                => Left(UnknownFailure(CRMM, status))
@@ -133,10 +132,9 @@ class CertificateService @Inject() (
         Try(Json.parse(body).validate[CertificateDpsResponse].asEither).toEither.flatten.left
           .map(_ => MalformedResponse(DPS))
       case HttpResponse(BAD_REQUEST, _, _)           => Left(Misalignment(DPS))
+      case HttpResponse(UNAUTHORIZED, _, _)          => Left(DownstreamUnauthorised(DPS))
+      case HttpResponse(FORBIDDEN, _, _)             => Left(DownstreamForbidden(DPS))
       case HttpResponse(INTERNAL_SERVER_ERROR, _, _) => Left(DownstreamServiceError(DPS))
-      case HttpResponse(UNAUTHORIZED, _, _)          => Left(Misconfiguration(DPS, UNAUTHORIZED))
-      case HttpResponse(FORBIDDEN, _, _)             => Left(Misconfiguration(DPS, FORBIDDEN))
-      case HttpResponse(NOT_FOUND, _, _)             => Left(Misalignment(DPS))
       case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(DownstreamServiceUnavailable(DPS))
       case HttpResponse(status, _, _)                => Left(UnknownFailure(DPS, status))
     })
@@ -165,15 +163,12 @@ object CertificateService {
   sealed trait Failure
   enum PostCertificateResponse {
     case Success(certificateReference: String)                              extends PostCertificateResponse
+    case Misalignment(downstreamService: DownstreamService)                 extends PostCertificateResponse with Failure
     case MalformedResponse(downstreamService: DownstreamService)            extends PostCertificateResponse with Failure
+    case DownstreamUnauthorised(downstreamService: DownstreamService)       extends PostCertificateResponse with Failure
+    case DownstreamForbidden(downstreamService: DownstreamService)          extends PostCertificateResponse with Failure
+    case DownstreamServiceError(downstreamService: DownstreamService)       extends PostCertificateResponse with Failure
     case DownstreamServiceUnavailable(downstreamService: DownstreamService) extends PostCertificateResponse with Failure
     case UnknownFailure(downstreamService: DownstreamService, status: Int)  extends PostCertificateResponse with Failure
-
-    case NotFoundFailure(downstreamService: DownstreamService) extends PostCertificateResponse with Failure
-    case Misalignment(downstreamService: DownstreamService)    extends PostCertificateResponse with Failure
-    case Misconfiguration(downstreamService: DownstreamService, status: Int)
-        extends PostCertificateResponse
-        with Failure
-    case DownstreamServiceError(downstreamService: DownstreamService) extends PostCertificateResponse with Failure
   }
 }

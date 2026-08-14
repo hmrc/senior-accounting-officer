@@ -48,26 +48,26 @@ class CertificateController @Inject() (
           .map {
             case Success(certificateRef) =>
               Created(Json.toJson(CertificateResponse(certificateRef)))
-            case MalformedResponse(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][MALFORMED_RESPONSE]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
             case Misalignment(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][BAD_REQUEST]")
+              logger.warn(s"[Certificate][$downstreamService][BadRequest]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-            case Misconfiguration(downstreamService, status) =>
-              logger.warn(s"[Certificate][$downstreamService][MISCONFIGURATION]status=$status")
+            case MalformedResponse(downstreamService) =>
+              logger.warn(s"[Certificate][$downstreamService][MalformedResponse]")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
+            case DownstreamUnauthorised(downstreamService) =>
+              logger.warn(s"[Certificate][$downstreamService][Unauthorised]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-            case NotFoundFailure(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][NOT_FOUND]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))
+            case DownstreamForbidden(downstreamService) =>
+              logger.warn(s"[Certificate][$downstreamService][Forbidden]")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
             case DownstreamServiceError(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][INTERNAL_SERVER_ERROR]")
+              logger.warn(s"[Certificate][$downstreamService][DownstreamInternalServerError]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
             case DownstreamServiceUnavailable(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][SERVICE_UNAVAILABLE]")
+              logger.warn(s"[Certificate][$downstreamService][ServiceUnavailable]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
             case UnknownFailure(downstreamService, status) =>
-              logger.warn(s"[Certificate][$downstreamService][Unknown]status=$status")
+              logger.warn(s"[Certificate][$downstreamService][$status]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
           }
       }
