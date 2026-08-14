@@ -165,24 +165,6 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       status(result) mustBe Status.BAD_GATEWAY
     }
 
-    "NotificationService returns NotFoundFailure; controller must return 500" in {
-      val mockResponse = NotFoundFailure(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
-        .thenReturn(Future.successful(mockResponse))
-
-      val url     = routes.NotificationController.postNotification().url
-      val request =
-        FakeRequest("POST", url)
-          .withTextBody(validPayload.toString())
-          .withHeaders(
-            "Content-Type"  -> MimeTypes.JSON,
-            "correlationId" -> UUID.randomUUID().toString
-          )
-      val result = routeResult(request)
-
-      status(result) mustBe Status.INTERNAL_SERVER_ERROR
-    }
-
     "NotificationService returns ServiceUnavailableFailure must return 502" in {
       val mockResponse = DownstreamServiceUnavailable(DPS)
       when(mockNotificationService.postNotification(any(), any())(using any()))
@@ -252,8 +234,26 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       status(result) mustBe Status.INTERNAL_SERVER_ERROR
     }
 
-    "NotificationService returns Misconfiguration; controller must return 500" in {
-      val mockResponse = Misconfiguration(DPS, 401)
+    "NotificationService returns DownstreamUnauthorised; controller must return 500" in {
+      val mockResponse = DownstreamUnauthorised(DPS)
+      when(mockNotificationService.postNotification(any(), any())(using any()))
+        .thenReturn(Future.successful(mockResponse))
+
+      val url     = routes.NotificationController.postNotification().url
+      val request =
+        FakeRequest("POST", url)
+          .withTextBody(validPayload.toString())
+          .withHeaders(
+            "Content-Type"  -> MimeTypes.JSON,
+            "correlationId" -> UUID.randomUUID().toString
+          )
+      val result = routeResult(request)
+
+      status(result) mustBe Status.INTERNAL_SERVER_ERROR
+    }
+
+    "NotificationService returns DownstreamForbidden; controller must return 500" in {
+      val mockResponse = DownstreamForbidden(DPS)
       when(mockNotificationService.postNotification(any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 

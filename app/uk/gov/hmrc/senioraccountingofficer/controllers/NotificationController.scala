@@ -49,25 +49,25 @@ class NotificationController @Inject() (
             case Success(notificationId, isPdfAvailable) =>
               Ok(Json.toJson(NotificationResponse(notificationId, isPdfAvailable)))
             case Misalignment(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][MISALIGNMENT]")
+              logger.warn(s"[Notification][$downstreamService][BadRequest]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
             case MalformedResponse(downstreamService) =>
               logger.warn(s"[Notification][$downstreamService][MalformedResponse]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-            case Misconfiguration(downstreamService, status) =>
-              logger.warn(s"[Notification][$downstreamService][MISCONFIGURATION]status=$status")
+            case DownstreamUnauthorised(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][Unauthorised]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-            case NotFoundFailure(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][NOT_FOUND]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.NOT_FOUND)))
+            case DownstreamForbidden(downstreamService) =>
+              logger.warn(s"[Notification][$downstreamService][Forbidden]")
+              InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
             case DownstreamServiceError(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][INTERNAL_SERVER_ERROR]")
+              logger.warn(s"[Notification][$downstreamService][DownstreamInternalServerError]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
             case DownstreamServiceUnavailable(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][SERVICE_UNAVAILABLE]")
+              logger.warn(s"[Notification][$downstreamService][ServiceUnavailable]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
             case UnknownFailure(downstreamService, status) =>
-              logger.warn(s"[Notification][$downstreamService][Unknown]status=$status")
+              logger.warn(s"[Notification][$downstreamService][$status]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
           }
       }
