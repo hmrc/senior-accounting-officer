@@ -21,6 +21,7 @@ import play.api.http.{HeaderNames, MimeTypes, Status}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.{
+  CertificateConfirmationSAO,
   CertificateConfirmationSubmitter,
   NotificationConfirmation
 }
@@ -85,8 +86,8 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
     "post the certificate email to the HMRC domain" in {
       val parameters = CertificateEmailParameters(
         companyName = "companyName",
-        submitterName = "submitter name",
-        saoName = Some("sao name"),
+        submitterName = Some("submitter name"),
+        saoName = "sao name",
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"
       )
@@ -102,6 +103,42 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
           |  "parameters": {
           |    "companyName": "companyName",
           |    "submitterName": "submitter name",
+          |    "saoName": "sao name",
+          |    "submittedDateTime": "17 January 2025 at 11:45am",
+          |    "referenceId": "abc"
+          |  }
+          |}""".stripMargin
+
+      stubFor(
+        post(urlEqualTo("/hmrc/email"))
+          .withHeader(HeaderNames.CONTENT_TYPE, containing(MimeTypes.JSON))
+          .withHeader("CorrelationId", equalTo(correlationId))
+          .withRequestBody(equalToJson(expectedRequestBody))
+          .willReturn(aResponse().withStatus(Status.ACCEPTED))
+      )
+
+      connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
+    }
+
+    "post the SAO certificate email to the HMRC domain without a submitter name" in {
+      val parameters = CertificateEmailParameters(
+        companyName = "companyName",
+        submitterName = None,
+        saoName = "sao name",
+        submittedDateTime = "17 January 2025 at 11:45am",
+        referenceId = "abc"
+      )
+      val request = CertificateEmail(
+        to = List("email@example.com"),
+        templateId = CertificateConfirmationSAO,
+        parameters = parameters
+      )
+
+      val expectedRequestBody = """{
+          |  "to": ["email@example.com"],
+          |  "templateId": "dsao_certificate_confirmation_for_sao",
+          |  "parameters": {
+          |    "companyName": "companyName",
           |    "saoName": "sao name",
           |    "submittedDateTime": "17 January 2025 at 11:45am",
           |    "referenceId": "abc"

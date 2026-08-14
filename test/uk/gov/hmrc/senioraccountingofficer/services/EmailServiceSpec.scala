@@ -201,8 +201,8 @@ class EmailServiceSpec
             email = "email@example.com",
             companyName = "companyName",
             referenceId = "abc",
-            submitterName = "name",
-            saoName = None
+            submitterName = None,
+            saoName = "name"
           )
           .futureValue
       }

@@ -160,8 +160,8 @@ class CertificateService @Inject() (
             email = contact.email,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
-            submitterName = submitterName,
-            saoName = Some(request.saoName)
+            submitterName = Some(submitterName),
+            saoName = request.saoName
           )
         }
         Future.sequence(emailRequests).map(_ => ())
@@ -172,8 +172,8 @@ class CertificateService @Inject() (
             email = email,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
-            submitterName = request.saoName,
-            saoName = None
+            submitterName = None,
+            saoName = request.saoName
           )
         }
         Future.sequence(emailRequests).map(_ => ())

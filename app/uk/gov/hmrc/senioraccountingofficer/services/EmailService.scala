@@ -88,8 +88,8 @@ class EmailService @Inject() (
       email: String,
       companyName: String,
       referenceId: String,
-      submitterName: String,
-      saoName: Option[String]
+      submitterName: Option[String],
+      saoName: String
   )(using HeaderCarrier): Future[Unit] = {
     val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = CertificateEmailParameters(

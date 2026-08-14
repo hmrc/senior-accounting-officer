@@ -42,8 +42,8 @@ final case class NotificationEmailParameters(
 
 final case class CertificateEmailParameters(
     companyName: String,
-    submitterName: String,
-    saoName: Option[String],
+    submitterName: Option[String],
+    saoName: String,
     submittedDateTime: String,
     referenceId: String
 )

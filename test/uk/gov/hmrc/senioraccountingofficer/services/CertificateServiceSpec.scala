@@ -486,8 +486,8 @@ class CertificateServiceSpec
               contact.email,
               exampleCompanyName,
               exampleCertificateReference,
-              "Firstname Lastname",
-              Some(expectedSaoName)
+              Some("Firstname Lastname"),
+              expectedSaoName
             )
           }
         }
@@ -517,8 +517,8 @@ class CertificateServiceSpec
             expectedSaoEmail,
             exampleCompanyName,
             exampleCertificateReference,
-            expectedSaoName,
-            None
+            None,
+            expectedSaoName
           )
 
           exampleContacts.foreach { contact =>
@@ -527,8 +527,8 @@ class CertificateServiceSpec
               contact.email,
               exampleCompanyName,
               exampleCertificateReference,
-              expectedSaoName,
-              None
+              None,
+              expectedSaoName
             )
           }
         }
