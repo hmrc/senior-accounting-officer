@@ -31,6 +31,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
@@ -457,6 +458,59 @@ class CertificateServiceSpec
             )(using any())
         }
 
+        "Valid response with submitter; Send submitter confirmation emails to subscription contacts" in {
+          configureSubscriptionResponse(responseBody =
+            Json.stringify(
+              Json.toJson(
+                GetSubscriptionDpsResponse(
+                  etmpSafeId = exampleSafeId,
+                  nominatedCompany =
+                    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
+                  contacts = exampleContacts
+                )
+              )
+            )
+          )
+          configureCrmmResponse()
+          configureDpsResponse(201, validDpsResponseBody)
+          configurePdfGeneration()
+          configureDocumentumPackageService()
+
+          service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
+
+          exampleContacts.foreach { contact =>
+            verify(mockEmailService, Times(1)).sendCertificateEmail(
+              EmailTemplate.CertificateConfirmationSubmitter,
+              contact.email,
+              contact.name,
+              exampleCompanyName,
+              exampleCertificateReference,
+              "Firstname Lastname",
+              Some(expectedSaoName)
+            )
+          }
+        }
+
+        "Valid response without submitter; Send SAO confirmation email to SAO" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse(201, validDpsResponseBody)
+          configurePdfGeneration()
+          configureDocumentumPackageService()
+
+          service.postCertificate(exampleSubscriptionId, incomingRequest.copy(submitterName = None)).futureValue
+
+          verify(mockEmailService, Times(1)).sendCertificateEmail(
+            EmailTemplate.CertificateConfirmationSAO,
+            expectedSaoEmail,
+            expectedSaoName,
+            exampleCompanyName,
+            exampleCertificateReference,
+            expectedSaoName,
+            None
+          )
+        }
+
         "Invalid response; Return malformed response error" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
@@ -464,6 +518,9 @@ class CertificateServiceSpec
 
           val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
+          verify(mockEmailService, Times(0)).sendCertificateEmail(any(), any(), any(), any(), any(), any(), any())(using
+            any()
+          )
           result mustBe MalformedResponse(DPS)
         }
       }
@@ -560,15 +617,20 @@ object CertificateServiceSpec {
       companies = List.empty
     )
 
-  val exampleSubscriptionId       = "123"
-  val exampleCertificateReference = "CRT0123456789"
-  val exampleUtr                  = generateUtr
-  val exampleCrn                  = generateCrn
-  val exampleCompanyName          = "company name"
-  val exampleSafeId               = "safe id"
-  val exampleCustomerId           = "customer id"
-  val expectedSaoName             = "Firstname Lastname"
-  val expectedSaoEmail            = "firstname.lastname@example.com"
+  val exampleSubscriptionId          = "123"
+  val exampleCertificateReference    = "CRT0123456789"
+  val exampleUtr                     = generateUtr
+  val exampleCrn                     = generateCrn
+  val exampleCompanyName             = "company name"
+  val exampleSafeId                  = "safe id"
+  val exampleCustomerId              = "customer id"
+  val exampleContacts: List[Contact] = List(
+    Contact("contact 1", "contact1@example.com", "en", "active"),
+    Contact("contact 2", "contact2@example.com", "en", "active"),
+    Contact("contact 3", "contact3@example.com", "en", "active")
+  )
+  val expectedSaoName  = "Firstname Lastname"
+  val expectedSaoEmail = "firstname.lastname@example.com"
 
   val validDpsResponseBody: String = s"""{"certificateRef":"$exampleCertificateReference"}"""
 
