@@ -85,7 +85,7 @@ class CertificateServiceSpec
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
     reset(mockEmailService)
-    when(mockEmailService.sendCertificateEmail(any(), any(), any(), any(), any(), any())(using any()))
+    when(mockEmailService.sendCertificateEmail(any(), any(), any(), any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
   }
 
@@ -484,6 +484,7 @@ class CertificateServiceSpec
             verify(mockEmailService, Times(1)).sendCertificateEmail(
               EmailTemplate.CertificateConfirmationSubmitter,
               contact.email,
+              contact.name,
               exampleCompanyName,
               exampleCertificateReference,
               Some("Firstname Lastname"),
@@ -515,6 +516,7 @@ class CertificateServiceSpec
           verify(mockEmailService, Times(1)).sendCertificateEmail(
             EmailTemplate.CertificateConfirmationSAO,
             expectedSaoEmail,
+            expectedSaoName,
             exampleCompanyName,
             exampleCertificateReference,
             None,
@@ -525,6 +527,7 @@ class CertificateServiceSpec
             verify(mockEmailService, Times(1)).sendCertificateEmail(
               EmailTemplate.CertificateConfirmationSAO,
               contact.email,
+              contact.name,
               exampleCompanyName,
               exampleCertificateReference,
               None,
@@ -540,7 +543,7 @@ class CertificateServiceSpec
 
           val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(0)).sendCertificateEmail(any(), any(), any(), any(), any(), any())(using
+          verify(mockEmailService, Times(0)).sendCertificateEmail(any(), any(), any(), any(), any(), any(), any())(using
             any()
           )
           result mustBe MalformedResponse(DPS)

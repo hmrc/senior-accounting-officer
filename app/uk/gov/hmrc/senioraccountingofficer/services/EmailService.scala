@@ -86,6 +86,7 @@ class EmailService @Inject() (
   def sendCertificateEmail(
       emailTemplate: EmailTemplate,
       email: String,
+      recipientName: String,
       companyName: String,
       referenceId: String,
       submitterName: Option[String],
@@ -93,6 +94,7 @@ class EmailService @Inject() (
   )(using HeaderCarrier): Future[Unit] = {
     val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = CertificateEmailParameters(
+      recipientName = recipientName,
       companyName = companyName,
       submittedDateTime = datetime,
       referenceId = referenceId,
