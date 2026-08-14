@@ -31,6 +31,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.NotificationConfirmation
 import uk.gov.hmrc.senioraccountingofficer.models.{NotificationEmail, NotificationEmailParameters}
 
+import java.util.UUID
+
 class EmailConnectorSpec
     extends AnyWordSpec
     with Matchers
@@ -58,7 +60,8 @@ class EmailConnectorSpec
     super.afterAll()
   }
 
-  private given HeaderCarrier = HeaderCarrier()
+  private val correlationId   = UUID.randomUUID().toString
+  private given HeaderCarrier = HeaderCarrier(extraHeaders = Seq("correlationId" -> correlationId))
   private lazy val connector  = app.injector.instanceOf[EmailConnector]
 
   "postEmail" should {
@@ -89,10 +92,33 @@ class EmailConnectorSpec
       wireMockServer.stubFor(
         post(urlEqualTo("/hmrc/email"))
           .withHeader(HeaderNames.CONTENT_TYPE, containing(MimeTypes.JSON))
+          .withHeader("CorrelationId", equalTo(correlationId))
           .withRequestBody(equalToJson(expectedRequestBody))
           .willReturn(aResponse().withStatus(Status.ACCEPTED))
       )
       connector.postEmail(request).futureValue.status shouldBe Status.ACCEPTED
+    }
+
+    "return the raw response without throwing on a non-202 status" in {
+      val request = NotificationEmail(
+        to = List("email@example.com"),
+        templateId = NotificationConfirmation,
+        parameters = NotificationEmailParameters(
+          recipientName = "name",
+          companyName = "companyName",
+          submittedDateTime = "17 January 2025 at 11:45am",
+          referenceId = "abc"
+        )
+      )
+
+      wireMockServer.stubFor(
+        post(urlEqualTo("/hmrc/email"))
+          .willReturn(aResponse().withStatus(Status.BAD_REQUEST).withBody("bad request"))
+      )
+
+      val result = connector.postEmail(request).futureValue
+      result.status shouldBe Status.BAD_REQUEST
+      result.body shouldBe "bad request"
     }
   }
 }

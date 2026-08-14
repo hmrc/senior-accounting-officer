@@ -58,10 +58,12 @@ class NotificationService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
       dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
-      _ = emailService.sendNotificationEmail(
-        dpsSubscription.contacts,
-        dpsSubscription.nominatedCompany.name,
-        dpsResult.notificationRef
+      _         <- EitherT.right[PostNotificationResponse with Failure](
+        emailService.sendNotificationEmail(
+          dpsSubscription.contacts,
+          dpsSubscription.nominatedCompany.name,
+          dpsResult.notificationRef
+        )
       )
       documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,

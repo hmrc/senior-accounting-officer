@@ -57,7 +57,9 @@ class CertificateService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toCertificateDpsRequest(customerId)
       dpsResult <- postCertificateDps(subscriptionId, requestWithCustomerId)
-      _ = sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
+      _         <- EitherT.right[PostCertificateResponse with Failure](
+        sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
+      )
       _ <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
@@ -149,10 +151,10 @@ class CertificateService @Inject() (
       dpsSubscription: GetSubscriptionDpsResponse,
       certificateReference: String,
       request: CertificateDpsRequest
-  )(using HeaderCarrier): Unit = {
+  )(using HeaderCarrier): Future[Unit] = {
     request.submitterName match {
       case Some(submitterName) =>
-        dpsSubscription.contacts.foreach { contact =>
+        val emailRequests = dpsSubscription.contacts.map { contact =>
           emailService.sendCertificateEmail(
             emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
             email = contact.email,
@@ -163,6 +165,7 @@ class CertificateService @Inject() (
             saoName = Some(request.saoName)
           )
         }
+        Future.sequence(emailRequests).map(_ => ())
       case None =>
         emailService.sendCertificateEmail(
           emailTemplate = EmailTemplate.CertificateConfirmationSAO,

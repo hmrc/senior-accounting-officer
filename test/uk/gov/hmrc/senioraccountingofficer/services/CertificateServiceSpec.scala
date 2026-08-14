@@ -85,6 +85,8 @@ class CertificateServiceSpec
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
     reset(mockEmailService)
+    when(mockEmailService.sendCertificateEmail(any(), any(), any(), any(), any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
   }
 
   def configureSubscriptionResponse(

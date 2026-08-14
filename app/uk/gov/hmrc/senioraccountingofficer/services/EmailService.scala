@@ -23,7 +23,7 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.EmailConnector
 import uk.gov.hmrc.senioraccountingofficer.models.*
 import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 import java.time.LocalDateTime
@@ -38,28 +38,34 @@ class EmailService @Inject() (
 
   private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
 
-  private def sendEmail(email: Email, emailType: String)(using HeaderCarrier): Unit = {
+  private def sendEmail(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
+    val correlationId = summon[HeaderCarrier].extraHeaders
+      .collectFirst { case (name, value) if name.equalsIgnoreCase("correlationId") => value }
+      .fold("not-provided")(identity)
+
     emailConnector
       .postEmail(email)
       .map {
         case HttpResponse(ACCEPTED, _, _)    => ()
         case HttpResponse(BAD_REQUEST, _, _) =>
-          logger.warn("Error from HMRC email service: status=400")
+          logger.warn(s"Error from HMRC email service: status=400 [CorrelationId=$correlationId]")
         case HttpResponse(status, _, _) =>
-          logger.warn(s"Unexpected response from HMRC email service: status=$status")
+          logger.warn(s"Unexpected response from HMRC email service: status=$status [CorrelationId=$correlationId]")
       }
       .recover { case NonFatal(e) =>
-        logger.warn(s"Unable to send ${emailType} confirmation email: ${e.getClass.getSimpleName}")
+        logger.warn(
+          s"Unable to send ${emailType} confirmation email: ${e.getClass.getSimpleName} [CorrelationId=$correlationId]"
+        )
       }
   }
   def sendNotificationEmail(
       contacts: List[Contact],
       companyName: String,
       referenceId: String
-  )(using HeaderCarrier): Unit = {
+  )(using HeaderCarrier): Future[Unit] = {
     val datetime = LocalDateTime.now().format(dateFormatter)
 
-    contacts.foreach(contact => {
+    val emailRequests = contacts.map(contact => {
       val emailParameters = NotificationEmailParameters(
         recipientName = contact.name,
         companyName = companyName,
@@ -73,6 +79,8 @@ class EmailService @Inject() (
       )
       sendEmail(emailModel.asInstanceOf[Email], "notification")
     })
+
+    Future.sequence(emailRequests).map(_ => ())
   }
 
   def sendCertificateEmail(
@@ -83,7 +91,7 @@ class EmailService @Inject() (
       referenceId: String,
       submitterName: String,
       saoName: Option[String]
-  )(using HeaderCarrier): Unit = {
+  )(using HeaderCarrier): Future[Unit] = {
     val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = CertificateEmailParameters(
       companyName = companyName,
