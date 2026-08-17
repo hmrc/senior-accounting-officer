@@ -46,8 +46,8 @@ class NotificationController @Inject() (
         notificationService
           .postNotification(request.saoSubscriptionId, notificationRequest)
           .map {
-            case Success(notificationId, isPdfAvailable) =>
-              Ok(Json.toJson(NotificationResponse(notificationId, isPdfAvailable)))
+            case Success(notificationId) =>
+              Ok(Json.toJson(NotificationResponse(notificationId)))
             case Misalignment(downstreamService) =>
               logger.warn(s"[Notification][$downstreamService][BadRequest]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))

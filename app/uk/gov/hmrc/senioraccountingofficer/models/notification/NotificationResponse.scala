@@ -19,8 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.models.notification
 import play.api.libs.json.*
 
 final case class NotificationResponse(
-    notificationRef: String,
-    isPdfAvailable: Boolean
+    notificationRef: String
 )
 
 object NotificationResponse {

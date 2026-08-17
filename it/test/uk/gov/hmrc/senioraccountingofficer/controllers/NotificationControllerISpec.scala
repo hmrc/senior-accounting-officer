@@ -16,23 +16,19 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
+import org.apache.pekko.util.ByteString
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import play.api.http.HeaderNames
+import play.api.libs.ws.WSResponse
+import play.api.libs.ws.readableAsString
+import play.api.libs.ws.{BodyWritable, InMemoryBody}
 import support.*
+import support.MockAuthHelper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
-import play.api.test.FakeRequest
-import support.MockAuthHelper.{testBearerToken, testId, testSubscriptionId}
-import play.api.http.{HeaderNames, Status}
-import support.MockAuthHelper
-import play.api.libs.ws.readableAsString
-import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.senioraccountingofficer.controllers.actions.IdentifierAction
-import play.api.mvc.Results.*
-import java.net.URI
-import play.api.libs.ws.{BodyWritable, InMemoryBody}
-import org.apache.pekko.util.ByteString
 import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerISpec.*
-import com.github.tomakehurst.wiremock.client.WireMock.*
-import play.api.libs.ws.WSResponse
+
+// TODO: verify endpoints called
 
 class NotificationControllerISpec extends ISpecBase {
   private val appConfig = app.injector.instanceOf[AppConfig]
@@ -40,8 +36,10 @@ class NotificationControllerISpec extends ISpecBase {
   given HeaderCarrier = HeaderCarrier()
 
   override def additionalConfigs: Map[String, Any] = Map(
-    "microservice.services.hip.host" -> wireMockHost,
-    "microservice.services.hip.port" -> wireMockPort
+    "microservice.services.hip.host"          -> wireMockHost,
+    "microservice.services.hip.port"          -> wireMockPort,
+    "microservice.services.object-store.host" -> wireMockHost,
+    "microservice.services.object-store.port" -> wireMockPort
   )
 
   given BodyWritable[String] = rawStringWriter("application/json")
@@ -175,6 +173,129 @@ class NotificationControllerISpec extends ISpecBase {
         }
       })
     }
+
+    "ObjectStore" when {
+      "Uploading the pdf" when {
+        // TODO: works
+
+        "Fails" must {
+          "return 200 despite the failure" in {
+            MockAuthHelper.mockAuthOk()
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
+            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(notificationResponse))
+            ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
+
+            val response = makeRequest(requestBody)
+
+            response.status mustBe 200
+            response.body[String] mustBe controllerSuccessResponse
+
+            ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 0)
+            ObjectStoreHelper.verifyFileUpload(zipFilename, 0)
+          }
+        }
+      }
+
+      "Retrieving the pdf" when {
+        // TODO: works
+        "Fails" must {
+          "return 200 despite the failure" in {
+            MockAuthHelper.mockAuthOk()
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
+            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(notificationResponse))
+            ObjectStoreHelper.mockPdfUpload(
+              pdfFilename,
+              200,
+              Some(objectStoreUploadResponse)
+            )
+            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 600, None)
+
+            println("teststart")
+
+            val response = makeRequest(requestBody)
+
+            response.status mustBe 200
+            response.body[String] mustBe controllerSuccessResponse
+
+            ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1) // FIXME
+            ObjectStoreHelper.verifyFileUpload(zipFilename, 0)
+          }
+        }
+      }
+
+      "Uploading the zip" when {
+        // TODO: works
+
+        "Fails" must {
+          "return 200 despite the failure" in {
+            MockAuthHelper.mockAuthOk()
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
+            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(notificationResponse))
+            ObjectStoreHelper.mockPdfUpload(
+              pdfFilename,
+              200,
+              Some(objectStoreUploadResponse)
+            )
+            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(""))
+            ObjectStoreHelper.mockZip(
+              zipFilename,
+              400,
+              None
+            )
+
+            // review
+            // File(Directory(/sdes/NOT0008470194/),20260817_NOT0008470194_SAO_Notification_OFFICIAL_SENSITIVE.zip)
+
+            val response = makeRequest(requestBody)
+
+            response.status mustBe 200
+            response.body[String] mustBe controllerSuccessResponse
+
+            ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1)
+            ObjectStoreHelper.verifyFileUpload(zipFilename, 1)
+          }
+        }
+      }
+    }
+
+    "SDES" when {
+      // TODO: works
+
+      "Fails" must {
+        "return 200 despite the failure" in {
+          MockAuthHelper.mockAuthOk()
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
+          SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(notificationResponse))
+          ObjectStoreHelper.mockPdfUpload(
+            pdfFilename,
+            200,
+            Some(objectStoreUploadResponse)
+          )
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(""))
+          ObjectStoreHelper.mockZip(
+            s"${notificationReference}_SAO_Notification.zip",
+            200,
+            Some(objectStoreUploadResponse)
+          )
+
+          val response = makeRequest(requestBody)
+
+          response.status mustBe 200
+          response.body[String] mustBe controllerSuccessResponse
+
+          ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
+          ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1)
+          ObjectStoreHelper.verifyFileUpload(zipFilename, 1)
+        }
+      }
+    }
   }
 }
 
@@ -242,4 +363,24 @@ object NotificationControllerISpec {
                                                    |  "existingCustomer": false,
                                                    |  "status": "Failure"
                                                    |}""".stripMargin
+
+  val notificationReference = "NOT0008470194"
+
+  val notificationResponse = s"""{
+                                |  "notificationRef": "$notificationReference"
+                                |}""".stripMargin
+
+  val objectStoreUploadResponse = """{
+                                    |  "contentLength": 0,
+                                    |  "contentMD5": "abc",
+                                    |  "lastModified": "2026-08-17T10:32:01Z",
+                                    |  "location": "/some/path"
+                                    |}""".stripMargin
+
+  val pdfFilename = s"${notificationReference}_SAO_Notification.pdf"
+
+  val zipFilename = s"${notificationReference}_SAO_Notification.zip"
+
+  val controllerSuccessResponse = s"""{"notificationRef":"$notificationReference"}"""
+
 }

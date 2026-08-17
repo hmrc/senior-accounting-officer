@@ -73,8 +73,7 @@ class NotificationService @Inject() (
         request
       )
     } yield Success(
-      notificationReference = dpsResult.notificationRef,
-      isPdfAvailable = documentPackage.packageAvailable
+      notificationReference = dpsResult.notificationRef
     )
   }.merge
 
@@ -178,12 +177,12 @@ object NotificationService {
   }
   sealed trait Failure
   enum PostNotificationResponse {
-    case Success(notificationReference: String, isPdfAvailable: Boolean) extends PostNotificationResponse
-    case MalformedResponse(downstreamService: DownstreamService)         extends PostNotificationResponse with Failure
-    case Misalignment(downstreamService: DownstreamService)              extends PostNotificationResponse with Failure
-    case DownstreamUnauthorised(downstreamService: DownstreamService)    extends PostNotificationResponse with Failure
-    case DownstreamForbidden(downstreamService: DownstreamService)       extends PostNotificationResponse with Failure
-    case DownstreamServiceError(downstreamService: DownstreamService)    extends PostNotificationResponse with Failure
+    case Success(notificationReference: String)                       extends PostNotificationResponse
+    case MalformedResponse(downstreamService: DownstreamService)      extends PostNotificationResponse with Failure
+    case Misalignment(downstreamService: DownstreamService)           extends PostNotificationResponse with Failure
+    case DownstreamUnauthorised(downstreamService: DownstreamService) extends PostNotificationResponse with Failure
+    case DownstreamForbidden(downstreamService: DownstreamService)    extends PostNotificationResponse with Failure
+    case DownstreamServiceError(downstreamService: DownstreamService) extends PostNotificationResponse with Failure
     case DownstreamServiceUnavailable(downstreamService: DownstreamService)
         extends PostNotificationResponse
         with Failure

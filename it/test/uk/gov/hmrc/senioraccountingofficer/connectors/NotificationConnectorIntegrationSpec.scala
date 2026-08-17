@@ -23,6 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company, NotificationDpsRequest, Sao}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyType, CompanyStatus}
+import support.SubmitNotificationHelper
 
 class NotificationConnectorIntegrationSpec extends ISpecBase {
 
@@ -83,13 +84,7 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
   "postNotification" must {
 
     "pass through a successful downstream response" in {
-      stubFor(
-        post(urlEqualTo("/dapm/subscriptions/123/notifications"))
-          .willReturn(
-            aResponse()
-              .withStatus(200)
-          )
-      )
+      SubmitNotificationHelper.mock("123", 200, None)
 
       val result = connector.postNotification("123", request).futureValue
 
@@ -107,14 +102,7 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
     "pass through a downstream validation error body" in {
       val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
-      stubFor(
-        post(urlEqualTo("/dapm/subscriptions/123/notifications"))
-          .willReturn(
-            aResponse()
-              .withStatus(400)
-              .withBody(downstreamBody)
-          )
-      )
+      SubmitNotificationHelper.mock("123", 400, Some(downstreamBody))
 
       val result = connector.postNotification("123", request).futureValue
 

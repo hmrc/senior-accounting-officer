@@ -82,7 +82,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
 
     "NotificationService returns Success must return 200" in {
-      val mockResponse = Success("ID", true)
+      val mockResponse = Success("ID")
       when(mockNotificationService.postNotification(any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
@@ -97,7 +97,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       val result = routeResult(request)
 
       status(result) mustBe Status.OK
-      contentAsJson(result) mustBe Json.parse("""{"notificationRef":"ID","isPdfAvailable":true}""")
+      contentAsJson(result) mustBe Json.parse("""{"notificationRef": "ID"}""")
 
       val expectedDpsRequest =
         NotificationRequest(
