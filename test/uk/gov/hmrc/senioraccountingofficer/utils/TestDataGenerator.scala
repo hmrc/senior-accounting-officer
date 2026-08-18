@@ -22,7 +22,7 @@ import scala.util.Random
 
 object TestDataGenerator {
   def generateCrn: String = {
-    val num = Random.nextInt(1000000)
+    val num = Random.nextInt(100000000)
     f"$num%08d"
   }
 
