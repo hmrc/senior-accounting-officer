@@ -42,6 +42,7 @@ object DocumentumPackageContext {
 
   def notification(
       submissionId: String,
+      customerId: Option[String],
       saoSubscriptionId: String,
       request: NotificationRequest
   ): DocumentumPackageContext =
@@ -49,7 +50,7 @@ object DocumentumPackageContext {
       submissionId = submissionId,
       submissionType = SubmissionType.Notification,
       saoSubscriptionId = saoSubscriptionId,
-      customerId = None,
+      customerId = customerId,
       companies = request.companies.value.map(company =>
         DocumentumCompany(utr = company.utr.value, name = company.name.value, crn = company.crn.map(_.value))
       )

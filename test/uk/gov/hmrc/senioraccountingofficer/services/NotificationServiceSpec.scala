@@ -443,7 +443,12 @@ class NotificationServiceSpec
             .packageAndSubmit(
               meq(
                 DocumentumPackageContext
-                  .notification(exampleNotificationReference, exampleSubscriptionId, incomingRequest)
+                  .notification(
+                    exampleNotificationReference,
+                    Some(exampleCustomerId),
+                    exampleSubscriptionId,
+                    incomingRequest
+                  )
               ),
               meq(objectStoreFileContent)
             )(using any())

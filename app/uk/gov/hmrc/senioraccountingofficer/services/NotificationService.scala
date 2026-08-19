@@ -67,6 +67,7 @@ class NotificationService @Inject() (
       )
       documentPackage <- packageAndSubmitDocumentumFile(
         subscriptionId,
+        customerId,
         dpsSubscription.nominatedCompany.name,
         dpsResult.notificationRef,
         request
@@ -155,6 +156,7 @@ class NotificationService @Inject() (
 
   private def packageAndSubmitDocumentumFile(
       subscriptionId: String,
+      customerId: Option[String],
       companyName: String,
       notificationReference: String,
       request: NotificationRequest
@@ -163,7 +165,7 @@ class NotificationService @Inject() (
   ) =
     EitherT.right[PostNotificationResponse with Failure](
       documentumPackageService.packageAndSubmit(
-        DocumentumPackageContext.notification(notificationReference, subscriptionId, request),
+        DocumentumPackageContext.notification(notificationReference, customerId, subscriptionId, request),
         pdfService.generateNotificationPdf(
           NotificationDpsRequest.toPdfNotification(notificationReference, request, companyName)
         )
