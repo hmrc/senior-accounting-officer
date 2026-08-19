@@ -191,6 +191,7 @@ class NotificationControllerISpec extends ISpecBase {
             response.status mustBe 200
             response.body[String] mustBe controllerSuccessResponse
 
+            Thread.sleep(4000)
             ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 0)
             ObjectStoreHelper.verifyFileUpload(zipFilename, 0)
@@ -220,9 +221,11 @@ class NotificationControllerISpec extends ISpecBase {
             response.status mustBe 200
             response.body[String] mustBe controllerSuccessResponse
 
+            Thread.sleep(4000)
             ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1) // FIXME
             ObjectStoreHelper.verifyFileUpload(zipFilename, 0)
+
           }
         }
       }
@@ -241,7 +244,7 @@ class NotificationControllerISpec extends ISpecBase {
               200,
               Some(objectStoreUploadResponse)
             )
-            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(""))
+            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
             ObjectStoreHelper.mockZip(
               zipFilename,
               400,
@@ -256,6 +259,7 @@ class NotificationControllerISpec extends ISpecBase {
             response.status mustBe 200
             response.body[String] mustBe controllerSuccessResponse
 
+            Thread.sleep(4000)
             ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyFileUpload(zipFilename, 1)
@@ -290,6 +294,7 @@ class NotificationControllerISpec extends ISpecBase {
           response.status mustBe 200
           response.body[String] mustBe controllerSuccessResponse
 
+          Thread.sleep(4000)
           ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
           ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1)
           ObjectStoreHelper.verifyFileUpload(zipFilename, 1)
