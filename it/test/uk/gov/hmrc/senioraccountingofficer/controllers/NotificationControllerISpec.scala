@@ -192,9 +192,9 @@ class NotificationControllerISpec extends ISpecBase {
             response.body[String] mustBe controllerSuccessResponse
 
             Thread.sleep(4000)
-            ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
-            ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyFileUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
+            ObjectStoreHelper.verifyPdfUpload(zipFilename, 0)
           }
         }
       }
@@ -222,9 +222,9 @@ class NotificationControllerISpec extends ISpecBase {
             response.body[String] mustBe controllerSuccessResponse
 
             Thread.sleep(4000)
-            ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
-            ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1) // FIXME
-            ObjectStoreHelper.verifyFileUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfUpload(zipFilename, 0)
 
           }
         }
@@ -246,7 +246,7 @@ class NotificationControllerISpec extends ISpecBase {
             )
             ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
             ObjectStoreHelper.mockZip(
-              zipFilename,
+              notificationReference,
               400,
               None
             )
@@ -259,10 +259,10 @@ class NotificationControllerISpec extends ISpecBase {
             response.status mustBe 200
             response.body[String] mustBe controllerSuccessResponse
 
-            Thread.sleep(4000)
-            ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
-            ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyFileUpload(zipFilename, 1)
+            Thread.sleep(8000)
+            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
+            ObjectStoreHelper.verifyZipUpload(notificationReference, 1)
           }
         }
       }
@@ -284,7 +284,7 @@ class NotificationControllerISpec extends ISpecBase {
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(""))
           ObjectStoreHelper.mockZip(
-            s"${notificationReference}_SAO_Notification.zip",
+            notificationReference,
             200,
             Some(objectStoreUploadResponse)
           )
@@ -295,9 +295,9 @@ class NotificationControllerISpec extends ISpecBase {
           response.body[String] mustBe controllerSuccessResponse
 
           Thread.sleep(4000)
-          ObjectStoreHelper.verifyFileUpload(pdfFilename, 1)
-          ObjectStoreHelper.verifyFileRetrieval(pdfFilename, 1)
-          ObjectStoreHelper.verifyFileUpload(zipFilename, 1)
+          ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+          ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
+          ObjectStoreHelper.verifyPdfUpload(zipFilename, 1)
         }
       }
     }

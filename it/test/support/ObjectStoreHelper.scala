@@ -62,11 +62,11 @@ object ObjectStoreHelper {
     )
   }
 
-  def mockZip(filename: String, status: Int, body: Option[String]): StubMapping = {
+  def mockZip(submissionId: String, status: Int, body: Option[String]): StubMapping = {
     stubFor(
       put(
         urlMatching(
-          s"/object-store/object/senior-accounting-officer/senior-accounting-officer/[a-z0-9]+/$filename"
+          s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Notification_OFFICIAL_SENSITIVE.zip"
         )
       )
         .willReturn(
@@ -83,7 +83,7 @@ object ObjectStoreHelper {
     )
   }
 
-  def verifyFileUpload(filename: String, times: Int): Unit = {
+  def verifyPdfUpload(filename: String, times: Int): Unit = {
     verify(
       times,
       putRequestedFor(
@@ -92,7 +92,19 @@ object ObjectStoreHelper {
     )
   }
 
-  def verifyFileRetrieval(filename: String, times: Int): Unit = {
+  def verifyZipUpload(submissionId: String, times: Int): Unit = {
+    verify(
+      times,
+      putRequestedFor(
+        // File(Directory(/sdes/NOT0008470194/),20260817_NOT0008470194_SAO_Notification_OFFICIAL_SENSITIVE.zip)
+        urlMatching(
+          s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Notification_OFFICIAL_SENSITIVE.zip"
+        )
+      )
+    )
+  }
+
+  def verifyPdfRetrieval(filename: String, times: Int): Unit = {
     verify(
       times,
       getRequestedFor(
