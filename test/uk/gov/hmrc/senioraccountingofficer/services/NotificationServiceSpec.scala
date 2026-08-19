@@ -116,10 +116,7 @@ class NotificationServiceSpec
       responseBody: String = Json.stringify(
         Json.toJson(
           RetrieveCustomerResponse(
-            customerId = Some(exampleCustomerId),
-            errorDescription = None,
-            existingCustomer = true,
-            status = "Success"
+            customerId = Some(exampleCustomerId)
           )
         )
       )
@@ -259,10 +256,7 @@ class NotificationServiceSpec
               Json.stringify(
                 Json.toJson(
                   RetrieveCustomerResponse(
-                    customerId = Some(expectedCustomerId),
-                    errorDescription = None,
-                    existingCustomer = true,
-                    status = "Success"
+                    customerId = Some(expectedCustomerId)
                   )
                 )
               )
@@ -298,10 +292,7 @@ class NotificationServiceSpec
               Json.stringify(
                 Json.toJson(
                   RetrieveCustomerResponse(
-                    customerId = None,
-                    errorDescription = Some("customer not found"),
-                    existingCustomer = false,
-                    status = "Failure"
+                    customerId = None
                   )
                 )
               )
@@ -329,27 +320,6 @@ class NotificationServiceSpec
             )(using
               any()
             )
-          }
-
-          "Invalid response; Return malformed response error" in {
-            configureSubscriptionResponse(200)
-            configureCrmmResponse(
-              200,
-              Json.stringify(
-                Json.toJson(
-                  RetrieveCustomerResponse(
-                    customerId = Some(exampleCustomerId),
-                    errorDescription = Some("an error message?!?"),
-                    existingCustomer = true,
-                    status = "a real status"
-                  )
-                )
-              )
-            )
-
-            val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
-
-            result mustBe MalformedResponse(CRMM)
           }
         }
 

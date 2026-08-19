@@ -128,10 +128,9 @@ class NotificationService @Inject() (
       case Left(_)         => Left(MalformedResponse(CRMM))
       case Right(customer) =>
         customer match {
-          case RetrieveCustomerResponse(None, Some(_), false, "Failure") =>
-            Right(None)
-          case RetrieveCustomerResponse(Some(customerId), None, true, "Success") => Right(Some(customerId))
-          case _                                                                 => Left(MalformedResponse(CRMM))
+          case RetrieveCustomerResponse(None)             => Right(None)
+          case RetrieveCustomerResponse(Some(customerId)) => Right(Some(customerId))
+          case _                                          => Left(MalformedResponse(CRMM))
         }
     }
   }

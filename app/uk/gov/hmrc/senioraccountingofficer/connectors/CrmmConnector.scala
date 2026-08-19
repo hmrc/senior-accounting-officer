@@ -48,13 +48,7 @@ class CrmmConnector @Inject() (
       Future.successful(
         HttpResponse(
           200,
-          Json
-            .obj(
-              "existingCustomer" -> false,
-              "errorDescription" -> "Customer not found (stubbed)",
-              "status"           -> "Failure"
-            )
-            .toString()
+          Json.obj().toString()
         )
       )
   }
