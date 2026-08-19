@@ -19,10 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.models.crmm
 import play.api.libs.json.{Json, OFormat}
 
 final case class RetrieveCustomerResponse(
-    customerId: Option[String],
-    errorDescription: Option[String],
-    existingCustomer: Boolean,
-    status: String // TODO: make enum and get the writing set up
+    customerId: Option[String]
 )
 
 object RetrieveCustomerResponse {

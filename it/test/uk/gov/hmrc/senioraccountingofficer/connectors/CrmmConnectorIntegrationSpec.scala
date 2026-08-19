@@ -48,11 +48,7 @@ class CrmmConnectorIntegrationSpec extends ISpecBase {
 
       result.status mustBe 200
       result.body mustBe Json
-        .obj(
-          "existingCustomer" -> false,
-          "errorDescription" -> "Customer not found (stubbed)",
-          "status"           -> "Failure"
-        )
+        .obj()
         .toString
 
       verify(
