@@ -151,8 +151,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
     }
 
     "GetSubscription" when {
-      // TODO: 200 and we can parse it
-
       "returns 200 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
@@ -212,9 +210,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
     }
 
     "RetrieveCustomer" when {
-      // TODO: 200, we can parse it and customer found response (assert it is passed to DPS)
-      // TODO: 200, we can parse it and customer not found response (assert it is not passed to DPS)
-
       "returns 200 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
@@ -276,8 +271,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
     }
 
     "SubmitNotification" when {
-      // TODO: 201 and we can parse it
-
       "returns 201 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
@@ -349,7 +342,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
     }
 
     "Email" when {
-      // TODO: works
       "Fails" must {
         "despite the failure return 200 and continue to upload to object store" in {
           MockAuthHelper.mockAuthOk()
@@ -385,8 +377,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
     "ObjectStore" when {
       "Uploading the pdf" when {
-        // TODO: works
-
         "Fails" must {
           "return 200 despite the failure" in {
             MockAuthHelper.mockAuthOk()
@@ -423,7 +413,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
       }
 
       "Retrieving the pdf" when {
-        // TODO: works
         "Fails" must {
           "return 200 despite the failure" in {
             MockAuthHelper.mockAuthOk()
@@ -465,8 +454,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
       }
 
       "Uploading the zip" when {
-        // TODO: works
-
         "Fails" must {
           "return 200 despite the failure" in {
             MockAuthHelper.mockAuthOk()
@@ -514,8 +501,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
     }
 
     "SDES" when {
-      // TODO: works
-
       "Fails" must {
         "return 200 despite the failure" in {
           MockAuthHelper.mockAuthOk()
