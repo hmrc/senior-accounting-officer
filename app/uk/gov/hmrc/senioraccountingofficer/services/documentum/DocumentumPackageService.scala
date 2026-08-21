@@ -76,7 +76,10 @@ class DocumentumPackageService @Inject() (
         DocumentumPackageResult(packageAvailable = true, Some(zipFileName))
       }
       .recover { case NonFatal(exception) =>
-        logger.warn(s"[DocumentumPackage][Failed] submissionId=${context.submissionId}", exception)
+        logger.warn(
+          s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=${context.submissionId}",
+          exception
+        )
         DocumentumPackageResult(packageAvailable = false)
       }
   }
@@ -104,9 +107,11 @@ class DocumentumPackageService @Inject() (
       )
     } yield {
       if response.status < 200 || response.status >= 300 then
-        logger.warn(s"[DocumentumPackage][SDES][UnexpectedStatus] status=${response.status}")
+        logger.warn(
+          s"[DocumentumPackage][SDES][UnexpectedStatus][CorrelationId=$getCorrelationId][Status=${response.status}]"
+        )
     }).recover { case NonFatal(exception) =>
-      logger.warn(s"[DocumentumPackage][Failed] submissionId=$submissionId", exception)
+      logger.warn(s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=$submissionId", exception)
       ()
     }
   }
@@ -165,4 +170,8 @@ class DocumentumPackageService @Inject() (
     Path.Directory(s"/sdes/$submissionId/").file(fileName)
 
   private val owner = "senior-accounting-officer"
+
+  private def getCorrelationId(using hc: HeaderCarrier): String = hc.extraHeaders
+    .collectFirst { case ("correlationId", id) => id }
+    .getOrElse("Not Set")
 }

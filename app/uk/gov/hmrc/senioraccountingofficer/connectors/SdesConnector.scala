@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
-import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.HttpReads.Implicits.*
@@ -33,8 +32,7 @@ import javax.inject.Inject
 class SdesConnector @Inject() (
     httpClientV2: HttpClientV2,
     servicesConfig: ServicesConfig
-)(using ExecutionContext)
-    extends Logging {
+)(using ExecutionContext) {
 
   def notifyFileReady(
       fileName: String,
