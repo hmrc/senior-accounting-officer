@@ -32,4 +32,6 @@ abstract class BaseController(
       case None => headerCarrier
     }
   }
+
+  def getCorrelationId(using request: RequestHeader): String = request.headers.get("correlationId").getOrElse("Not Set")
 }
