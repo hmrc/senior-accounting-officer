@@ -19,29 +19,19 @@ package support
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 
-object SubmitNotificationHelper {
-  def mock(subscriptionId: String, status: Int, body: Option[String]): StubMapping = {
+object EmailHelper {
+  def mock(status: Int): StubMapping = {
     stubFor(
-      post(urlEqualTo(s"/dapm/subscriptions/$subscriptionId/notifications"))
-        .willReturn(
-          body match {
-            case Some(body) =>
-              aResponse()
-                .withStatus(status)
-                .withBody(body)
-            case None =>
-              aResponse()
-                .withStatus(status)
-          }
-        )
+      post(urlEqualTo("/hmrc/email"))
+        .willReturn(aResponse().withStatus(status))
     )
   }
 
-  def verifyCalled(subscriptionId: String, body: Option[String], times: Int): Unit = {
-    val postRequest = postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$subscriptionId/notifications"))
+  def verifyCalled(body: Option[String], times: Int): Unit = {
+    val postRequest = postRequestedFor(urlEqualTo("/hmrc/email"))
     verify(
       times,
-      body.fold(postRequest)(body => postRequest.withRequestBody(equalToJson(body)))
+      body.fold(postRequest)(body => postRequest.withRequestBody(equalToJson(body, true, true)))
     )
   }
 }

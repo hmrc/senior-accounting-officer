@@ -36,4 +36,12 @@ object RetrieveCustomerHelper {
         )
     )
   }
+
+  def verifyCalled(body: String, times: Int): Unit = {
+    verify(
+      times,
+      postRequestedFor(urlEqualTo("/compliance/civil-investigation-and-avoidance/api/customer/v1/retrievecustomer"))
+        .withRequestBody(equalToJson(body))
+    )
+  }
 }

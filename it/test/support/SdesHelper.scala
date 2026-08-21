@@ -19,10 +19,10 @@ package support
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 
-object SubmitNotificationHelper {
-  def mock(subscriptionId: String, status: Int, body: Option[String]): StubMapping = {
+object SdesHelper {
+  def mock(status: Int, body: Option[String]): StubMapping = {
     stubFor(
-      post(urlEqualTo(s"/dapm/subscriptions/$subscriptionId/notifications"))
+      post(urlEqualTo("/notification/fileready"))
         .willReturn(
           body match {
             case Some(body) =>
@@ -37,11 +37,11 @@ object SubmitNotificationHelper {
     )
   }
 
-  def verifyCalled(subscriptionId: String, body: Option[String], times: Int): Unit = {
-    val postRequest = postRequestedFor(urlEqualTo(s"/dapm/subscriptions/$subscriptionId/notifications"))
+  def verifyCalled(body: String, times: Int): Unit = {
     verify(
       times,
-      body.fold(postRequest)(body => postRequest.withRequestBody(equalToJson(body)))
+      postRequestedFor(urlEqualTo("/notification/fileready"))
+        .withRequestBody(equalToJson(body))
     )
   }
 }

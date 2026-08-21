@@ -53,16 +53,22 @@ object ObjectStoreHelper {
             case Some(body) =>
               aResponse()
                 .withStatus(status)
+                .withHeader("Content-Length", body.length.toString)
+                .withHeader("Content-MD5", "apple")
+                .withHeader("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT")
                 .withBody(body)
             case None =>
               aResponse()
+                .withHeader("Content-Length", "0")
+                .withHeader("Content-MD5", "apple")
+                .withHeader("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT")
                 .withStatus(status)
           }
         )
     )
   }
 
-  def mockZip(submissionId: String, status: Int, body: Option[String]): StubMapping = {
+  def mockZipUpload(submissionId: String, status: Int, body: Option[String]): StubMapping = {
     stubFor(
       put(
         urlMatching(
@@ -96,7 +102,6 @@ object ObjectStoreHelper {
     verify(
       times,
       putRequestedFor(
-        // File(Directory(/sdes/NOT0008470194/),20260817_NOT0008470194_SAO_Notification_OFFICIAL_SENSITIVE.zip)
         urlMatching(
           s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Notification_OFFICIAL_SENSITIVE.zip"
         )
@@ -104,6 +109,7 @@ object ObjectStoreHelper {
     )
   }
 
+  // use notification reference here instead
   def verifyPdfRetrieval(filename: String, times: Int): Unit = {
     verify(
       times,

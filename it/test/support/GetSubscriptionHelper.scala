@@ -36,4 +36,11 @@ object GetSubscriptionHelper {
         )
     )
   }
+
+  def verifyCalled(subscriptionId: String, times: Int): Unit = {
+    verify(
+      times,
+      getRequestedFor(urlEqualTo(s"/business-tax/corporate-tax/iv_subscriptions/$subscriptionId"))
+    )
+  }
 }
