@@ -18,7 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer.connectors
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.HeaderNames
-import support.ISpecBase
+import support.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnectorIntegrationSpec.*
@@ -38,14 +38,7 @@ class GetSubscriptionConnectorIntegrationSpec extends ISpecBase {
   "GetSubscriptionConnector" must {
     Seq(200, 204, 400, 401, 403, 500, 503).foreach { expectedStatus =>
       s"return a Future.successful(HttpResponse) for a $expectedStatus response from HIP" in {
-        stubFor(
-          get(urlEqualTo(s"/business-tax/corporate-tax/iv_subscriptions/$testSaoSubscriptionId"))
-            .willReturn(
-              aResponse()
-                .withStatus(expectedStatus)
-                .withBody(testResponse)
-            )
-        )
+        GetSubscriptionHelper.mock(testSaoSubscriptionId, expectedStatus, Some(testResponse))
 
         val result = connector.getSubscription(testSaoSubscriptionId).futureValue
 

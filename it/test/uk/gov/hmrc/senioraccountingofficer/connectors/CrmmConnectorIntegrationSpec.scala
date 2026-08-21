@@ -25,6 +25,7 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.CrmmConnectorIntegrationSp
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 import play.api.libs.json.Json
+import support.RetrieveCustomerHelper
 
 class CrmmConnectorIntegrationSpec extends ISpecBase {
 
@@ -62,14 +63,7 @@ class CrmmConnectorIntegrationSpec extends ISpecBase {
       s"return a $expectedStatus response from the service when the crmm feature toggle is enabled" in {
         AppConfig.setValue("feature-toggles.crmm", "true")
 
-        stubFor(
-          post(urlEqualTo("/compliance/civil-investigation-and-avoidance/api/customer/v1/retrievecustomer"))
-            .willReturn(
-              aResponse()
-                .withStatus(expectedStatus)
-                .withBody(testResponse)
-            )
-        )
+        RetrieveCustomerHelper.mock(expectedStatus, Some(testResponse))
 
         val request = RetrieveCustomerRequest(Some(generateCrn), Some(generateUtr))
 

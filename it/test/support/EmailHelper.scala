@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models.notification
+package support
 
-import play.api.libs.json.*
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
 
-final case class NotificationResponse(
-    notificationRef: String
-)
+object EmailHelper {
+  def mock(status: Int): StubMapping = {
+    stubFor(
+      post(urlEqualTo("/hmrc/email"))
+        .willReturn(aResponse().withStatus(status))
+    )
+  }
 
-object NotificationResponse {
-  given OFormat[NotificationResponse] = Json.format[NotificationResponse]
+  def verifyCalled(body: Option[String], times: Int): Unit = {
+    val postRequest = postRequestedFor(urlEqualTo("/hmrc/email"))
+    verify(
+      times,
+      body.fold(postRequest)(body => postRequest.withRequestBody(equalToJson(body, true, true)))
+    )
+  }
 }

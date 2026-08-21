@@ -23,6 +23,7 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnectorIntegrationSp
 
 import java.util.UUID
 import scala.util.Random
+import support.SdesHelper
 
 class SdesConnectorIntegrationSpec extends ISpecBase {
 
@@ -62,14 +63,7 @@ class SdesConnectorIntegrationSpec extends ISpecBase {
       given HeaderCarrier = HeaderCarrier(extraHeaders = Seq("correlationId" -> correlationId))
 
       s"return a Future.successful(HttpResponse) for a $expectedStatus response from SDES Proxy" in {
-        stubFor(
-          post(urlEqualTo("/notification/fileready"))
-            .willReturn(
-              aResponse()
-                .withStatus(expectedStatus)
-                .withBody(testResponse)
-            )
-        )
+        SdesHelper.mock(expectedStatus, Some(testResponse))
 
         val result = connector
           .notifyFileReady(
@@ -84,14 +78,9 @@ class SdesConnectorIntegrationSpec extends ISpecBase {
         result.status mustBe expectedStatus
         result.body mustBe testResponse
 
-        verify(
-          1,
-          postRequestedFor(urlEqualTo("/notification/fileready"))
-            .withRequestBody(equalToJson(expectedRequest))
-        )
+        SdesHelper.verifyCalled(expectedRequest, 1)
       }
     }
-
   }
 }
 

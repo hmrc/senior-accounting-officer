@@ -407,7 +407,7 @@ class NotificationServiceSpec
             exampleNominatedCompany.name,
             exampleNotificationReference
           )
-          result mustBe Success(exampleNotificationReference, true)
+          result mustBe Success(exampleNotificationReference)
 
           verify(mockDocumentumPackageService)
             .packageAndSubmit(
