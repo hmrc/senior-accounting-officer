@@ -109,7 +109,6 @@ object ObjectStoreHelper {
     )
   }
 
-  // use notification reference here instead
   def verifyPdfRetrieval(filename: String, times: Int): Unit = {
     verify(
       times,
