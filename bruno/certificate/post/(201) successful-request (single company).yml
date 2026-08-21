@@ -35,7 +35,8 @@ http:
             "isPetroleumRevenueTaxQualified": true,
             "isCustomsDutiesQualified": true,
             "isExciseDutiesQualified": true,
-            "isBankLevyQualified": true
+            "isBankLevyQualified": true,
+            "qualificationStatement": "test statement"
           }
         ],
         "remarks": "Testremarks"

@@ -27,15 +27,15 @@ http:
             "status": "Dormant",
             "type": "LTD",
             "isCorporationTaxQualified": false,
-            "isVatQualified": true,
-            "isPayeQualified": true,
-            "isInsurancePremiumTaxQualified": true,
-            "isStampDutyLandTaxQualified": true,
-            "isStampDutyReserveTaxQualified": true,
-            "isPetroleumRevenueTaxQualified": true,
-            "isCustomsDutiesQualified": true,
-            "isExciseDutiesQualified": true,
-            "isBankLevyQualified": true
+            "isVatQualified": false,
+            "isPayeQualified": false,
+            "isInsurancePremiumTaxQualified": false,
+            "isStampDutyLandTaxQualified": false,
+            "isStampDutyReserveTaxQualified": false,
+            "isPetroleumRevenueTaxQualified": false,
+            "isCustomsDutiesQualified": false,
+            "isExciseDutiesQualified": false,
+            "isBankLevyQualified": false
           },
           {
             "crn": "12435690",
@@ -53,7 +53,8 @@ http:
             "isPetroleumRevenueTaxQualified": true,
             "isCustomsDutiesQualified": true,
             "isExciseDutiesQualified": true,
-            "isBankLevyQualified": true
+            "isBankLevyQualified": true,
+            "qualificationStatement": "test statement"
           }
         ]
       }

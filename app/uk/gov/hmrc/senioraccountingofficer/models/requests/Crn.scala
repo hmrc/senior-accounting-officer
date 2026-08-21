@@ -22,12 +22,12 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 final case class Crn(value: String) extends AnyVal
 
 object Crn {
-  val maxCrnLength: Int = 8
+  val crnRegex: String = s"[A-za-z0-9]{8}"
 
   given Reads[Crn] = Json.valueReads[Crn].flatMapResult {
-    case crn if crn.value.isEmpty               => JsError(Reason.CANNOT_BE_EMPTY.toString)
-    case crn if crn.value.length > maxCrnLength => JsError(Reason.INVALID_FORMAT.toString)
-    case crn                                    => JsSuccess(crn)
+    case crn if crn.value.matches(crnRegex) => JsSuccess(crn)
+    case crn if crn.value.isEmpty           => JsError(Reason.CANNOT_BE_EMPTY.toString)
+    case crn                                => JsError(Reason.INVALID_FORMAT.toString)
   }
   given Writes[Crn] = Json.valueWrites
 

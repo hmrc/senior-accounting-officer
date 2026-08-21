@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.requests
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.*
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsCompany
 
 import java.time.LocalDate
@@ -42,9 +43,32 @@ final case class CertificateCompany(
 )
 
 object CertificateCompany {
-  given OFormat[CertificateCompany] = Json.format[CertificateCompany]
+  given Reads[CertificateCompany] = Json
+    .reads[CertificateCompany]
+    .flatMapResult { cert =>
+      if cert.isQualified && cert.qualificationStatement.isEmpty then
+        JsError(Reason.QUALIFICATION_STATEMENT_MISSING.toString)
+      else if cert.isUnqualified && cert.qualificationStatement.isDefined then
+        JsError(Reason.QUALIFICATION_STATEMENT_PROHIBITED.toString)
+      else JsSuccess(cert)
+    }
+
+  given OWrites[CertificateCompany] = Json.writes[CertificateCompany]
 
   extension (certificateCompany: CertificateCompany) {
+
+    def isQualified: Boolean = certificateCompany.isCorporationTaxQualified ||
+      certificateCompany.isVatQualified ||
+      certificateCompany.isPayeQualified ||
+      certificateCompany.isInsurancePremiumTaxQualified ||
+      certificateCompany.isStampDutyLandTaxQualified ||
+      certificateCompany.isStampDutyReserveTaxQualified ||
+      certificateCompany.isPetroleumRevenueTaxQualified ||
+      certificateCompany.isCustomsDutiesQualified ||
+      certificateCompany.isExciseDutiesQualified ||
+      certificateCompany.isBankLevyQualified
+
+    def isUnqualified: Boolean = !isQualified
 
     def toDpsCertificateCompany: CertificateDpsCompany = {
       CertificateDpsCompany(

@@ -25,6 +25,8 @@ import scala.util.Random
 
 import java.time.LocalDate
 
+import CertificateCompanySpec.*
+
 class CertificateCompanySpec extends AnyWordSpec with Matchers {
 
   case class Test(company: CertificateCompany)
@@ -43,7 +45,7 @@ class CertificateCompanySpec extends AnyWordSpec with Matchers {
         accPeriodEnd = accPeriodEnd,
         status = CompanyStatus.Active,
         `type` = CompanyType.PLC,
-        isCorporationTaxQualified = Random.nextBoolean,
+        isCorporationTaxQualified = true,
         isVatQualified = Random.nextBoolean,
         isPayeQualified = Random.nextBoolean,
         isInsurancePremiumTaxQualified = Random.nextBoolean,
@@ -76,14 +78,14 @@ class CertificateCompanySpec extends AnyWordSpec with Matchers {
           | "qualificationStatement": "${testCompany.qualificationStatement.get.value}"
           |}""".stripMargin
 
-      val r = Json
+      val result = Json
         .parse(s"""
              |{
              | "company" : $testCompanyAsJson
              |}""".stripMargin)
         .validate[Test]
 
-      r.asEither mustBe Right(Test(testCompany))
+      result.asEither mustBe Right(Test(testCompany))
     }
 
     "return a CertificateCompany when the optional fields are empty" in {
@@ -94,16 +96,16 @@ class CertificateCompanySpec extends AnyWordSpec with Matchers {
         accPeriodEnd = LocalDate.now(),
         status = CompanyStatus.Active,
         `type` = CompanyType.PLC,
-        isCorporationTaxQualified = Random.nextBoolean,
-        isVatQualified = Random.nextBoolean,
-        isPayeQualified = Random.nextBoolean,
-        isInsurancePremiumTaxQualified = Random.nextBoolean,
-        isStampDutyLandTaxQualified = Random.nextBoolean,
-        isStampDutyReserveTaxQualified = Random.nextBoolean,
-        isPetroleumRevenueTaxQualified = Random.nextBoolean,
-        isCustomsDutiesQualified = Random.nextBoolean,
-        isExciseDutiesQualified = Random.nextBoolean,
-        isBankLevyQualified = Random.nextBoolean,
+        isCorporationTaxQualified = false,
+        isVatQualified = false,
+        isPayeQualified = false,
+        isInsurancePremiumTaxQualified = false,
+        isStampDutyLandTaxQualified = false,
+        isStampDutyReserveTaxQualified = false,
+        isPetroleumRevenueTaxQualified = false,
+        isCustomsDutiesQualified = false,
+        isExciseDutiesQualified = false,
+        isBankLevyQualified = false,
         qualificationStatement = None
       )
 
@@ -127,14 +129,83 @@ class CertificateCompanySpec extends AnyWordSpec with Matchers {
            | "isBankLevyQualified": ${testCompany.isBankLevyQualified}
            |}""".stripMargin
 
-      val r = Json
+      val result = Json
         .parse(s"""
              |{
              | "company" : $testCompanyAsJson
              |}""".stripMargin)
         .validate[Test]
 
-      r.asEither mustBe Right(Test(testCompany))
+      result.asEither mustBe Right(Test(testCompany))
+    }
+
+    "return an QUALIFICATION_STATEMENT_MISSING error for a qualified certificate" when {
+      Map(
+        "isCorporationTaxQualified"      -> genUnqualifiedCompany.copy(isCorporationTaxQualified = true),
+        "isVatQualified"                 -> genUnqualifiedCompany.copy(isVatQualified = true),
+        "isPayeQualified"                -> genUnqualifiedCompany.copy(isPayeQualified = true),
+        "isInsurancePremiumTaxQualified" -> genUnqualifiedCompany.copy(isInsurancePremiumTaxQualified = true),
+        "isStampDutyLandTaxQualified"    -> genUnqualifiedCompany.copy(isStampDutyLandTaxQualified = true),
+        "isStampDutyReserveTaxQualified" -> genUnqualifiedCompany.copy(isStampDutyReserveTaxQualified = true),
+        "isPetroleumRevenueTaxQualified" -> genUnqualifiedCompany.copy(isPetroleumRevenueTaxQualified = true),
+        "isCustomsDutiesQualified"       -> genUnqualifiedCompany.copy(isCustomsDutiesQualified = true),
+        "isExciseDutiesQualified"        -> genUnqualifiedCompany.copy(isExciseDutiesQualified = true),
+        "isBankLevyQualified"            -> genUnqualifiedCompany.copy(isBankLevyQualified = true)
+      ).foreach { (field, company) =>
+        s"$field is qualified" in {
+          val result = Json
+            .parse(s"""
+                   |{
+                   | "company" : ${Json.toJson(company)}
+                   |}""".stripMargin)
+            .validate[Test]
+
+          result.asEither mustBe Left(
+            List((JsPath.\("company"), List(JsonValidationError("QUALIFICATION_STATEMENT_MISSING"))))
+          )
+        }
+      }
+    }
+
+    "return an QUALIFICATION_STATEMENT_PROHIBITED error for a qualified certificate" when {
+      s"there is a qualification statement but the entity is unqualified" in {
+        val company = genUnqualifiedCompany.copy(qualificationStatement = Some(FreeText(generateAlphanumeric(1))))
+        val result  = Json
+          .parse(s"""
+                   |{
+                   | "company" : ${Json.toJson(company)}
+                   |}""".stripMargin)
+          .validate[Test]
+
+        result.asEither mustBe Left(
+          List((JsPath.\("company"), List(JsonValidationError("QUALIFICATION_STATEMENT_PROHIBITED"))))
+        )
+      }
     }
   }
+
+}
+
+object CertificateCompanySpec {
+
+  def genUnqualifiedCompany: CertificateCompany = CertificateCompany(
+    crn = Some(Crn(generateCrn)),
+    utr = Utr(generateUtr),
+    name = CompanyName(generateAlphanumeric(CompanyName.maxCompanyNameLength)),
+    accPeriodEnd = LocalDate.now(),
+    status = CompanyStatus.Active,
+    `type` = CompanyType.PLC,
+    isCorporationTaxQualified = false,
+    isVatQualified = false,
+    isPayeQualified = false,
+    isInsurancePremiumTaxQualified = false,
+    isStampDutyLandTaxQualified = false,
+    isStampDutyReserveTaxQualified = false,
+    isPetroleumRevenueTaxQualified = false,
+    isCustomsDutiesQualified = false,
+    isExciseDutiesQualified = false,
+    isBankLevyQualified = false,
+    qualificationStatement = None
+  )
+
 }

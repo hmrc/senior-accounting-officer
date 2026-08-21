@@ -119,7 +119,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
                 isCustomsDutiesQualified = false,
                 isExciseDutiesQualified = false,
                 isBankLevyQualified = false,
-                qualificationStatement = None
+                qualificationStatement = Some(FreeText("Test statement"))
               )
             )
           ),
@@ -301,7 +301,8 @@ object CertificateControllerSpec {
         "isPetroleumRevenueTaxQualified" -> false,
         "isCustomsDutiesQualified"       -> false,
         "isExciseDutiesQualified"        -> false,
-        "isBankLevyQualified"            -> false
+        "isBankLevyQualified"            -> false,
+        "qualificationStatement"         -> "Test statement"
       )
     )
   )
