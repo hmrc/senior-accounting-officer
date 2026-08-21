@@ -15,8 +15,10 @@
  */
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
+
 import org.apache.pekko.util.ByteString
-import org.scalatest.concurrent.Eventually
+import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.http.HeaderNames
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.readableAsString
@@ -31,6 +33,11 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class NotificationControllerISpec extends ISpecBase with Eventually {
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(
+    timeout = scaled(Span(20, Seconds)),
+    interval = scaled(Span(150, Millis))
+  )
 
   given HeaderCarrier = HeaderCarrier()
 
