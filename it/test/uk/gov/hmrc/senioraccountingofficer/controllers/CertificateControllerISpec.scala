@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.apache.pekko.util.ByteString
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.http.HeaderNames
 import play.api.libs.ws.WSResponse
@@ -26,13 +26,13 @@ import play.api.libs.ws.{BodyWritable, InMemoryBody}
 import support.*
 import support.MockAuthHelper
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerISpec.*
+import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerISpec.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class NotificationControllerISpec extends ISpecBase with Eventually {
+class CertificateControllerISpec extends ISpecBase with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = scaled(Span(20, Seconds)),
@@ -56,7 +56,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
   def makeRequest(body: String): WSResponse = {
     wsClient
-      .url(s"$baseUrl/senior-accounting-officer/notification")
+      .url(s"$baseUrl/senior-accounting-officer/certificate")
       .withHttpHeaders(
         HeaderNames.AUTHORIZATION -> MockAuthHelper.testBearerToken,
         "correlationId"           -> correlationId
@@ -65,15 +65,15 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
       .futureValue
   }
 
-  "POST /notification" when {
+  "POST /certificate" when {
 
     "Succeeds" when {
-      "returns 200" must {
+      "returns 201" must {
         "CRMM gives us a customer id" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
           EmailHelper.mock(200)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
@@ -81,8 +81,8 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             Some(objectStoreUploadResponse)
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-          ObjectStoreHelper.mockNotificationZipUpload(
-            notificationReference,
+          ObjectStoreHelper.mockCertificateZipUpload(
+            certificateReference,
             200,
             Some(objectStoreUploadResponse)
           )
@@ -90,14 +90,14 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 200
+          response.status mustBe 201
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-          SubmitNotificationHelper.verifyCalled(
+          SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitNotificationRequestWithCustomerId),
+            Some(submitCertificateRequestWithCustomerId),
             1
           )
 
@@ -107,7 +107,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
             SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
@@ -116,7 +116,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
-          SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
           EmailHelper.mock(200)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
@@ -124,8 +124,8 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             Some(objectStoreUploadResponse)
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-          ObjectStoreHelper.mockNotificationZipUpload(
-            notificationReference,
+          ObjectStoreHelper.mockCertificateZipUpload(
+            certificateReference,
             200,
             Some(objectStoreUploadResponse)
           )
@@ -133,14 +133,14 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 200
+          response.status mustBe 201
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-          SubmitNotificationHelper.verifyCalled(
+          SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitNotificationRequestWithoutCustomerId),
+            Some(submitCertificateRequestWithoutCustomerId),
             1
           )
 
@@ -150,7 +150,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
             SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
@@ -170,13 +170,13 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 0)
-          SubmitNotificationHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
+          SubmitCertificateHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
 
           eventually {
             EmailHelper.verifyCalled(None, 0)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
-            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0) // FIXME: problem with the test, cant reproduce this
+            ObjectStoreHelper.verifyCertificateZipUpload(zipLocation, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -202,13 +202,13 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 0)
-            SubmitNotificationHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
+            SubmitCertificateHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
 
             eventually {
               EmailHelper.verifyCalled(None, 0)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -230,13 +230,13 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-          SubmitNotificationHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
+          SubmitCertificateHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
 
           eventually {
             EmailHelper.verifyCalled(None, 0)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -263,13 +263,13 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-            SubmitNotificationHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
+            SubmitCertificateHelper.verifyCalled(MockAuthHelper.testSubscriptionId, None, 0)
 
             eventually {
               EmailHelper.verifyCalled(None, 0)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -277,13 +277,13 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
       })
     }
 
-    "SubmitNotification" when {
+    "SubmitCertificate" when {
       "returns 201 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(unparsableResponse))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(unparsableResponse))
 
           val response = makeRequest(requestBody)
 
@@ -292,9 +292,9 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-          SubmitNotificationHelper.verifyCalled(
+          SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitNotificationRequestWithCustomerId),
+            Some(submitCertificateRequestWithCustomerId),
             1
           )
 
@@ -302,7 +302,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(None, 0)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -321,7 +321,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             MockAuthHelper.mockAuthOk()
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, downstreamResponseCode, None)
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, downstreamResponseCode, None)
 
             val response = makeRequest(requestBody)
 
@@ -330,9 +330,9 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-            SubmitNotificationHelper.verifyCalled(
+            SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitNotificationRequestWithCustomerId),
+              Some(submitCertificateRequestWithCustomerId),
               1
             )
 
@@ -340,7 +340,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(None, 0)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -350,24 +350,24 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
     "Email" when {
       "Fails" must {
-        "despite the failure return 200 and continue to upload to object store" in {
+        "despite the failure return 201 and continue to upload to object store" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
           EmailHelper.mock(400)
           ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 200
+          response.status mustBe 201
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-          SubmitNotificationHelper.verifyCalled(
+          SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitNotificationRequestWithCustomerId),
+            Some(submitCertificateRequestWithCustomerId),
             1
           )
 
@@ -375,7 +375,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestFirstContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -385,24 +385,24 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
     "ObjectStore" when {
       "Uploading the pdf" when {
         "Fails" must {
-          "return 200 despite the failure" in {
+          "return 201 despite the failure" in {
             MockAuthHelper.mockAuthOk()
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
             EmailHelper.mock(200)
             ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
 
             val response = makeRequest(requestBody)
 
-            response.status mustBe 200
+            response.status mustBe 201
             response.body[String] mustBe controllerSuccessResponse
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-            SubmitNotificationHelper.verifyCalled(
+            SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitNotificationRequestWithCustomerId),
+              Some(submitCertificateRequestWithCustomerId),
               1
             )
 
@@ -412,7 +412,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -421,11 +421,11 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
       "Retrieving the pdf" when {
         "Fails" must {
-          "return 200 despite the failure" in {
+          "return 201 despite the failure" in {
             MockAuthHelper.mockAuthOk()
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
             EmailHelper.mock(200)
             ObjectStoreHelper.mockPdfUpload(
               pdfFilename,
@@ -436,14 +436,14 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
             val response = makeRequest(requestBody)
 
-            response.status mustBe 200
+            response.status mustBe 201
             response.body[String] mustBe controllerSuccessResponse
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-            SubmitNotificationHelper.verifyCalled(
+            SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitNotificationRequestWithCustomerId),
+              Some(submitCertificateRequestWithCustomerId),
               1
             )
 
@@ -453,7 +453,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -462,11 +462,11 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
       "Uploading the zip" when {
         "Fails" must {
-          "return 200 despite the failure" in {
+          "return 201 despite the failure" in {
             MockAuthHelper.mockAuthOk()
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
             EmailHelper.mock(200)
             ObjectStoreHelper.mockPdfUpload(
               pdfFilename,
@@ -474,22 +474,22 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               Some(objectStoreUploadResponse)
             )
             ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-            ObjectStoreHelper.mockNotificationZipUpload(
-              notificationReference,
+            ObjectStoreHelper.mockCertificateZipUpload(
+              certificateReference,
               400,
               Some(objectStoreUploadResponse)
             )
 
             val response = makeRequest(requestBody)
 
-            response.status mustBe 200
+            response.status mustBe 201
             response.body[String] mustBe controllerSuccessResponse
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-            SubmitNotificationHelper.verifyCalled(
+            SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitNotificationRequestWithCustomerId),
+              Some(submitCertificateRequestWithCustomerId),
               1
             )
 
@@ -499,7 +499,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-              ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
+              ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -509,11 +509,11 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
     "SDES" when {
       "Fails" must {
-        "return 200 despite the failure" in {
+        "return 201 despite the failure" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
           EmailHelper.mock(200)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
@@ -521,8 +521,8 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             Some(objectStoreUploadResponse)
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-          ObjectStoreHelper.mockNotificationZipUpload(
-            notificationReference,
+          ObjectStoreHelper.mockCertificateZipUpload(
+            certificateReference,
             200,
             Some(objectStoreUploadResponse)
           )
@@ -530,14 +530,14 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 200
+          response.status mustBe 201
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
-          SubmitNotificationHelper.verifyCalled(
+          SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitNotificationRequestWithCustomerId),
+            Some(submitCertificateRequestWithCustomerId),
             1
           )
 
@@ -547,7 +547,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
             SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
@@ -556,7 +556,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
   }
 }
 
-object NotificationControllerISpec {
+object CertificateControllerISpec {
   def rawStringWriter(contentType: String): BodyWritable[String] =
     BodyWritable(
       str => InMemoryBody(ByteString(str)),
@@ -565,35 +565,59 @@ object NotificationControllerISpec {
 
   val unparsableResponse = "{"
 
-  val requestBody = """{
-                      |  "companies": [
-                      |    {
-                      |      "crn": "65476489",
-                      |      "utr": "1233456679",
-                      |      "name": "TestCompanyName",
-                      |      "accPeriodEnd": "2009-09-09",
-                      |      "status": "Dormant",
-                      |      "type": "LTD"
-                      |    }
-                      |  ],
-                      |  "saos": [
-                      |    {
-                      |      "name": "Testname",
-                      |      "fromDate": "2020-03-10",
-                      |      "toDate": "2021-03-10"
-                      |    }
-                      |  ],
-                      |  "remarks":"testremarks"
-                      |}""".stripMargin
+  val crn                            = generateCrn
+  val utr                            = generateUtr
+  val firstContactName               = "Firstname Lastname"
+  val firstContactEmail              = "Firstname.Lastname@example.com"
+  val secondContactName              = "Firstname Lastname II"
+  val secondContactEmail             = "Firstname.Lastname.II@example.com"
+  val companyName                    = "Example Subsidiary Ltd"
+  val staffPid                       = "staffpid_123"
+  val accountingPeriodEnd            = "2025-03-31"
+  val remarks                        = "This is remarkable."
+  val status                         = "Dormant"
+  val companyType                    = "LTD"
+  val isCorporationTaxQualified      = false
+  val isVatQualified                 = true
+  val isPayeQualified                = true
+  val isInsurancePremiumTaxQualified = true
+  val isStampDutyLandTaxQualified    = true
+  val isStampDutyReserveTaxQualified = true
+  val isPetroleumRevenueTaxQualified = true
+  val isCustomsDutiesQualified       = true
+  val isExciseDutiesQualified        = true
+  val isBankLevyQualified            = true
+  val qualificationStatement         = "test statement"
 
-  val crn = generateCrn
-
-  val utr = generateUtr
-
-  val firstContactName   = "Firstname Lastname"
-  val firstContactEmail  = "Firstname.Lastname@example.com"
-  val secondContactName  = "Firstname Lastname II"
-  val secondContactEmail = "Firstname.Lastname.II@example.com"
+  val requestBody = s"""{
+                       |  "submitterName": "$firstContactName",
+                       |  "saoName": "$secondContactName",
+                       |  "saoEmail": "$firstContactEmail",
+                       |  "companies": [
+                       |    {
+                       |      "crn": "$crn",
+                       |      "utr": "$utr",
+                       |      "name": "$companyName",
+                       |      "accPeriodEnd": "$accountingPeriodEnd",
+                       |      "status": "$status",
+                       |      "type": "LTD",
+                       |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                       |      "isVatQualified": $isVatQualified,
+                       |      "isPayeQualified": $isPayeQualified,
+                       |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                       |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                       |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                       |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                       |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                       |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                       |      "isBankLevyQualified": $isBankLevyQualified,
+                       |      "qualificationStatement": "$qualificationStatement"
+                       |    }
+                       |  ],
+                       |  "remarks": "$remarks",
+                       |  "staffPid": "$staffPid"
+                       |}
+                       |""".stripMargin
 
   val getSubscriptionResponse = s"""{
                                    |  "etmpSafeId": "1234567890",
@@ -613,7 +637,7 @@ object NotificationControllerISpec {
                                    |  ],
                                    |  "nominatedCompany": {
                                    |    "crn": "$crn",
-                                   |    "name": "Fake Company Ltd",
+                                   |    "name": "$companyName",
                                    |    "utr": "$utr"
                                    |  }
                                    |}""".stripMargin
@@ -637,66 +661,92 @@ object NotificationControllerISpec {
                                                    |  "uniqueTaxReference": "$utr"
                                                    |}""".stripMargin
 
-  val notificationReference = "NOT0008470194"
+  val certificateReference = "CERT0008470194"
 
   val correlationId = "d80fd83a-2c50-4967-b596-675f7f11e241"
 
-  val submitNotificationRequestWithoutCustomerId = s"""{
-                                                      |  "remarks": "testremarks",
-                                                      |  "companies": [
-                                                      |    {
-                                                      |      "crn": "65476489",
-                                                      |      "utr": "1233456679",
-                                                      |      "name": "TestCompanyName",
-                                                      |      "accPeriodEnd": "2009-09-09",
-                                                      |      "status": "Dormant",
-                                                      |      "type": "LTD"
-                                                      |    }
-                                                      |  ],
-                                                      |  "saos": [
-                                                      |    {
-                                                      |      "name": "Testname",
-                                                      |      "fromDate": "2020-03-10",
-                                                      |      "toDate": "2021-03-10"
-                                                      |    }
-                                                      |  ]
-                                                      |}""".stripMargin
+  val submitCertificateRequestWithoutCustomerId = s"""{
+                                                     |  "submitterName": "$firstContactName",
+                                                     |  "saoName": "$secondContactName",
+                                                     |  "saoEmail": "$firstContactEmail",
+                                                     |  "staffPid": "$staffPid",
+                                                     |  "remarks": "$remarks",
+                                                     |  "companies": [
+                                                     |    {
+                                                     |      "crn": "$crn",
+                                                     |      "utr": "$utr",
+                                                     |      "name": "$companyName",
+                                                     |      "accPeriodEnd": "$accountingPeriodEnd",
+                                                     |      "status": "$status",
+                                                     |      "type": "LTD",
+                                                     |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                                                     |      "isVatQualified": $isVatQualified,
+                                                     |      "isPayeQualified": $isPayeQualified,
+                                                     |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                                                     |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                                                     |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                                                     |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                                                     |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                                                     |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                                                     |      "isBankLevyQualified": $isBankLevyQualified,
+                                                     |      "qualificationStatement": "$qualificationStatement"
+                                                     |    }
+                                                     |  ]
+                                                     |}""".stripMargin
 
-  val submitNotificationRequestWithCustomerId = s"""{
-                                                   |  "remarks": "testremarks",
-                                                   |  "companies": [
-                                                   |    {
-                                                   |      "crn": "65476489",
-                                                   |      "utr": "1233456679",
-                                                   |      "name": "TestCompanyName",
-                                                   |      "accPeriodEnd": "2009-09-09",
-                                                   |      "status": "Dormant",
-                                                   |      "type": "LTD"
-                                                   |    }
-                                                   |  ],
-                                                   |  "customerId": "$customerId",
-                                                   |  "saos": [
-                                                   |    {
-                                                   |      "name": "Testname",
-                                                   |      "fromDate": "2020-03-10",
-                                                   |      "toDate": "2021-03-10"
-                                                   |    }
-                                                   |  ]
-                                                   |}""".stripMargin
+  val submitCertificateRequestWithCustomerId = s"""{
+                                                  |  "submitterName": "$firstContactName",
+                                                  |  "saoName": "$secondContactName",
+                                                  |  "saoEmail": "$firstContactEmail",
+                                                  |  "staffPid": "$staffPid",
+                                                  |  "remarks": "$remarks",
+                                                  |  "customerId": "$customerId",
+                                                  |  "companies": [
+                                                  |    {
+                                                  |      "crn": "$crn",
+                                                  |      "utr": "$utr",
+                                                  |      "name": "$companyName",
+                                                  |      "accPeriodEnd": "$accountingPeriodEnd",
+                                                  |      "status": "$status",
+                                                  |      "type": "LTD",
+                                                  |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                                                  |      "isVatQualified": $isVatQualified,
+                                                  |      "isPayeQualified": $isPayeQualified,
+                                                  |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                                                  |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                                                  |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                                                  |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                                                  |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                                                  |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                                                  |      "isBankLevyQualified": $isBankLevyQualified,
+                                                  |      "qualificationStatement": "$qualificationStatement"
+                                                  |    }
+                                                  |  ]
+                                                  |}""".stripMargin
 
-  val submitNotificationResponse = s"""{
-                                      |  "notificationRef": "$notificationReference"
+  val submitCertificateResponse = s"""{
+                                      |  "certificateRef": "$certificateReference"
                                       |}""".stripMargin
+
+  // TODO: test for email with submitter. the sao, first contact, second contact all have different email addresses. 3 emails sent
+
+  // TODO: test for email with submitter. the sao and first contact have the same email address, the second contact has a different email address. 2 emails sent
+
+  // TODO: test for email with no submitter. the sao, first contact, second contact all have different email addresses. 3 emails sent
+
+  // TODO: test for email with no submitter. the sao and first contact have the same email address, the second contact has a different email address. 2 emails sent
 
   val emailRequestFirstContact = s"""{
                                     |  "to": [
                                     |    "$firstContactEmail"
                                     |  ],
-                                    |  "templateId": "dsao_notification_confirmation",
+                                    |  "templateId": "dsao_certificate_confirmation_for_submitter",
                                     |  "parameters": {
                                     |    "recipientName": "$firstContactName",
-                                    |    "companyName": "Fake Company Ltd",
-                                    |    "referenceId": "$notificationReference"
+                                    |    "companyName": "$companyName",
+                                    |    "submitterName": "$firstContactName",
+                                    |    "saoName": "$secondContactName",
+                                    |    "referenceId": "$certificateReference"
                                     |  }
                                     |}""".stripMargin
 
@@ -704,11 +754,13 @@ object NotificationControllerISpec {
                                      |  "to": [
                                      |    "$secondContactEmail"
                                      |  ],
-                                     |  "templateId": "dsao_notification_confirmation",
+                                     |  "templateId": "dsao_certificate_confirmation_for_submitter",
                                      |  "parameters": {
                                      |    "recipientName": "$secondContactName",
-                                     |    "companyName": "Fake Company Ltd",
-                                     |    "referenceId": "$notificationReference"
+                                     |    "companyName": "$companyName",
+                                     |    "submitterName": "$firstContactName",
+                                     |    "saoName": "$secondContactName",
+                                     |    "referenceId": "$certificateReference"
                                      |  }
                                      |}""".stripMargin
 
@@ -719,15 +771,14 @@ object NotificationControllerISpec {
                                     |  "location": "/some/path"
                                     |}""".stripMargin
 
-  val pdfFilename = s"${notificationReference}_SAO_Notification.pdf"
+  val pdfFilename = s"${certificateReference}_SAO_Certificate.pdf"
 
   val zipFilename =
-    s"${LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)}_${notificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.zip"
+    s"${LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)}_${certificateReference}_SAO_Certificate_OFFICIAL_SENSITIVE.zip"
 
-  val zipLocation =
-    s"object-store/object/senior-accounting-officer/sdes/$notificationReference/$zipFilename"
+  val zipLocation = s"object-store/object/senior-accounting-officer/sdes/$certificateReference/$zipFilename"
 
-  val controllerSuccessResponse = s"""{"notificationRef":"$notificationReference"}"""
+  val controllerSuccessResponse = s"""{"certificateRef":"$certificateReference"}"""
 
   val sdesRequest = s"""{
                        |  "informationType" : "DSAO",
