@@ -97,15 +97,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
           SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitCertificateRequestWithCustomerId),
+            Some(submitCertificateRequest),
             1
           )
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSubmitter), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
@@ -147,9 +147,97 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
+            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
+          }
+        }
+
+        "submitterName is provided in the request therefore the dsao_certificate_confirmation_for_submitter template is used" in {
+          MockAuthHelper.mockAuthOk()
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
+          EmailHelper.mock(200)
+          ObjectStoreHelper.mockPdfUpload(
+            pdfFilename,
+            200,
+            Some(objectStoreUploadResponse)
+          )
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockCertificateZipUpload(
+            certificateReference,
+            200,
+            Some(objectStoreUploadResponse)
+          )
+          SdesHelper.mock(200, None)
+
+          val response = makeRequest(requestBodyWithSubmitterName)
+
+          response.status mustBe 201
+          response.body[String] mustBe controllerSuccessResponse
+
+          GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
+          RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
+          SubmitCertificateHelper.verifyCalled(
+            MockAuthHelper.testSubscriptionId,
+            Some(submitCertificateRequestWithSubmitterName),
+            1
+          )
+
+          eventually {
+            EmailHelper.verifyCalled(None, 3)
             EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSubmitter), 1)
+            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
+            ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
+          }
+        }
+
+        "submitterName is not provided in the request therefore the dsao_certificate_confirmation_for_sao template is used" in {
+          MockAuthHelper.mockAuthOk()
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
+          EmailHelper.mock(200)
+          ObjectStoreHelper.mockPdfUpload(
+            pdfFilename,
+            200,
+            Some(objectStoreUploadResponse)
+          )
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockCertificateZipUpload(
+            certificateReference,
+            200,
+            Some(objectStoreUploadResponse)
+          )
+          SdesHelper.mock(200, None)
+
+          val response = makeRequest(requestBody)
+
+          response.status mustBe 201
+          response.body[String] mustBe controllerSuccessResponse
+
+          GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
+          RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
+          SubmitCertificateHelper.verifyCalled(
+            MockAuthHelper.testSubscriptionId,
+            Some(submitCertificateRequestWithoutCustomerId),
+            1
+          )
+
+          eventually {
+            EmailHelper.verifyCalled(None, 3)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
@@ -165,7 +253,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(unparsableResponse))
 
-          val response = makeRequest(requestBody)
+          val response = makeRequest(requestBodyWithSubmitterName)
 
           response.status mustBe 500
           response.body[String] mustBe s"""{"reason":"DOWNSTREAM_SERVICE_MISALIGNMENT"}"""
@@ -197,7 +285,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             MockAuthHelper.mockAuthOk()
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, downstreamResponseCode, None)
 
-            val response = makeRequest(requestBody)
+            val response = makeRequest(requestBodyWithSubmitterName)
 
             response.status mustBe expectedResponseCode
             response.body[String] mustBe s"""{"reason":"$expectedReason"}"""
@@ -225,7 +313,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(unparsableResponse))
 
-          val response = makeRequest(requestBody)
+          val response = makeRequest(requestBodyWithSubmitterName)
 
           response.status mustBe 500
           response.body[String] mustBe s"""{"reason":"DOWNSTREAM_SERVICE_MISALIGNMENT"}"""
@@ -258,7 +346,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(downstreamResponseCode, None)
 
-            val response = makeRequest(requestBody)
+            val response = makeRequest(requestBodyWithSubmitterName)
 
             response.status mustBe expectedResponseCode
             response.body[String] mustBe s"""{"reason":"$expectedReason"}"""
@@ -296,7 +384,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
           SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitCertificateRequestWithCustomerId),
+            Some(submitCertificateRequest),
             1
           )
 
@@ -334,7 +422,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
             SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitCertificateRequestWithCustomerId),
+              Some(submitCertificateRequest),
               1
             )
 
@@ -369,15 +457,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
           SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitCertificateRequestWithCustomerId),
+            Some(submitCertificateRequest),
             1
           )
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSubmitter), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
@@ -407,15 +495,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
             SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitCertificateRequestWithCustomerId),
+              Some(submitCertificateRequest),
               1
             )
 
             eventually {
               EmailHelper.verifyCalled(None, 3)
-              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSubmitter), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
               ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
@@ -449,15 +537,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
             SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitCertificateRequestWithCustomerId),
+              Some(submitCertificateRequest),
               1
             )
 
             eventually {
               EmailHelper.verifyCalled(None, 3)
-              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSubmitter), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
               ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 0)
@@ -496,15 +584,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
             SubmitCertificateHelper.verifyCalled(
               MockAuthHelper.testSubscriptionId,
-              Some(submitCertificateRequestWithCustomerId),
+              Some(submitCertificateRequest),
               1
             )
 
             eventually {
               EmailHelper.verifyCalled(None, 3)
-              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSubmitter), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
               ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
@@ -545,14 +633,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           RetrieveCustomerHelper.verifyCalled(retrieveCustomerRequest, 1)
           SubmitCertificateHelper.verifyCalled(
             MockAuthHelper.testSubscriptionId,
-            Some(submitCertificateRequestWithCustomerId),
+            Some(submitCertificateRequest),
             1
           )
 
           eventually {
-            EmailHelper.verifyCalled(None, 2)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSubmitter), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSubmitter), 1)
+            EmailHelper.verifyCalled(None, 3)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
@@ -601,34 +690,63 @@ object CertificateControllerISpec {
   val qualificationStatement         = "test statement"
 
   val requestBody = s"""{
-                       |  "submitterName": "$fourthUserName",
-                       |  "saoName": "$thirdUserName",
-                       |  "saoEmail": "$thirdUserEmail",
-                       |  "companies": [
-                       |    {
-                       |      "crn": "$crn",
-                       |      "utr": "$utr",
-                       |      "name": "$companyName",
-                       |      "accPeriodEnd": "$accountingPeriodEnd",
-                       |      "status": "$status",
-                       |      "type": "LTD",
-                       |      "isCorporationTaxQualified": $isCorporationTaxQualified,
-                       |      "isVatQualified": $isVatQualified,
-                       |      "isPayeQualified": $isPayeQualified,
-                       |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
-                       |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
-                       |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
-                       |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
-                       |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
-                       |      "isExciseDutiesQualified": $isExciseDutiesQualified,
-                       |      "isBankLevyQualified": $isBankLevyQualified,
-                       |      "qualificationStatement": "$qualificationStatement"
-                       |    }
-                       |  ],
-                       |  "remarks": "$remarks",
-                       |  "staffPid": "$staffPid"
-                       |}
-                       |""".stripMargin
+                                           |  "saoName": "$thirdUserName",
+                                           |  "saoEmail": "$thirdUserEmail",
+                                           |  "companies": [
+                                           |    {
+                                           |      "crn": "$crn",
+                                           |      "utr": "$utr",
+                                           |      "name": "$companyName",
+                                           |      "accPeriodEnd": "$accountingPeriodEnd",
+                                           |      "status": "$status",
+                                           |      "type": "LTD",
+                                           |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                                           |      "isVatQualified": $isVatQualified,
+                                           |      "isPayeQualified": $isPayeQualified,
+                                           |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                                           |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                                           |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                                           |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                                           |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                                           |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                                           |      "isBankLevyQualified": $isBankLevyQualified,
+                                           |      "qualificationStatement": "$qualificationStatement"
+                                           |    }
+                                           |  ],
+                                           |  "remarks": "$remarks",
+                                           |  "staffPid": "$staffPid"
+                                           |}
+                                           |""".stripMargin
+
+  val requestBodyWithSubmitterName = s"""{
+                                        |  "submitterName": "$fourthUserName",
+                                        |  "saoName": "$thirdUserName",
+                                        |  "saoEmail": "$thirdUserEmail",
+                                        |  "companies": [
+                                        |    {
+                                        |      "crn": "$crn",
+                                        |      "utr": "$utr",
+                                        |      "name": "$companyName",
+                                        |      "accPeriodEnd": "$accountingPeriodEnd",
+                                        |      "status": "$status",
+                                        |      "type": "LTD",
+                                        |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                                        |      "isVatQualified": $isVatQualified,
+                                        |      "isPayeQualified": $isPayeQualified,
+                                        |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                                        |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                                        |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                                        |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                                        |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                                        |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                                        |      "isBankLevyQualified": $isBankLevyQualified,
+                                        |      "qualificationStatement": "$qualificationStatement"
+                                        |    }
+                                        |  ],
+                                        |  "remarks": "$remarks",
+                                        |  "staffPid": "$staffPid"
+                                        |}
+                                        |""".stripMargin
 
   val getSubscriptionResponse = s"""{
                                    |  "etmpSafeId": "1234567890",
@@ -677,7 +795,6 @@ object CertificateControllerISpec {
   val correlationId = "d80fd83a-2c50-4967-b596-675f7f11e241"
 
   val submitCertificateRequestWithoutCustomerId = s"""{
-                                                     |  "submitterName": "$fourthUserName",
                                                      |  "saoName": "$thirdUserName",
                                                      |  "saoEmail": "$thirdUserEmail",
                                                      |  "staffPid": "$staffPid",
@@ -705,8 +822,7 @@ object CertificateControllerISpec {
                                                      |  ]
                                                      |}""".stripMargin
 
-  val submitCertificateRequestWithCustomerId = s"""{
-                                                  |  "submitterName": "$fourthUserName",
+  val submitCertificateRequest = s"""{
                                                   |  "saoName": "$thirdUserName",
                                                   |  "saoEmail": "$thirdUserEmail",
                                                   |  "staffPid": "$staffPid",
@@ -735,11 +851,79 @@ object CertificateControllerISpec {
                                                   |  ]
                                                   |}""".stripMargin
 
+  val submitCertificateRequestWithSubmitterName = s"""{
+                                                     |  "submitterName": "$fourthUserName",
+                                                     |  "saoName": "$thirdUserName",
+                                                     |  "saoEmail": "$thirdUserEmail",
+                                                     |  "staffPid": "$staffPid",
+                                                     |  "remarks": "$remarks",
+                                                     |  "companies": [
+                                                     |    {
+                                                     |      "crn": "$crn",
+                                                     |      "utr": "$utr",
+                                                     |      "name": "$companyName",
+                                                     |      "accPeriodEnd": "$accountingPeriodEnd",
+                                                     |      "status": "$status",
+                                                     |      "type": "LTD",
+                                                     |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                                                     |      "isVatQualified": $isVatQualified,
+                                                     |      "isPayeQualified": $isPayeQualified,
+                                                     |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                                                     |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                                                     |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                                                     |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                                                     |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                                                     |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                                                     |      "isBankLevyQualified": $isBankLevyQualified,
+                                                     |      "qualificationStatement": "$qualificationStatement"
+                                                     |    }
+                                                     |  ]
+                                                     |}""".stripMargin
+
   val submitCertificateResponse = s"""{
                                      |  "certificateRef": "$certificateReference"
                                      |}""".stripMargin
 
   object EmailRequests {
+    val firstUserConfirmationForSao = s"""{
+                                               |  "to": [
+                                               |    "$firstUserEmail"
+                                               |  ],
+                                               |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                               |  "parameters": {
+                                               |    "recipientName": "$firstUserName",
+                                               |    "companyName": "$companyName",
+                                               |    "saoName": "$thirdUserName",
+                                               |    "referenceId": "$certificateReference"
+                                               |  }
+                                               |}""".stripMargin
+
+    val secondUserConfirmationForSao = s"""{
+                                               |  "to": [
+                                               |    "$secondUserEmail"
+                                               |  ],
+                                               |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                               |  "parameters": {
+                                               |    "recipientName": "$secondUserName",
+                                               |    "companyName": "$companyName",
+                                               |    "saoName": "$thirdUserName",
+                                               |    "referenceId": "$certificateReference"
+                                               |  }
+                                               |}""".stripMargin
+
+    val thirdUserConfirmationForSao = s"""{
+                                               |  "to": [
+                                               |    "$thirdUserEmail"
+                                               |  ],
+                                               |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                               |  "parameters": {
+                                               |    "recipientName": "$thirdUserName",
+                                               |    "companyName": "$companyName",
+                                               |    "saoName": "$thirdUserName",
+                                               |    "referenceId": "$certificateReference"
+                                               |  }
+                                               |}""".stripMargin
+
     val firstUserConfirmationForSubmitter = s"""{
                                                |  "to": [
                                                |    "$firstUserEmail"
