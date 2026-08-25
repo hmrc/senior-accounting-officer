@@ -446,7 +446,7 @@ class CertificateServiceSpec
           verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
             expectedSaoEmail,
             "Firstname Lastname",
-            exampleCompanyName,
+            nominatedCompanyName,
             exampleCertificateReference,
             "Firstname Lastname",
             expectedSaoName
