@@ -423,7 +423,7 @@ class CertificateServiceSpec
             )(using any())
         }
 
-        "Valid response with submitter; Send submitter confirmation emails to subscription contacts" in {
+        "Valid response with submitter; Send submitter confirmation email to the SAO and contacts" in {
           configureSubscriptionResponse(responseBody =
             Json.stringify(
               Json.toJson(
@@ -443,6 +443,15 @@ class CertificateServiceSpec
 
           service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
+          verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
+            expectedSaoEmail,
+            "Firstname Lastname",
+            exampleCompanyName,
+            exampleCertificateReference,
+            "Firstname Lastname",
+            expectedSaoName
+          )
+
           exampleContacts.foreach { contact =>
             verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
               contact.email,
@@ -455,7 +464,7 @@ class CertificateServiceSpec
           }
         }
 
-        "Valid response without submitter; Send SAO confirmation email to SAO and subscription contacts" in {
+        "Valid response without submitter; Send SAO confirmation email to the SAO and contacts" in {
           configureSubscriptionResponse(responseBody =
             Json.stringify(
               Json.toJson(
@@ -492,6 +501,7 @@ class CertificateServiceSpec
               expectedSaoName
             )
           }
+
         }
 
         "Invalid response; Return malformed response error" in {
