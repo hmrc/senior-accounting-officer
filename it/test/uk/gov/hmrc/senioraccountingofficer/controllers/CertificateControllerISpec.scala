@@ -690,33 +690,33 @@ object CertificateControllerISpec {
   val qualificationStatement         = "test statement"
 
   val requestBody = s"""{
-                                           |  "saoName": "$thirdUserName",
-                                           |  "saoEmail": "$thirdUserEmail",
-                                           |  "companies": [
-                                           |    {
-                                           |      "crn": "$crn",
-                                           |      "utr": "$utr",
-                                           |      "name": "$companyName",
-                                           |      "accPeriodEnd": "$accountingPeriodEnd",
-                                           |      "status": "$status",
-                                           |      "type": "LTD",
-                                           |      "isCorporationTaxQualified": $isCorporationTaxQualified,
-                                           |      "isVatQualified": $isVatQualified,
-                                           |      "isPayeQualified": $isPayeQualified,
-                                           |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
-                                           |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
-                                           |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
-                                           |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
-                                           |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
-                                           |      "isExciseDutiesQualified": $isExciseDutiesQualified,
-                                           |      "isBankLevyQualified": $isBankLevyQualified,
-                                           |      "qualificationStatement": "$qualificationStatement"
-                                           |    }
-                                           |  ],
-                                           |  "remarks": "$remarks",
-                                           |  "staffPid": "$staffPid"
-                                           |}
-                                           |""".stripMargin
+                       |  "saoName": "$thirdUserName",
+                       |  "saoEmail": "$thirdUserEmail",
+                       |  "companies": [
+                       |    {
+                       |      "crn": "$crn",
+                       |      "utr": "$utr",
+                       |      "name": "$companyName",
+                       |      "accPeriodEnd": "$accountingPeriodEnd",
+                       |      "status": "$status",
+                       |      "type": "LTD",
+                       |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                       |      "isVatQualified": $isVatQualified,
+                       |      "isPayeQualified": $isPayeQualified,
+                       |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                       |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                       |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                       |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                       |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                       |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                       |      "isBankLevyQualified": $isBankLevyQualified,
+                       |      "qualificationStatement": "$qualificationStatement"
+                       |    }
+                       |  ],
+                       |  "remarks": "$remarks",
+                       |  "staffPid": "$staffPid"
+                       |}
+                       |""".stripMargin
 
   val requestBodyWithSubmitterName = s"""{
                                         |  "submitterName": "$fourthUserName",
@@ -786,9 +786,9 @@ object CertificateControllerISpec {
                                                    |}""".stripMargin
 
   val retrieveCustomerRequest = s"""{
-                                                   |  "companyRegistrationNumber": "$crn",
-                                                   |  "uniqueTaxReference": "$utr"
-                                                   |}""".stripMargin
+                                   |  "companyRegistrationNumber": "$crn",
+                                   |  "uniqueTaxReference": "$utr"
+                                   |}""".stripMargin
 
   val certificateReference = "CERT0008470194"
 
@@ -823,33 +823,33 @@ object CertificateControllerISpec {
                                                      |}""".stripMargin
 
   val submitCertificateRequest = s"""{
-                                                  |  "saoName": "$thirdUserName",
-                                                  |  "saoEmail": "$thirdUserEmail",
-                                                  |  "staffPid": "$staffPid",
-                                                  |  "remarks": "$remarks",
-                                                  |  "customerId": "$customerId",
-                                                  |  "companies": [
-                                                  |    {
-                                                  |      "crn": "$crn",
-                                                  |      "utr": "$utr",
-                                                  |      "name": "$companyName",
-                                                  |      "accPeriodEnd": "$accountingPeriodEnd",
-                                                  |      "status": "$status",
-                                                  |      "type": "LTD",
-                                                  |      "isCorporationTaxQualified": $isCorporationTaxQualified,
-                                                  |      "isVatQualified": $isVatQualified,
-                                                  |      "isPayeQualified": $isPayeQualified,
-                                                  |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
-                                                  |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
-                                                  |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
-                                                  |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
-                                                  |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
-                                                  |      "isExciseDutiesQualified": $isExciseDutiesQualified,
-                                                  |      "isBankLevyQualified": $isBankLevyQualified,
-                                                  |      "qualificationStatement": "$qualificationStatement"
-                                                  |    }
-                                                  |  ]
-                                                  |}""".stripMargin
+                                    |  "saoName": "$thirdUserName",
+                                    |  "saoEmail": "$thirdUserEmail",
+                                    |  "staffPid": "$staffPid",
+                                    |  "remarks": "$remarks",
+                                    |  "customerId": "$customerId",
+                                    |  "companies": [
+                                    |    {
+                                    |      "crn": "$crn",
+                                    |      "utr": "$utr",
+                                    |      "name": "$companyName",
+                                    |      "accPeriodEnd": "$accountingPeriodEnd",
+                                    |      "status": "$status",
+                                    |      "type": "LTD",
+                                    |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                                    |      "isVatQualified": $isVatQualified,
+                                    |      "isPayeQualified": $isPayeQualified,
+                                    |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                                    |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                                    |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                                    |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                                    |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                                    |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                                    |      "isBankLevyQualified": $isBankLevyQualified,
+                                    |      "qualificationStatement": "$qualificationStatement"
+                                    |    }
+                                    |  ]
+                                    |}""".stripMargin
 
   val submitCertificateRequestWithSubmitterName = s"""{
                                                      |  "submitterName": "$fourthUserName",
@@ -886,43 +886,43 @@ object CertificateControllerISpec {
 
   object EmailRequests {
     val firstUserConfirmationForSao = s"""{
-                                               |  "to": [
-                                               |    "$firstUserEmail"
-                                               |  ],
-                                               |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                               |  "parameters": {
-                                               |    "recipientName": "$firstUserName",
-                                               |    "companyName": "$companyName",
-                                               |    "saoName": "$thirdUserName",
-                                               |    "referenceId": "$certificateReference"
-                                               |  }
-                                               |}""".stripMargin
+                                         |  "to": [
+                                         |    "$firstUserEmail"
+                                         |  ],
+                                         |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                         |  "parameters": {
+                                         |    "recipientName": "$firstUserName",
+                                         |    "companyName": "$companyName",
+                                         |    "saoName": "$thirdUserName",
+                                         |    "referenceId": "$certificateReference"
+                                         |  }
+                                         |}""".stripMargin
 
     val secondUserConfirmationForSao = s"""{
-                                               |  "to": [
-                                               |    "$secondUserEmail"
-                                               |  ],
-                                               |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                               |  "parameters": {
-                                               |    "recipientName": "$secondUserName",
-                                               |    "companyName": "$companyName",
-                                               |    "saoName": "$thirdUserName",
-                                               |    "referenceId": "$certificateReference"
-                                               |  }
-                                               |}""".stripMargin
+                                          |  "to": [
+                                          |    "$secondUserEmail"
+                                          |  ],
+                                          |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                          |  "parameters": {
+                                          |    "recipientName": "$secondUserName",
+                                          |    "companyName": "$companyName",
+                                          |    "saoName": "$thirdUserName",
+                                          |    "referenceId": "$certificateReference"
+                                          |  }
+                                          |}""".stripMargin
 
     val thirdUserConfirmationForSao = s"""{
-                                               |  "to": [
-                                               |    "$thirdUserEmail"
-                                               |  ],
-                                               |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                               |  "parameters": {
-                                               |    "recipientName": "$thirdUserName",
-                                               |    "companyName": "$companyName",
-                                               |    "saoName": "$thirdUserName",
-                                               |    "referenceId": "$certificateReference"
-                                               |  }
-                                               |}""".stripMargin
+                                         |  "to": [
+                                         |    "$thirdUserEmail"
+                                         |  ],
+                                         |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                         |  "parameters": {
+                                         |    "recipientName": "$thirdUserName",
+                                         |    "companyName": "$companyName",
+                                         |    "saoName": "$thirdUserName",
+                                         |    "referenceId": "$certificateReference"
+                                         |  }
+                                         |}""".stripMargin
 
     val firstUserConfirmationForSubmitter = s"""{
                                                |  "to": [
