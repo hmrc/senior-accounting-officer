@@ -567,10 +567,13 @@ object CertificateControllerISpec {
 
   val crn                            = generateCrn
   val utr                            = generateUtr
-  val firstContactName               = "Firstname Lastname"
-  val firstContactEmail              = "Firstname.Lastname@example.com"
-  val secondContactName              = "Firstname Lastname II"
-  val secondContactEmail             = "Firstname.Lastname.II@example.com"
+  val firstUserName                  = "Firstname Lastname"
+  val firstUserEmail                 = "Firstname.Lastname@example.com"
+  val secondUserName                 = "Firstname Lastname II"
+  val secondUserEmail                = "Firstname.Lastname.II@example.com"
+  val thirdUserName                  = "Firstname Lastname III"
+  val thirdUserEmail                 = "Firstname.Lastname.III@example.com"
+  val fourthUserName                 = "Firstname Lastname IV"
   val companyName                    = "Example Subsidiary Ltd"
   val staffPid                       = "staffpid_123"
   val accountingPeriodEnd            = "2025-03-31"
@@ -590,9 +593,9 @@ object CertificateControllerISpec {
   val qualificationStatement         = "test statement"
 
   val requestBody = s"""{
-                       |  "submitterName": "$firstContactName",
-                       |  "saoName": "$secondContactName",
-                       |  "saoEmail": "$firstContactEmail",
+                       |  "submitterName": "$fourthUserName",
+                       |  "saoName": "$thirdUserName",
+                       |  "saoEmail": "$thirdUserEmail",
                        |  "companies": [
                        |    {
                        |      "crn": "$crn",
@@ -623,14 +626,14 @@ object CertificateControllerISpec {
                                    |  "etmpSafeId": "1234567890",
                                    |  "contacts": [
                                    |    {
-                                   |      "name": "$firstContactName",
-                                   |      "email": "$firstContactEmail",
+                                   |      "name": "$firstUserName",
+                                   |      "email": "$firstUserEmail",
                                    |      "language": "en",
                                    |      "status": "valid"
                                    |    },
                                    |    {
-                                   |      "name": "$secondContactName",
-                                   |      "email": "$secondContactEmail",
+                                   |      "name": "$secondUserName",
+                                   |      "email": "$secondUserEmail",
                                    |      "language": "cy",
                                    |      "status": "valid"
                                    |    }
@@ -666,9 +669,9 @@ object CertificateControllerISpec {
   val correlationId = "d80fd83a-2c50-4967-b596-675f7f11e241"
 
   val submitCertificateRequestWithoutCustomerId = s"""{
-                                                     |  "submitterName": "$firstContactName",
-                                                     |  "saoName": "$secondContactName",
-                                                     |  "saoEmail": "$firstContactEmail",
+                                                     |  "submitterName": "$fourthUserName",
+                                                     |  "saoName": "$thirdUserName",
+                                                     |  "saoEmail": "$thirdUserEmail",
                                                      |  "staffPid": "$staffPid",
                                                      |  "remarks": "$remarks",
                                                      |  "companies": [
@@ -695,9 +698,9 @@ object CertificateControllerISpec {
                                                      |}""".stripMargin
 
   val submitCertificateRequestWithCustomerId = s"""{
-                                                  |  "submitterName": "$firstContactName",
-                                                  |  "saoName": "$secondContactName",
-                                                  |  "saoEmail": "$firstContactEmail",
+                                                  |  "submitterName": "$fourthUserName",
+                                                  |  "saoName": "$thirdUserName",
+                                                  |  "saoEmail": "$thirdUserEmail",
                                                   |  "staffPid": "$staffPid",
                                                   |  "remarks": "$remarks",
                                                   |  "customerId": "$customerId",
@@ -728,38 +731,30 @@ object CertificateControllerISpec {
                                       |  "certificateRef": "$certificateReference"
                                       |}""".stripMargin
 
-  // TODO: test for email with submitter. the sao, first contact, second contact all have different email addresses. 3 emails sent
-
-  // TODO: test for email with submitter. the sao and first contact have the same email address, the second contact has a different email address. 2 emails sent
-
-  // TODO: test for email with no submitter. the sao, first contact, second contact all have different email addresses. 3 emails sent
-
-  // TODO: test for email with no submitter. the sao and first contact have the same email address, the second contact has a different email address. 2 emails sent
-
   val emailRequestFirstContact = s"""{
                                     |  "to": [
-                                    |    "$firstContactEmail"
+                                    |    "$firstUserEmail"
                                     |  ],
                                     |  "templateId": "dsao_certificate_confirmation_for_submitter",
                                     |  "parameters": {
-                                    |    "recipientName": "$firstContactName",
+                                    |    "recipientName": "$firstUserName",
                                     |    "companyName": "$companyName",
-                                    |    "submitterName": "$firstContactName",
-                                    |    "saoName": "$secondContactName",
+                                    |    "submitterName": "$fourthUserName",
+                                    |    "saoName": "$thirdUserName",
                                     |    "referenceId": "$certificateReference"
                                     |  }
                                     |}""".stripMargin
 
   val emailRequestSecondContact = s"""{
                                      |  "to": [
-                                     |    "$secondContactEmail"
+                                     |    "$secondUserEmail"
                                      |  ],
                                      |  "templateId": "dsao_certificate_confirmation_for_submitter",
                                      |  "parameters": {
-                                     |    "recipientName": "$secondContactName",
+                                     |    "recipientName": "$secondUserName",
                                      |    "companyName": "$companyName",
-                                     |    "submitterName": "$firstContactName",
-                                     |    "saoName": "$secondContactName",
+                                     |    "submitterName": "$fourthUserName",
+                                     |    "saoName": "$thirdUserName",
                                      |    "referenceId": "$certificateReference"
                                      |  }
                                      |}""".stripMargin
