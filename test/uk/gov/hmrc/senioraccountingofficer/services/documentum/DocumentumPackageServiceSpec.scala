@@ -214,6 +214,6 @@ class DocumentumPackageServiceSpec
       submissionType = SubmissionType.Notification,
       saoSubscriptionId = saoSubscriptionId,
       customerId = None,
-      companies = List(DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")))
+      nominatedCompany = DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456"))
     )
 }

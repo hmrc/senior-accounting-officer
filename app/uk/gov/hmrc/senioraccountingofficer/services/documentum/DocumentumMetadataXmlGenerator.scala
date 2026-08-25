@@ -25,7 +25,7 @@ import javax.inject.Inject
 class DocumentumMetadataXmlGenerator @Inject() () {
 
   def generate(context: DocumentumPackageContext, documentTitle: String, reconciliationId: String): String = {
-    val nominatedCompany       = context.companies.headOption
+    val nominatedCompany       = context.nominatedCompany
     val referenceAttributeName = context.submissionType match {
       case SubmissionType.Certificate  => "hm_certificate_ref"
       case SubmissionType.Notification => "hm_notification_ref"
@@ -47,8 +47,8 @@ class DocumentumMetadataXmlGenerator @Inject() () {
             {attribute("hm_unique_doc_id", documentTitle)}
             {attribute("hm_customer_id", context.customerId.getOrElse("DSAO"))}
             {attribute(referenceAttributeName, s"SAO${context.submissionId}")}
-            {attribute("hm_utr", nominatedCompany.map(_.utr).getOrElse(""))}
-            {attribute("hm_crn", nominatedCompany.flatMap(_.crn).getOrElse(""))}
+            {attribute("hm_utr", nominatedCompany.utr)}
+            {attribute("hm_crn", nominatedCompany.crn.getOrElse(""))}
           </metadata>
         </document>
       </documents>

@@ -93,8 +93,8 @@ class DocumentumMetadataXmlGeneratorSpec extends AnyWordSpec with Matchers {
       submissionId = "NOT0123456789",
       submissionType = SubmissionType.Notification,
       saoSubscriptionId = "XASAO1234567890",
-      customerId = None,
-      companies = List(DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")))
+      nominatedCompany = DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")),
+      customerId = None
     )
 
   private val certificateContext =
@@ -102,7 +102,7 @@ class DocumentumMetadataXmlGeneratorSpec extends AnyWordSpec with Matchers {
       submissionId = "CRT0001234567",
       submissionType = SubmissionType.Certificate,
       saoSubscriptionId = "XASAO1234567890",
-      customerId = Some("customer-1"),
-      companies = List(DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = None))
+      nominatedCompany = DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")),
+      customerId = Some("customer-1")
     )
 }

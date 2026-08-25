@@ -91,15 +91,7 @@ class CertificateServiceSpec
 
   def configureSubscriptionResponse(
       httpStatusCode: Int = 200,
-      responseBody: String = Json.stringify(
-        Json.toJson(
-          GetSubscriptionDpsResponse(
-            etmpSafeId = exampleSafeId,
-            nominatedCompany = NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
-            contacts = Nil
-          )
-        )
-      )
+      responseBody: String = Json.stringify(Json.toJson(subscriptionResponse))
   ): Unit = {
     when(mockGetSubscriptionConnector.getSubscription(meq(exampleSubscriptionId))(using any()))
       .thenReturn(
@@ -126,8 +118,8 @@ class CertificateServiceSpec
       mockCrmmConnector.retrieveCustomer(
         meq(
           RetrieveCustomerRequest(
-            companyRegistrationNumber = Some(exampleCrn),
-            uniqueTaxReference = Some(exampleUtr)
+            companyRegistrationNumber = Some(nominatedCompanyCrn),
+            uniqueTaxReference = Some(nominatedCompanyUtr)
           )
         )
       )(using any())
@@ -178,7 +170,7 @@ class CertificateServiceSpec
           verify(
             mockCrmmConnector,
             Times(1)
-          ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(exampleCrn), Some(exampleUtr))))(using
+          ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(nominatedCompanyCrn), Some(nominatedCompanyUtr))))(using
             any()
           )
         }
@@ -416,7 +408,12 @@ class CertificateServiceSpec
             .packageAndSubmit(
               meq(
                 DocumentumPackageContext
-                  .certificate(exampleCertificateReference, exampleSubscriptionId, expectedDpsRequest)
+                  .certificate(
+                    exampleCertificateReference,
+                    exampleSubscriptionId,
+                    exampleNominatedCompany,
+                    expectedDpsRequest
+                  )
               ),
               meq(objectStoreFileContent)
             )(using any())
@@ -428,8 +425,11 @@ class CertificateServiceSpec
               Json.toJson(
                 GetSubscriptionDpsResponse(
                   etmpSafeId = exampleSafeId,
-                  nominatedCompany =
-                    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
+                  nominatedCompany = NominatedCompany(
+                    crn = Some(nominatedCompanyCrn),
+                    name = nominatedCompanyName,
+                    utr = nominatedCompanyUtr
+                  ),
                   contacts = exampleContacts
                 )
               )
@@ -447,7 +447,7 @@ class CertificateServiceSpec
               EmailTemplate.CertificateConfirmationSubmitter,
               contact.email,
               contact.name,
-              exampleCompanyName,
+              nominatedCompanyName,
               exampleCertificateReference,
               Some("Firstname Lastname"),
               expectedSaoName
@@ -461,8 +461,11 @@ class CertificateServiceSpec
               Json.toJson(
                 GetSubscriptionDpsResponse(
                   etmpSafeId = exampleSafeId,
-                  nominatedCompany =
-                    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr),
+                  nominatedCompany = NominatedCompany(
+                    crn = Some(nominatedCompanyCrn),
+                    name = nominatedCompanyName,
+                    utr = nominatedCompanyUtr
+                  ),
                   contacts = exampleContacts
                 )
               )
@@ -479,7 +482,7 @@ class CertificateServiceSpec
             EmailTemplate.CertificateConfirmationSAO,
             expectedSaoEmail,
             expectedSaoName,
-            exampleCompanyName,
+            nominatedCompanyName,
             exampleCertificateReference,
             None,
             expectedSaoName
@@ -490,7 +493,7 @@ class CertificateServiceSpec
               EmailTemplate.CertificateConfirmationSAO,
               contact.email,
               contact.name,
-              exampleCompanyName,
+              nominatedCompanyName,
               exampleCertificateReference,
               None,
               expectedSaoName
@@ -596,9 +599,9 @@ object CertificateServiceSpec {
 
   val exampleSubscriptionId          = "123"
   val exampleCertificateReference    = "CRT0123456789"
-  val exampleUtr                     = generateUtr
-  val exampleCrn                     = generateCrn
-  val exampleCompanyName             = "company name"
+  val nominatedCompanyUtr            = generateUtr
+  val nominatedCompanyCrn            = generateCrn
+  val nominatedCompanyName           = "company name"
   val exampleSafeId                  = "safe id"
   val exampleCustomerId              = "customer id"
   val exampleContacts: List[Contact] = List(
@@ -616,4 +619,12 @@ object CertificateServiceSpec {
 
   val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 
+  val exampleNominatedCompany: NominatedCompany =
+    NominatedCompany(crn = Some(nominatedCompanyCrn), name = nominatedCompanyName, utr = nominatedCompanyUtr)
+
+  val subscriptionResponse: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
+    etmpSafeId = exampleSafeId,
+    nominatedCompany = exampleNominatedCompany,
+    contacts = Nil
+  )
 }
