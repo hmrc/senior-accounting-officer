@@ -196,13 +196,11 @@ class EmailServiceSpec
 
       val logs = withEmailServiceLogs {
         emailService
-          .sendCertificateEmail(
-            emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+          .sendSaoCertificateEmail(
             email = "email@example.com",
             recipientName = "name",
             companyName = "companyName",
             referenceId = "abc",
-            submitterName = None,
             saoName = "name"
           )
           .futureValue

@@ -21,15 +21,15 @@ import play.api.http.{HeaderNames, MimeTypes, Status}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.{
-  CertificateConfirmationSAO,
-  CertificateConfirmationSubmitter,
   NotificationConfirmation
 }
 import uk.gov.hmrc.senioraccountingofficer.models.{
-  CertificateEmail,
-  CertificateEmailParameters,
   NotificationEmail,
-  NotificationEmailParameters
+  NotificationEmailParameters,
+  SaoCertificateEmail,
+  SaoCertificateEmailParameters,
+  SubmitterCertificateEmail,
+  SubmitterCertificateEmailParameters
 }
 
 import java.util.UUID
@@ -84,7 +84,7 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
     }
 
     "post the certificate email to the HMRC domain" in {
-      val parameters = CertificateEmailParameters(
+      val parameters = SubmitterCertificateEmailParameters(
         recipientName = "recipient name",
         companyName = "companyName",
         submitterName = Some("submitter name"),
@@ -92,9 +92,8 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"
       )
-      val request = CertificateEmail(
+      val request = SubmitterCertificateEmail(
         to = List("email@example.com"),
-        templateId = CertificateConfirmationSubmitter,
         parameters = parameters
       )
 
@@ -123,17 +122,15 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
     }
 
     "post the SAO certificate email to the HMRC domain without a submitter name" in {
-      val parameters = CertificateEmailParameters(
+      val parameters = SaoCertificateEmailParameters(
         recipientName = "recipient name",
         companyName = "companyName",
-        submitterName = None,
         saoName = "sao name",
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"
       )
-      val request = CertificateEmail(
+      val request = SaoCertificateEmail(
         to = List("email@example.com"),
-        templateId = CertificateConfirmationSAO,
         parameters = parameters
       )
 

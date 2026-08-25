@@ -27,10 +27,15 @@ final case class NotificationEmail(
     templateId: EmailTemplate,
     parameters: NotificationEmailParameters
 ) extends Email
-final case class CertificateEmail(
+final case class SubmitterCertificateEmail(
     to: List[String],
-    templateId: EmailTemplate,
-    parameters: CertificateEmailParameters
+    templateId: EmailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
+    parameters: SubmitterCertificateEmailParameters
+) extends Email
+final case class SaoCertificateEmail(
+    to: List[String],
+    templateId: EmailTemplate = EmailTemplate.CertificateConfirmationSAO,
+    parameters: SaoCertificateEmailParameters
 ) extends Email
 
 final case class NotificationEmailParameters(
@@ -40,7 +45,7 @@ final case class NotificationEmailParameters(
     referenceId: String
 )
 
-final case class CertificateEmailParameters(
+final case class SubmitterCertificateEmailParameters(
     recipientName: String,
     companyName: String,
     submitterName: Option[String],
@@ -49,10 +54,20 @@ final case class CertificateEmailParameters(
     referenceId: String
 )
 
+final case class SaoCertificateEmailParameters(
+    recipientName: String,
+    companyName: String,
+    saoName: String,
+    submittedDateTime: String,
+    referenceId: String
+)
+
 object Email {
   given OWrites[Email] = OWrites {
-    case notificationEmail: NotificationEmail => Json.toJson(notificationEmail).as[JsObject]
-    case certificateEmail: CertificateEmail   => Json.toJson(certificateEmail).as[JsObject]
+    case notificationEmail: NotificationEmail                 => Json.toJson(notificationEmail).as[JsObject]
+    case submitterCertificateEmail: SubmitterCertificateEmail =>
+      Json.toJson(submitterCertificateEmail).as[JsObject]
+    case saoCertificateEmail: SaoCertificateEmail => Json.toJson(saoCertificateEmail).as[JsObject]
   }
 }
 
@@ -60,14 +75,22 @@ object NotificationEmail {
   given OFormat[NotificationEmail] = Json.format[NotificationEmail]
 }
 
-object CertificateEmail {
-  given OFormat[CertificateEmail] = Json.format[CertificateEmail]
+object SubmitterCertificateEmail {
+  given OFormat[SubmitterCertificateEmail] = Json.format[SubmitterCertificateEmail]
 }
 
 object NotificationEmailParameters {
   given OFormat[NotificationEmailParameters] = Json.format[NotificationEmailParameters]
 }
 
-object CertificateEmailParameters {
-  given OFormat[CertificateEmailParameters] = Json.format[CertificateEmailParameters]
+object SubmitterCertificateEmailParameters {
+  given OFormat[SubmitterCertificateEmailParameters] = Json.format[SubmitterCertificateEmailParameters]
+}
+
+object SaoCertificateEmail {
+  given OFormat[SaoCertificateEmail] = Json.format[SaoCertificateEmail]
+}
+
+object SaoCertificateEmailParameters {
+  given OFormat[SaoCertificateEmailParameters] = Json.format[SaoCertificateEmailParameters]
 }

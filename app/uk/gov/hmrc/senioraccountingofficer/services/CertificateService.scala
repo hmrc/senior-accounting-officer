@@ -21,7 +21,6 @@ import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{
@@ -149,33 +148,29 @@ class CertificateService @Inject() (
       certificateReference: String,
       request: CertificateDpsRequest
   )(using HeaderCarrier): Future[Unit] = {
+    val recipients = ((request.saoName, request.saoEmail) :: dpsSubscription.contacts.map { contact =>
+      (contact.name, contact.email)
+    }).distinctBy { case (_, email) => email }
     request.submitterName match {
       case Some(submitterName) =>
-        val emailRequests = dpsSubscription.contacts.map { contact =>
-          emailService.sendCertificateEmail(
-            emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
-            email = contact.email,
-            recipientName = contact.name,
+        val emailRequests = recipients.map { case (recipientName, email) =>
+          emailService.sendSubmitterCertificateEmail(
+            email = email,
+            recipientName = recipientName,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
-            submitterName = Some(submitterName),
+            submitterName = submitterName,
             saoName = request.saoName
           )
         }
         Future.sequence(emailRequests).map(_ => ())
       case None =>
-        val recipients = ((request.saoName, request.saoEmail) :: dpsSubscription.contacts.map { contact =>
-          (contact.name, contact.email)
-        }).distinctBy { case (_, email) => email }
-
         val emailRequests = recipients.map { case (recipientName, email) =>
-          emailService.sendCertificateEmail(
-            emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+          emailService.sendSaoCertificateEmail(
             email = email,
             recipientName = recipientName,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
-            submitterName = None,
             saoName = request.saoName
           )
         }
