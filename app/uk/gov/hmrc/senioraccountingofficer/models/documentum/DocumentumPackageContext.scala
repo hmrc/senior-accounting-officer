@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, NominatedCompany}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 
 enum SubmissionType(val documentumName: String) {
@@ -34,8 +34,8 @@ final case class DocumentumPackageContext(
     submissionId: String,
     submissionType: SubmissionType,
     saoSubscriptionId: String,
-    customerId: Option[String],
-    companies: List[DocumentumCompany]
+    nominatedCompany: DocumentumCompany,
+    customerId: Option[String]
 )
 
 object DocumentumPackageContext {
@@ -44,29 +44,30 @@ object DocumentumPackageContext {
       submissionId: String,
       customerId: Option[String],
       saoSubscriptionId: String,
+      nominatedCompany: NominatedCompany,
       request: NotificationRequest
   ): DocumentumPackageContext =
     DocumentumPackageContext(
       submissionId = submissionId,
       submissionType = SubmissionType.Notification,
       saoSubscriptionId = saoSubscriptionId,
-      customerId = customerId,
-      companies = request.companies.value.map(company =>
-        DocumentumCompany(utr = company.utr.value, name = company.name.value, crn = company.crn.map(_.value))
-      )
+      nominatedCompany =
+        DocumentumCompany(name = nominatedCompany.name, utr = nominatedCompany.utr, crn = nominatedCompany.crn),
+      customerId = customerId
     )
 
   def certificate(
       submissionId: String,
       saoSubscriptionId: String,
+      nominatedCompany: NominatedCompany,
       request: CertificateDpsRequest
   ): DocumentumPackageContext =
     DocumentumPackageContext(
       submissionId = submissionId,
       submissionType = SubmissionType.Certificate,
       saoSubscriptionId = saoSubscriptionId,
-      customerId = request.customerId,
-      companies =
-        request.companies.map(company => DocumentumCompany(utr = company.utr, name = company.name, crn = company.crn))
+      nominatedCompany =
+        DocumentumCompany(name = nominatedCompany.name, utr = nominatedCompany.utr, crn = nominatedCompany.crn),
+      customerId = request.customerId
     )
 }

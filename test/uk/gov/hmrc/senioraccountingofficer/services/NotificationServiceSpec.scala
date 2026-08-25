@@ -125,8 +125,8 @@ class NotificationServiceSpec
       mockCrmmConnector.retrieveCustomer(
         meq(
           RetrieveCustomerRequest(
-            companyRegistrationNumber = Some(exampleCrn),
-            uniqueTaxReference = Some(exampleUtr)
+            companyRegistrationNumber = Some(nominatedCompanyCrn),
+            uniqueTaxReference = Some(nominatedCompanyUtr)
           )
         )
       )(using any())
@@ -182,7 +182,7 @@ class NotificationServiceSpec
           verify(
             mockCrmmConnector,
             Times(1)
-          ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(exampleCrn), Some(exampleUtr))))(using
+          ).retrieveCustomer(meq(RetrieveCustomerRequest(Some(nominatedCompanyCrn), Some(nominatedCompanyUtr))))(using
             any()
           )
         }
@@ -417,6 +417,7 @@ class NotificationServiceSpec
                     exampleNotificationReference,
                     Some(exampleCustomerId),
                     exampleSubscriptionId,
+                    exampleNominatedCompany,
                     incomingRequest
                   )
               ),
@@ -514,9 +515,9 @@ object NotificationServiceSpec {
 
   val exampleSubscriptionId        = "123"
   val exampleNotificationReference = "NOT0123456789"
-  val exampleUtr                   = generateUtr
-  val exampleCrn                   = generateCrn
-  val exampleCompanyName           = "company name"
+  val nominatedCompanyUtr          = generateUtr
+  val nominatedCompanyCrn          = generateCrn
+  val nominatedCompanyName         = "company name"
   val exampleSafeId                = "safe id"
   val exampleCustomerId            = "customer id"
 
@@ -531,5 +532,6 @@ object NotificationServiceSpec {
   val exampleContacts: List[Contact] =
     List(Contact("name", "email@ex.com", "en", "ACTIVE"), Contact("name2", "email2@ex.com", "en", "ACTIVE"))
   val exampleNominatedCompany: NominatedCompany =
-    NominatedCompany(crn = Some(exampleCrn), name = exampleCompanyName, utr = exampleUtr)
+    NominatedCompany(crn = Some(nominatedCompanyCrn), name = nominatedCompanyName, utr = nominatedCompanyUtr)
+
 }
