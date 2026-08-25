@@ -83,25 +83,43 @@ class EmailService @Inject() (
     Future.sequence(emailRequests).map(_ => ())
   }
 
-  def sendCertificateEmail(
-      emailTemplate: EmailTemplate,
+  def sendSubmitterCertificateEmail(
       email: String,
       recipientName: String,
       companyName: String,
       referenceId: String,
-      submitterName: Option[String],
+      submitterName: String,
       saoName: String
   )(using HeaderCarrier): Future[Unit] = {
     val datetime        = LocalDateTime.now().format(dateFormatter)
-    val emailParameters = CertificateEmailParameters(
+    val emailParameters = SubmitterCertificateEmailParameters(
       recipientName = recipientName,
       companyName = companyName,
       submittedDateTime = datetime,
       referenceId = referenceId,
-      submitterName = submitterName,
+      submitterName = Some(submitterName),
       saoName = saoName
     )
-    val emailModel = CertificateEmail(List(email), emailTemplate, emailParameters)
+    val emailModel = SubmitterCertificateEmail(List(email), parameters = emailParameters)
+    sendEmail(emailModel, "certificate")
+  }
+
+  def sendSaoCertificateEmail(
+      email: String,
+      recipientName: String,
+      companyName: String,
+      referenceId: String,
+      saoName: String
+  )(using HeaderCarrier): Future[Unit] = {
+    val datetime        = LocalDateTime.now().format(dateFormatter)
+    val emailParameters = SaoCertificateEmailParameters(
+      recipientName = recipientName,
+      companyName = companyName,
+      submittedDateTime = datetime,
+      referenceId = referenceId,
+      saoName = saoName
+    )
+    val emailModel = SaoCertificateEmail(List(email), parameters = emailParameters)
     sendEmail(emailModel, "certificate")
   }
 

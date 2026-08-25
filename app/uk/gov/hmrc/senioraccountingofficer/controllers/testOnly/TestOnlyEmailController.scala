@@ -61,26 +61,23 @@ class TestOnlyEmailController @Inject() (
 
         case "certificate-sao" =>
           emailService
-            .sendCertificateEmail(
-              emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+            .sendSaoCertificateEmail(
               email = email,
               recipientName = recipientName,
               companyName = testCompanyName,
               referenceId = testCertificateReference,
-              submitterName = None,
               saoName = recipientName
             )
             .map(_ => accepted(email, recipientName, EmailTemplate.CertificateConfirmationSAO))
 
         case "certificate-submitter" =>
           emailService
-            .sendCertificateEmail(
-              emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
+            .sendSubmitterCertificateEmail(
               email = email,
               recipientName = recipientName,
               companyName = testCompanyName,
               referenceId = testCertificateReference,
-              submitterName = Some(recipientName),
+              submitterName = recipientName,
               saoName = testSaoName
             )
             .map(_ => accepted(email, recipientName, EmailTemplate.CertificateConfirmationSubmitter))

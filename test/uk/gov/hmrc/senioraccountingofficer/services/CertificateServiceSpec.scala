@@ -31,7 +31,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
@@ -85,7 +84,9 @@ class CertificateServiceSpec
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
     reset(mockEmailService)
-    when(mockEmailService.sendCertificateEmail(any(), any(), any(), any(), any(), any(), any())(using any()))
+    when(mockEmailService.sendSubmitterCertificateEmail(any(), any(), any(), any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
+    when(mockEmailService.sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
   }
 
@@ -443,13 +444,12 @@ class CertificateServiceSpec
           service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
           exampleContacts.foreach { contact =>
-            verify(mockEmailService, Times(1)).sendCertificateEmail(
-              EmailTemplate.CertificateConfirmationSubmitter,
+            verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
               contact.email,
               contact.name,
               exampleCompanyName,
               exampleCertificateReference,
-              Some("Firstname Lastname"),
+              "Firstname Lastname",
               expectedSaoName
             )
           }
@@ -475,24 +475,20 @@ class CertificateServiceSpec
 
           service.postCertificate(exampleSubscriptionId, incomingRequest.copy(submitterName = None)).futureValue
 
-          verify(mockEmailService, Times(1)).sendCertificateEmail(
-            EmailTemplate.CertificateConfirmationSAO,
+          verify(mockEmailService, Times(1)).sendSaoCertificateEmail(
             expectedSaoEmail,
             expectedSaoName,
             exampleCompanyName,
             exampleCertificateReference,
-            None,
             expectedSaoName
           )
 
           exampleContacts.foreach { contact =>
-            verify(mockEmailService, Times(1)).sendCertificateEmail(
-              EmailTemplate.CertificateConfirmationSAO,
+            verify(mockEmailService, Times(1)).sendSaoCertificateEmail(
               contact.email,
               contact.name,
               exampleCompanyName,
               exampleCertificateReference,
-              None,
               expectedSaoName
             )
           }
@@ -505,9 +501,10 @@ class CertificateServiceSpec
 
           val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(0)).sendCertificateEmail(any(), any(), any(), any(), any(), any(), any())(using
-            any()
+          verify(mockEmailService, Times(0)).sendSubmitterCertificateEmail(any(), any(), any(), any(), any(), any())(
+            using any()
           )
+          verify(mockEmailService, Times(0)).sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any())
           result mustBe MalformedResponse(DPS)
         }
       }

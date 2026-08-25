@@ -21,7 +21,6 @@ import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.{CertificateConnector, CrmmConnector, GetSubscriptionConnector}
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{
@@ -152,13 +151,12 @@ class CertificateService @Inject() (
     request.submitterName match {
       case Some(submitterName) =>
         val emailRequests = dpsSubscription.contacts.map { contact =>
-          emailService.sendCertificateEmail(
-            emailTemplate = EmailTemplate.CertificateConfirmationSubmitter,
+          emailService.sendSubmitterCertificateEmail(
             email = contact.email,
             recipientName = contact.name,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
-            submitterName = Some(submitterName),
+            submitterName = submitterName,
             saoName = request.saoName
           )
         }
@@ -169,13 +167,11 @@ class CertificateService @Inject() (
         }).distinctBy { case (_, email) => email }
 
         val emailRequests = recipients.map { case (recipientName, email) =>
-          emailService.sendCertificateEmail(
-            emailTemplate = EmailTemplate.CertificateConfirmationSAO,
+          emailService.sendSaoCertificateEmail(
             email = email,
             recipientName = recipientName,
             companyName = dpsSubscription.nominatedCompany.name,
             referenceId = certificateReference,
-            submitterName = None,
             saoName = request.saoName
           )
         }
