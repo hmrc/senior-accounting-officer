@@ -68,11 +68,32 @@ object ObjectStoreHelper {
     )
   }
 
-  def mockZipUpload(submissionId: String, status: Int, body: Option[String]): StubMapping = {
+  def mockNotificationZipUpload(submissionId: String, status: Int, body: Option[String]): StubMapping = {
     stubFor(
       put(
         urlMatching(
           s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Notification_OFFICIAL_SENSITIVE.zip"
+        )
+      )
+        .willReturn(
+          body match {
+            case Some(body) =>
+              aResponse()
+                .withStatus(status)
+                .withBody(body)
+            case None =>
+              aResponse()
+                .withStatus(status)
+          }
+        )
+    )
+  }
+
+  def mockCertificateZipUpload(submissionId: String, status: Int, body: Option[String]): StubMapping = {
+    stubFor(
+      put(
+        urlMatching(
+          s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Certificate_OFFICIAL_SENSITIVE.zip"
         )
       )
         .willReturn(
@@ -98,12 +119,23 @@ object ObjectStoreHelper {
     )
   }
 
-  def verifyZipUpload(submissionId: String, times: Int): Unit = {
+  def verifyNotificationZipUpload(submissionId: String, times: Int): Unit = {
     verify(
       times,
       putRequestedFor(
         urlMatching(
           s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Notification_OFFICIAL_SENSITIVE.zip"
+        )
+      )
+    )
+  }
+
+  def verifyCertificateZipUpload(submissionId: String, times: Int): Unit = {
+    verify(
+      times,
+      putRequestedFor(
+        urlMatching(
+          s"/object-store/object/senior-accounting-officer/sdes/$submissionId/[0-9]+_${submissionId}_SAO_Certificate_OFFICIAL_SENSITIVE.zip"
         )
       )
     )

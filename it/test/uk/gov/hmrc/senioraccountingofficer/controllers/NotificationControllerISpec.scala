@@ -81,7 +81,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             Some(objectStoreUploadResponse)
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-          ObjectStoreHelper.mockZipUpload(
+          ObjectStoreHelper.mockNotificationZipUpload(
             notificationReference,
             200,
             Some(objectStoreUploadResponse)
@@ -107,7 +107,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyZipUpload(notificationReference, 1)
+            ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
             SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
@@ -124,7 +124,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             Some(objectStoreUploadResponse)
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-          ObjectStoreHelper.mockZipUpload(
+          ObjectStoreHelper.mockNotificationZipUpload(
             notificationReference,
             200,
             Some(objectStoreUploadResponse)
@@ -150,7 +150,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyZipUpload(notificationReference, 1)
+            ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
             SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
@@ -176,7 +176,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(None, 0)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -208,7 +208,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(None, 0)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -236,7 +236,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(None, 0)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -269,7 +269,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(None, 0)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -302,7 +302,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(None, 0)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -340,7 +340,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(None, 0)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -375,7 +375,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestFirstContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-            ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+            ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
           }
         }
@@ -412,7 +412,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
-              ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -453,7 +453,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-              ObjectStoreHelper.verifyZipUpload(zipFilename, 0)
+              ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -474,7 +474,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               Some(objectStoreUploadResponse)
             )
             ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-            ObjectStoreHelper.mockZipUpload(
+            ObjectStoreHelper.mockNotificationZipUpload(
               notificationReference,
               400,
               Some(objectStoreUploadResponse)
@@ -499,7 +499,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
               EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-              ObjectStoreHelper.verifyZipUpload(notificationReference, 1)
+              ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
               SdesHelper.verifyCalled(sdesRequest, 0)
             }
           }
@@ -521,7 +521,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             Some(objectStoreUploadResponse)
           )
           ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-          ObjectStoreHelper.mockZipUpload(
+          ObjectStoreHelper.mockNotificationZipUpload(
             notificationReference,
             200,
             Some(objectStoreUploadResponse)
@@ -547,7 +547,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             EmailHelper.verifyCalled(Some(emailRequestSecondContact), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
-            ObjectStoreHelper.verifyZipUpload(notificationReference, 1)
+            ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
             SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
