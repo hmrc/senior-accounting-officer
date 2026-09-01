@@ -520,7 +520,9 @@ class CertificateServiceSpec
             using any()
           )
           verify(mockEmailService, Times(0)).sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any())
-          verify(mockEmailService, Times(0)).sendSaoContactCertificateEmail(any(), any(), any(), any(), any())(using any())
+          verify(mockEmailService, Times(0)).sendSaoContactCertificateEmail(any(), any(), any(), any(), any())(using
+            any()
+          )
           result mustBe MalformedResponse(DPS)
         }
       }
