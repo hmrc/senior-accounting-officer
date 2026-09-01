@@ -123,4 +123,27 @@ class EmailService @Inject() (
     sendEmail(emailModel, "certificate")
   }
 
+  def sendSaoContactCertificateEmail(
+      email: String,
+      recipientName: String,
+      companyName: String,
+      referenceId: String,
+      saoName: String
+  )(using HeaderCarrier): Future[Unit] = {
+    val datetime        = LocalDateTime.now().format(dateFormatter)
+    val emailParameters = SaoCertificateEmailParameters(
+      recipientName = recipientName,
+      companyName = companyName,
+      submittedDateTime = datetime,
+      referenceId = referenceId,
+      saoName = saoName
+    )
+    val emailModel = SaoCertificateEmail(
+      List(email),
+      templateId = EmailTemplate.CertificateConfirmationSAOToContacts,
+      parameters = emailParameters
+    )
+    sendEmail(emailModel, "certificate")
+  }
+
 }

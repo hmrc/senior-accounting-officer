@@ -88,6 +88,8 @@ class CertificateServiceSpec
       .thenReturn(Future.successful(()))
     when(mockEmailService.sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
+    when(mockEmailService.sendSaoContactCertificateEmail(any(), any(), any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
   }
 
   def configureSubscriptionResponse(
@@ -496,7 +498,7 @@ class CertificateServiceSpec
           )
 
           exampleContacts.foreach { contact =>
-            verify(mockEmailService, Times(1)).sendSaoCertificateEmail(
+            verify(mockEmailService, Times(1)).sendSaoContactCertificateEmail(
               contact.email,
               contact.name,
               nominatedCompanyName,
@@ -518,6 +520,7 @@ class CertificateServiceSpec
             using any()
           )
           verify(mockEmailService, Times(0)).sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any())
+          verify(mockEmailService, Times(0)).sendSaoContactCertificateEmail(any(), any(), any(), any(), any())(using any())
           result mustBe MalformedResponse(DPS)
         }
       }
