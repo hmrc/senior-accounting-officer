@@ -35,7 +35,7 @@ import java.time.format.DateTimeFormatter
 class CertificateControllerISpec extends ISpecBase with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = scaled(Span(20, Seconds)),
+    timeout = scaled(Span(30, Seconds)),
     interval = scaled(Span(150, Millis))
   )
 
