@@ -26,7 +26,10 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
 lazy val it = project
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
-  .settings(DefaultBuildSettings.itSettings())
+  .settings(
+    DefaultBuildSettings.itSettings(),
+    Test / parallelExecution := false
+  )
   .settings(libraryDependencies ++= AppDependencies.compile ++ AppDependencies.it)
 
 val scalafixSettings: Seq[Setting[?]] = Seq(
