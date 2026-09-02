@@ -165,16 +165,24 @@ class CertificateService @Inject() (
         }
         Future.sequence(emailRequests).map(_ => ())
       case None =>
-        val emailRequests = recipients.map { case (recipientName, email) =>
-          emailService.sendSaoCertificateEmail(
-            email = email,
-            recipientName = recipientName,
-            companyName = dpsSubscription.nominatedCompany.name,
-            referenceId = certificateReference,
-            saoName = request.saoName
-          )
+        val sendSaoEmail = emailService.sendSaoCertificateEmail(
+          email = request.saoEmail,
+          recipientName = request.saoName,
+          companyName = dpsSubscription.nominatedCompany.name,
+          referenceId = certificateReference,
+          saoName = request.saoName
+        )
+        val contactEmailRequests = recipients.collect {
+          case (recipientName, email) if email != request.saoEmail =>
+            emailService.sendSaoContactCertificateEmail(
+              email = email,
+              recipientName = recipientName,
+              companyName = dpsSubscription.nominatedCompany.name,
+              referenceId = certificateReference,
+              saoName = request.saoName
+            )
         }
-        Future.sequence(emailRequests).map(_ => ())
+        Future.sequence(sendSaoEmail :: contactEmailRequests).map(_ => ())
     }
   }
 

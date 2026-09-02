@@ -17,28 +17,28 @@
 package uk.gov.hmrc.senioraccountingofficer.models
 
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.{
-  CertificateConfirmationSAO,
-  CertificateConfirmationSubmitter,
-  NotificationConfirmation
-}
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.*
 
 enum EmailTemplate(val templateId: JsString) {
   case CertificateConfirmationSubmitter extends EmailTemplate(JsString("dsao_certificate_confirmation_for_submitter"))
   case CertificateConfirmationSAO       extends EmailTemplate(JsString("dsao_certificate_confirmation_for_sao"))
-  case NotificationConfirmation         extends EmailTemplate(JsString("dsao_notification_confirmation"))
+  case CertificateConfirmationSAOToContacts
+      extends EmailTemplate(JsString("dsao_certificate_confirmation_for_sao_to_contacts"))
+  case NotificationConfirmation extends EmailTemplate(JsString("dsao_notification_confirmation"))
 
 }
 
 given Writes[EmailTemplate] = Writes {
-  case CertificateConfirmationSubmitter => CertificateConfirmationSubmitter.templateId
-  case CertificateConfirmationSAO       => CertificateConfirmationSAO.templateId
-  case NotificationConfirmation         => NotificationConfirmation.templateId
+  case CertificateConfirmationSubmitter     => CertificateConfirmationSubmitter.templateId
+  case CertificateConfirmationSAO           => CertificateConfirmationSAO.templateId
+  case CertificateConfirmationSAOToContacts => CertificateConfirmationSAOToContacts.templateId
+  case NotificationConfirmation             => NotificationConfirmation.templateId
 }
 
 given Reads[EmailTemplate] = Reads {
-  case CertificateConfirmationSubmitter.templateId => JsSuccess(CertificateConfirmationSubmitter)
-  case CertificateConfirmationSAO.templateId       => JsSuccess(CertificateConfirmationSAO)
-  case NotificationConfirmation.templateId         => JsSuccess(NotificationConfirmation)
+  case CertificateConfirmationSubmitter.templateId     => JsSuccess(CertificateConfirmationSubmitter)
+  case CertificateConfirmationSAO.templateId           => JsSuccess(CertificateConfirmationSAO)
+  case CertificateConfirmationSAOToContacts.templateId => JsSuccess(CertificateConfirmationSAOToContacts)
+  case NotificationConfirmation.templateId             => JsSuccess(NotificationConfirmation)
 
 }

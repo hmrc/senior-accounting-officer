@@ -157,6 +157,43 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
       connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
     }
 
+    "post the SAO contact certificate email to the HMRC domain" in {
+      val parameters = SaoCertificateEmailParameters(
+        recipientName = "recipient name",
+        companyName = "companyName",
+        saoName = "sao name",
+        submittedDateTime = "17 January 2025 at 11:45am",
+        referenceId = "abc"
+      )
+      val request = SaoCertificateEmail(
+        to = List("email@example.com"),
+        templateId = uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.CertificateConfirmationSAOToContacts,
+        parameters = parameters
+      )
+
+      val expectedRequestBody = """{
+          |  "to": ["email@example.com"],
+          |  "templateId": "dsao_certificate_confirmation_for_sao_to_contacts",
+          |  "parameters": {
+          |    "recipientName": "recipient name",
+          |    "companyName": "companyName",
+          |    "saoName": "sao name",
+          |    "submittedDateTime": "17 January 2025 at 11:45am",
+          |    "referenceId": "abc"
+          |  }
+          |}""".stripMargin
+
+      stubFor(
+        post(urlEqualTo("/hmrc/email"))
+          .withHeader(HeaderNames.CONTENT_TYPE, containing(MimeTypes.JSON))
+          .withHeader("CorrelationId", equalTo(correlationId))
+          .withRequestBody(equalToJson(expectedRequestBody))
+          .willReturn(aResponse().withStatus(Status.ACCEPTED))
+      )
+
+      connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
+    }
+
     "return the raw response without throwing on a non-202 status" in {
       val request = NotificationEmail(
         to = List("email@example.com"),

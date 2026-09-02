@@ -103,8 +103,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
@@ -147,8 +147,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
@@ -235,8 +235,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
@@ -463,8 +463,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
@@ -501,8 +501,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
             eventually {
               EmailHelper.verifyCalled(None, 3)
-              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
               EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
@@ -543,8 +543,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
             eventually {
               EmailHelper.verifyCalled(None, 3)
-              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
               EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
@@ -590,8 +590,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
             eventually {
               EmailHelper.verifyCalled(None, 3)
-              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+              EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
               EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
               ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
               ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
@@ -639,8 +639,8 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
-            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSao), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSao), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.firstUserConfirmationForSaoToContacts), 1)
+            EmailHelper.verifyCalled(Some(EmailRequests.secondUserConfirmationForSaoToContacts), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.thirdUserConfirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
@@ -885,44 +885,44 @@ object CertificateControllerISpec {
                                      |}""".stripMargin
 
   object EmailRequests {
-    val firstUserConfirmationForSao = s"""{
-                                         |  "to": [
-                                         |    "$firstUserEmail"
-                                         |  ],
-                                         |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                         |  "parameters": {
-                                         |    "recipientName": "$firstUserName",
-                                         |    "companyName": "$companyName",
-                                         |    "saoName": "$thirdUserName",
-                                         |    "referenceId": "$certificateReference"
-                                         |  }
-                                         |}""".stripMargin
+    val firstUserConfirmationForSaoToContacts = s"""{
+                                                   |  "to": [
+                                                   |    "$firstUserEmail"
+                                                   |  ],
+                                                   |  "templateId": "dsao_certificate_confirmation_for_sao_to_contacts",
+                                                   |  "parameters": {
+                                                   |    "recipientName": "$firstUserName",
+                                                   |    "companyName": "$companyName",
+                                                   |    "saoName": "$thirdUserName",
+                                                   |    "referenceId": "$certificateReference"
+                                                   |  }
+                                                   |}""".stripMargin
 
-    val secondUserConfirmationForSao = s"""{
-                                          |  "to": [
-                                          |    "$secondUserEmail"
-                                          |  ],
-                                          |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                          |  "parameters": {
-                                          |    "recipientName": "$secondUserName",
-                                          |    "companyName": "$companyName",
-                                          |    "saoName": "$thirdUserName",
-                                          |    "referenceId": "$certificateReference"
-                                          |  }
-                                          |}""".stripMargin
+    val secondUserConfirmationForSaoToContacts = s"""{
+                                                    |  "to": [
+                                                    |    "$secondUserEmail"
+                                                    |  ],
+                                                    |  "templateId": "dsao_certificate_confirmation_for_sao_to_contacts",
+                                                    |  "parameters": {
+                                                    |    "recipientName": "$secondUserName",
+                                                    |    "companyName": "$companyName",
+                                                    |    "saoName": "$thirdUserName",
+                                                    |    "referenceId": "$certificateReference"
+                                                    |  }
+                                                    |}""".stripMargin
 
     val thirdUserConfirmationForSao = s"""{
-                                         |  "to": [
-                                         |    "$thirdUserEmail"
-                                         |  ],
-                                         |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                         |  "parameters": {
-                                         |    "recipientName": "$thirdUserName",
-                                         |    "companyName": "$companyName",
-                                         |    "saoName": "$thirdUserName",
-                                         |    "referenceId": "$certificateReference"
-                                         |  }
-                                         |}""".stripMargin
+                                        |  "to": [
+                                        |    "$thirdUserEmail"
+                                        |  ],
+                                        |  "templateId": "dsao_certificate_confirmation_for_sao",
+                                        |  "parameters": {
+                                        |    "recipientName": "$thirdUserName",
+                                        |    "companyName": "$companyName",
+                                        |    "saoName": "$thirdUserName",
+                                        |    "referenceId": "$certificateReference"
+                                        |  }
+                                        |}""".stripMargin
 
     val firstUserConfirmationForSubmitter = s"""{
                                                |  "to": [
