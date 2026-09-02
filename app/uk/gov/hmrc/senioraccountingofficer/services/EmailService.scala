@@ -38,6 +38,24 @@ class EmailService @Inject() (
 
   private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
 
+  private def sendEmailStrict(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
+    val correlationId = summon[HeaderCarrier].extraHeaders
+      .collectFirst { case (name, value) if name.equalsIgnoreCase("correlationId") => value }
+      .fold("not-provided")(identity)
+
+    emailConnector
+      .postEmail(email)
+      .flatMap {
+        case HttpResponse(ACCEPTED, _, _)    => Future.successful(())
+        case HttpResponse(BAD_REQUEST, _, _) =>
+          Future.failed(new IllegalStateException(s"Email service returned 400 for $emailType [CorrelationId=$correlationId]"))
+        case HttpResponse(status, _, _)      =>
+          Future.failed(
+            new IllegalStateException(s"Email service returned $status for $emailType [CorrelationId=$correlationId]")
+          )
+      }
+  }
+
   private def sendEmail(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
     val correlationId = summon[HeaderCarrier].extraHeaders
       .collectFirst { case (name, value) if name.equalsIgnoreCase("correlationId") => value }
@@ -49,7 +67,7 @@ class EmailService @Inject() (
         case HttpResponse(ACCEPTED, _, _)    => ()
         case HttpResponse(BAD_REQUEST, _, _) =>
           logger.warn(s"Error from HMRC email service: status=400 [CorrelationId=$correlationId]")
-        case HttpResponse(status, _, _) =>
+        case HttpResponse(status, _, _)      =>
           logger.warn(s"Unexpected response from HMRC email service: status=$status [CorrelationId=$correlationId]")
       }
       .recover { case NonFatal(e) =>
@@ -58,6 +76,72 @@ class EmailService @Inject() (
         )
       }
   }
+
+  def sendNotificationEmailStrict(
+      contacts: List[Contact],
+      companyName: String,
+      referenceId: String
+  )(using HeaderCarrier): Future[Unit] = {
+    val datetime = LocalDateTime.now().format(dateFormatter)
+
+    val emailRequests = contacts.map(contact => {
+      val emailParameters = NotificationEmailParameters(
+        recipientName = contact.name,
+        companyName = companyName,
+        submittedDateTime = datetime,
+        referenceId = referenceId
+      )
+      val emailModel = NotificationEmail(
+        List(contact.email),
+        templateId = EmailTemplate.NotificationConfirmation,
+        parameters = emailParameters
+      )
+      sendEmailStrict(emailModel.asInstanceOf[Email], "notification")
+    })
+
+    Future.sequence(emailRequests).map(_ => ())
+  }
+
+  def sendSubmitterCertificateEmailStrict(
+      email: String,
+      recipientName: String,
+      companyName: String,
+      referenceId: String,
+      submitterName: String,
+      saoName: String
+  )(using HeaderCarrier): Future[Unit] = {
+    val datetime        = LocalDateTime.now().format(dateFormatter)
+    val emailParameters = SubmitterCertificateEmailParameters(
+      recipientName = recipientName,
+      companyName = companyName,
+      submittedDateTime = datetime,
+      referenceId = referenceId,
+      submitterName = Some(submitterName),
+      saoName = saoName
+    )
+    val emailModel = SubmitterCertificateEmail(List(email), parameters = emailParameters)
+    sendEmailStrict(emailModel, "certificate")
+  }
+
+  def sendSaoCertificateEmailStrict(
+      email: String,
+      recipientName: String,
+      companyName: String,
+      referenceId: String,
+      saoName: String
+  )(using HeaderCarrier): Future[Unit] = {
+    val datetime        = LocalDateTime.now().format(dateFormatter)
+    val emailParameters = SaoCertificateEmailParameters(
+      recipientName = recipientName,
+      companyName = companyName,
+      submittedDateTime = datetime,
+      referenceId = referenceId,
+      saoName = saoName
+    )
+    val emailModel = SaoCertificateEmail(List(email), parameters = emailParameters)
+    sendEmailStrict(emailModel, "certificate")
+  }
+
   def sendNotificationEmail(
       contacts: List[Contact],
       companyName: String,

@@ -32,9 +32,10 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
-import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, PreparedSdesSubmission}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
+import uk.gov.hmrc.senioraccountingofficer.repositories.SubmissionStateRepository
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
@@ -66,6 +67,8 @@ class NotificationServiceSpec
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
   val mockEmailService: EmailService                         = mock[EmailService]
+  val mockSubmissionStateRepository: SubmissionStateRepository = mock[SubmissionStateRepository]
+  val mockSubmissionWorkItemScheduler: SubmissionWorkItemScheduler = mock[SubmissionWorkItemScheduler]
 
   val service = new NotificationService(
     mockNotificationDpsConnector,
@@ -73,7 +76,9 @@ class NotificationServiceSpec
     mockCrmmConnector,
     mockDocumentumPackageService,
     mockPdfService,
-    mockEmailService
+    mockEmailService,
+    mockSubmissionStateRepository,
+    mockSubmissionWorkItemScheduler
   )
 
   override def beforeEach(): Unit = {
@@ -84,8 +89,13 @@ class NotificationServiceSpec
     reset(mockEmailService)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
-    when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
+    reset(mockSubmissionStateRepository)
+    reset(mockSubmissionWorkItemScheduler)
+    when(mockEmailService.sendNotificationEmailStrict(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
+    when(mockSubmissionStateRepository.set(any())).thenReturn(Future.successful(true))
+    when(mockSubmissionStateRepository.clear(any())).thenReturn(Future.successful(true))
+    when(mockSubmissionWorkItemScheduler.enqueue(any(), any())).thenReturn(Future.successful(()))
   }
 
   def configureSubscriptionResponse(
@@ -154,8 +164,10 @@ class NotificationServiceSpec
   }
 
   def configureDocumentumPackageService(): Unit = {
-    when(mockDocumentumPackageService.packageAndSubmit(any(), any())(using any()))
-      .thenReturn(Future.successful(DocumentumPackageResult(packageAvailable = true, Some(exampleZipFilename))))
+    when(mockDocumentumPackageService.preparePackage(any(), any())(using any()))
+      .thenReturn(Future.successful(examplePreparedSdesSubmission))
+    when(mockDocumentumPackageService.notifySdes(any())(using any()))
+      .thenReturn(Future.successful(()))
   }
 
   def configurePdfGeneration(): Unit = {
@@ -174,7 +186,7 @@ class NotificationServiceSpec
 
           service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendNotificationEmail(
+          verify(mockEmailService, Times(1)).sendNotificationEmailStrict(
             exampleContacts,
             exampleNominatedCompany.name,
             exampleNotificationReference
@@ -402,7 +414,7 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendNotificationEmail(
+          verify(mockEmailService, Times(1)).sendNotificationEmailStrict(
             exampleContacts,
             exampleNominatedCompany.name,
             exampleNotificationReference
@@ -410,7 +422,7 @@ class NotificationServiceSpec
           result mustBe Success(exampleNotificationReference)
 
           verify(mockDocumentumPackageService)
-            .packageAndSubmit(
+            .preparePackage(
               meq(
                 DocumentumPackageContext
                   .notification(
@@ -528,6 +540,14 @@ object NotificationServiceSpec {
 
   val examplePdfFilename: String = s"${exampleNotificationReference}_SAO_Notification.pdf"
   val exampleZipFilename: String = s"20260728_${exampleNotificationReference}_SAO_Notification_OFFICIAL_SENSITIVE.ZIP"
+  val examplePreparedSdesSubmission: PreparedSdesSubmission = PreparedSdesSubmission(
+    submissionId = exampleNotificationReference,
+    fileName = exampleZipFilename,
+    owner = objectStoreOwner,
+    objectStorePath = s"/sdes/$exampleNotificationReference/$exampleZipFilename",
+    checksum = "checksum",
+    contentLength = 123L
+  )
 
   val exampleContacts: List[Contact] =
     List(Contact("name", "email@ex.com", "en", "ACTIVE"), Contact("name2", "email2@ex.com", "en", "ACTIVE"))

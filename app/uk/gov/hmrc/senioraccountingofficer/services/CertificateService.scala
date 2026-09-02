@@ -59,11 +59,15 @@ class CertificateService @Inject() (
       _         <- EitherT.right[PostCertificateResponse with Failure](
         sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
       )
-      _ <- packageAndSubmitDocumentumFile(
-        subscriptionId,
-        dpsSubscription,
-        dpsResult.certificateRef,
-        requestWithCustomerId
+      _ <- EitherT.right[PostCertificateResponse with Failure](
+        documentumPackageService.packageAndSubmit(
+          DocumentumPackageContext
+            .certificate(dpsResult.certificateRef, subscriptionId, dpsSubscription.nominatedCompany, requestWithCustomerId),
+          pdfService.generateCertificatePdf(
+            CertificateDpsRequest.toPdfCertificate(dpsResult.certificateRef, requestWithCustomerId),
+            dpsSubscription
+          )
+        ).map(_ => ())
       )
     } yield Success(certificateReference = dpsResult.certificateRef)
   }.merge
@@ -177,25 +181,6 @@ class CertificateService @Inject() (
         Future.sequence(emailRequests).map(_ => ())
     }
   }
-
-  private def packageAndSubmitDocumentumFile(
-      subscriptionId: String,
-      dpsSubscription: GetSubscriptionDpsResponse,
-      certificateReference: String,
-      request: CertificateDpsRequest
-  )(using
-      HeaderCarrier
-  ) =
-    EitherT.right[PostCertificateResponse with Failure](
-      documentumPackageService.packageAndSubmit(
-        DocumentumPackageContext
-          .certificate(certificateReference, subscriptionId, dpsSubscription.nominatedCompany, request),
-        pdfService.generateCertificatePdf(
-          CertificateDpsRequest.toPdfCertificate(certificateReference, request),
-          dpsSubscription
-        )
-      )
-    )
 }
 
 object CertificateService {

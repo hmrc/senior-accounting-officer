@@ -17,11 +17,13 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import com.google.inject.AbstractModule
+import uk.gov.hmrc.senioraccountingofficer.services.SubmissionWorkItemPoller
 
 class Module extends AbstractModule {
 
   override def configure(): Unit = {
 
     bind(classOf[AppConfig]).asEagerSingleton()
+    bind(classOf[SubmissionWorkItemPoller]).asEagerSingleton()
   }
 }
