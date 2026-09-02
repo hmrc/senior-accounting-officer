@@ -35,7 +35,7 @@ import java.time.format.DateTimeFormatter
 class CertificateControllerISpec extends ISpecBase with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = scaled(Span(20, Seconds)),
+    timeout = scaled(Span(30, Seconds)),
     interval = scaled(Span(150, Millis))
   )
 
@@ -109,6 +109,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
 
@@ -152,6 +153,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
 
@@ -195,6 +197,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
 
@@ -238,6 +241,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
       }
@@ -641,6 +645,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
+            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
       }
