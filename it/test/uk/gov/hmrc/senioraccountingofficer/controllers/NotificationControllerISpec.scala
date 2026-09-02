@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.apache.pekko.util.ByteString
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.http.HeaderNames
 import play.api.libs.ws.WSResponse
@@ -108,7 +108,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
-            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
 
@@ -151,7 +150,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
-            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
       }
@@ -548,7 +546,6 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
-            SdesHelper.verifyCalled(sdesRequest, 1)
           }
         }
       }

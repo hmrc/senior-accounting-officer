@@ -27,8 +27,7 @@ lazy val it = project
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
   .settings(
-    DefaultBuildSettings.itSettings(),
-    Test / parallelExecution := false
+    DefaultBuildSettings.itSettings()
   )
   .settings(libraryDependencies ++= AppDependencies.compile ++ AppDependencies.it)
 
