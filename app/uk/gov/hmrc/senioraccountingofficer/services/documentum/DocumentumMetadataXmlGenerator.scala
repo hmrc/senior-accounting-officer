@@ -46,7 +46,7 @@ class DocumentumMetadataXmlGenerator @Inject() () {
           <metadata>
             {attribute("hm_unique_doc_id", documentTitle)}
             {attribute("hm_customer_id", context.customerId.getOrElse("DSAO"))}
-            {attribute(referenceAttributeName, s"SAO${context.submissionId}")}
+            {attribute(referenceAttributeName, s"${context.submissionId}")}
             {attribute("hm_utr", nominatedCompany.utr)}
             {attribute("hm_crn", nominatedCompany.crn.getOrElse(""))}
           </metadata>

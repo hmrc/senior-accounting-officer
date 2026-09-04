@@ -90,7 +90,7 @@ class DocumentumMetadataXmlGeneratorSpec extends AnyWordSpec with Matchers {
 
   private val notificationContext =
     DocumentumPackageContext(
-      submissionId = "NOT0123456789",
+      submissionId = "SAONOT0123456789",
       submissionType = SubmissionType.Notification,
       saoSubscriptionId = "XASAO1234567890",
       nominatedCompany = DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")),
@@ -99,7 +99,7 @@ class DocumentumMetadataXmlGeneratorSpec extends AnyWordSpec with Matchers {
 
   private val certificateContext =
     DocumentumPackageContext(
-      submissionId = "CRT0001234567",
+      submissionId = "SAOCRT0001234567",
       submissionType = SubmissionType.Certificate,
       saoSubscriptionId = "XASAO1234567890",
       nominatedCompany = DocumentumCompany(utr = "1234567890", name = "Test Ltd", crn = Some("AB123456")),
