@@ -17,13 +17,18 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import com.google.inject.AbstractModule
+import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.senioraccountingofficer.services.SubmissionWorkItemPoller
 
-class Module extends AbstractModule {
+class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 
   override def configure(): Unit = {
 
     bind(classOf[AppConfig]).asEagerSingleton()
-    bind(classOf[SubmissionWorkItemPoller]).asEagerSingleton()
+    val workItemsEnabled =
+      sys.props.get("work-items.enabled").fold(configuration.get[Boolean]("work-items.enabled"))(_ == "true")
+
+    if environment.mode != Mode.Test && workItemsEnabled then
+      bind(classOf[SubmissionWorkItemPoller]).asEagerSingleton()
   }
 }

@@ -31,7 +31,6 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
 }
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.workitems.*
-import uk.gov.hmrc.senioraccountingofficer.repositories.SubmissionStateRepository
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
@@ -39,6 +38,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackage
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 import java.time.Instant
 import javax.inject.Inject
@@ -50,8 +50,7 @@ class NotificationService @Inject() (
     documentumPackageService: DocumentumPackageService,
     pdfService: PdfService,
     emailService: EmailService,
-    submissionStateRepository: SubmissionStateRepository,
-    submissionWorkItemScheduler: SubmissionWorkItemScheduler
+    submissionWorkItemService: SubmissionWorkItemService
 )(using ExecutionContext)
     extends Logging {
 
@@ -60,24 +59,87 @@ class NotificationService @Inject() (
   ): Future[PostNotificationResponse] = {
     val initialState = SubmissionWorkItemState.notification(subscriptionId, request)
 
-    submissionStateRepository.set(initialState).flatMap(_ => run(initialState, ExecutionMode.Initial))
+    val initialAttempt = for {
+      dpsSubscription <- EitherT(getSubscriptionDps(subscriptionId))
+        .leftMap(toFailure(initialState, SubmissionStep.GetSubscription, _))
+      withSubscription = markSuccess(
+                           initialState.copy(subscription = Some(dpsSubscription)),
+                           SubmissionStep.GetSubscription
+                         )
+      customerId <- EitherT(
+                      retrieveCrmmCustomerId(
+                        dpsSubscription.nominatedCompany.crn,
+                        dpsSubscription.nominatedCompany.utr
+                      )
+                    ).leftMap(toFailure(withSubscription, SubmissionStep.RetrieveCrmmCustomer, _))
+      withCustomerId = markSuccess(
+                         withSubscription.copy(customerId = customerId),
+                         SubmissionStep.RetrieveCrmmCustomer
+                       )
+      requestWithCustomerId = request.toNotificationDpsRequest(customerId)
+      dpsResult <- EitherT(postNotificationDps(subscriptionId, requestWithCustomerId))
+                     .leftMap(toFailure(withCustomerId, SubmissionStep.SubmitDps, _))
+      withDpsResult = markSuccess(
+                        withCustomerId.copy(submissionReference = Some(dpsResult.notificationRef)),
+                        SubmissionStep.SubmitDps
+                      )
+      _ <- attemptSideEffect(
+             emailService.sendNotificationEmailStrict(
+               dpsSubscription.contacts,
+               dpsSubscription.nominatedCompany.name,
+               dpsResult.notificationRef
+             ),
+             withDpsResult,
+             SubmissionStep.SendEmail,
+             Success(dpsResult.notificationRef)
+           )
+      withEmail = markSuccess(withDpsResult, SubmissionStep.SendEmail)
+      preparedSubmission <- attemptSideEffect(
+                              documentumPackageService.preparePackage(
+                                DocumentumPackageContext.notification(
+                                  dpsResult.notificationRef,
+                                  customerId,
+                                  subscriptionId,
+                                  dpsSubscription.nominatedCompany,
+                                  request
+                                ),
+                                pdfService.generateNotificationPdf(
+                                  NotificationDpsRequest.toPdfNotification(
+                                    dpsResult.notificationRef,
+                                    request,
+                                    dpsSubscription.nominatedCompany.name
+                                  )
+                                )
+                              ),
+                              withEmail,
+                              SubmissionStep.PackageDocumentum,
+                              Success(dpsResult.notificationRef)
+                            )
+      withDocumentum = markSuccess(
+                         withEmail.copy(preparedSdesSubmission = Some(preparedSubmission)),
+                         SubmissionStep.PackageDocumentum
+                       )
+      _ <- attemptSideEffect(
+             documentumPackageService.notifySdes(preparedSubmission),
+             withDocumentum,
+             SubmissionStep.NotifySdes,
+             Success(dpsResult.notificationRef)
+           )
+    } yield Success(dpsResult.notificationRef)
+
+    initialAttempt.value.flatMap {
+      case Right(response)                         => Future.successful(response)
+      case Left(failure) if failure.shouldEnqueue =>
+        submissionWorkItemService.enqueueRetry(failure.state, failure.step).map(_ => failure.response)
+      case Left(failure)                          => Future.successful(failure.response)
+    }
   }
 
   def processWorkItem(state: SubmissionWorkItemState)(using HeaderCarrier): Future[Boolean] =
-    runInternal(state, ExecutionMode.Resume).map(_.isRight)
+    runWorkItem(state).map(_.isRight)
 
-  private def run(
-      state: SubmissionWorkItemState,
-      mode: ExecutionMode
-  )(using HeaderCarrier): Future[PostNotificationResponse] =
-    runInternal(state, mode).map {
-      case Right(successState) => Success(successState.submissionReference.get)
-      case Left(failure)       => failure.response
-    }
-
-  private def runInternal(
-      state: SubmissionWorkItemState,
-      mode: ExecutionMode
+  private def runWorkItem(
+      state: SubmissionWorkItemState
   )(using HeaderCarrier): Future[Either[FlowFailure, SubmissionWorkItemState]] = {
     val flow = for {
       withSubscription <- getSubscriptionStep(state)
@@ -90,21 +152,32 @@ class NotificationService @Inject() (
 
     flow.value.flatMap {
       case Right(successState) =>
-        mode match {
-          case ExecutionMode.Initial => submissionStateRepository.clear(successState.jobId).map(_ => Right(successState))
-          case ExecutionMode.Resume  => submissionStateRepository.set(successState).map(_ => Right(successState))
-        }
+        submissionWorkItemService.saveProgress(successState).map(_ => Right(successState))
       case Left(failure)       =>
-        for {
-          _ <- submissionStateRepository.set(failure.state)
-          _ <- mode match {
-                 case ExecutionMode.Initial if failure.shouldEnqueue =>
-                   submissionWorkItemScheduler.enqueue(failure.state.jobId, failure.step)
-                 case _                                              => Future.unit
-               }
-        } yield Left(failure)
+        submissionWorkItemService.saveProgress(failure.state).map(_ => Left(failure))
     }
   }
+
+  private def attemptSideEffect[A](
+      operation: => Future[A],
+      state: SubmissionWorkItemState,
+      step: SubmissionStep,
+      responseOnFailure: PostNotificationResponse
+  ): EitherT[Future, FlowFailure, A] =
+    EitherT(
+      operation
+        .map(Right(_))
+        .recover { case NonFatal(error) =>
+          Left(
+            FlowFailure(
+              response = responseOnFailure,
+              state = markFailure(state, step, error.getMessage),
+              step = step,
+              shouldEnqueue = true
+            )
+          )
+        }
+    )
 
   private def getSubscriptionStep(
       state: SubmissionWorkItemState
@@ -389,10 +462,6 @@ object NotificationService {
         extends PostNotificationResponse
         with Failure
     case UnknownFailure(downstreamService: DownstreamService, status: Int) extends PostNotificationResponse with Failure
-  }
-
-  private enum ExecutionMode {
-    case Initial, Resume
   }
 
   private final case class FlowFailure(

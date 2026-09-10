@@ -16,18 +16,29 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services
 
-import uk.gov.hmrc.senioraccountingofficer.models.workitems.SubmissionStep
-import uk.gov.hmrc.senioraccountingofficer.repositories.{SubmissionOrchestration, SubmissionOrchestrationRepository}
+import uk.gov.hmrc.senioraccountingofficer.models.workitems.{SubmissionStep, SubmissionWorkItemState}
+import uk.gov.hmrc.senioraccountingofficer.repositories.{
+  SubmissionOrchestration,
+  SubmissionOrchestrationRepository,
+  SubmissionStateRepository
+}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class SubmissionWorkItemScheduler @Inject() (
+class SubmissionWorkItemService @Inject() (
+    submissionStateRepository: SubmissionStateRepository,
     submissionOrchestrationRepository: SubmissionOrchestrationRepository
 )(using ExecutionContext) {
 
-  def enqueue(jobId: String, step: SubmissionStep): Future[Unit] =
-    submissionOrchestrationRepository.pushNew(SubmissionOrchestration(jobId, step)).map(_ => ())
+  def enqueueRetry(state: SubmissionWorkItemState, failedStep: SubmissionStep): Future[Unit] =
+    submissionStateRepository
+      .set(state)
+      .flatMap(_ => submissionOrchestrationRepository.pushNew(SubmissionOrchestration(state.jobId, failedStep)))
+      .map(_ => ())
+
+  def saveProgress(state: SubmissionWorkItemState): Future[Unit] =
+    submissionStateRepository.set(state).map(_ => ())
 }
