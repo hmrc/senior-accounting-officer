@@ -16,35 +16,32 @@
 
 package uk.gov.hmrc.senioraccountingofficer.repositories
 
+import org.bson.types.ObjectId
+import org.mongodb.scala.model.{Filters, Updates}
 import play.api.Configuration
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.mongo.workitem.{WorkItemFields, WorkItemRepository}
-import uk.gov.hmrc.senioraccountingofficer.models.workitems.SubmissionStep
+import uk.gov.hmrc.mongo.workitem.{ProcessingStatus, WorkItemFields, WorkItemRepository}
+import uk.gov.hmrc.senioraccountingofficer.models.workitems.NotificationRetry
 
-import scala.concurrent.{ExecutionContext, duration}
+import scala.concurrent.{ExecutionContext, Future, duration}
 import scala.jdk.DurationConverters.*
 
 import java.time.{Clock, Duration as JavaDuration, Instant}
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 
-final case class SubmissionOrchestration(jobId: String, step: SubmissionStep)
-
-object SubmissionOrchestration {
-  given Format[SubmissionOrchestration] = Json.format
-}
-
 @Singleton
-class SubmissionOrchestrationRepository @Inject() (
+class NotificationRetryRepository @Inject() (
     configuration: Configuration,
     mongoComponent: MongoComponent
 )(using ExecutionContext)
-    extends WorkItemRepository[SubmissionOrchestration](
-      collectionName = "submission-orchestration",
+    extends WorkItemRepository[NotificationRetry](
+      collectionName = "notification-retries",
       mongoComponent = mongoComponent,
-      itemFormat = summon[Format[SubmissionOrchestration]],
+      itemFormat = summon[Format[NotificationRetry]],
       workItemFields = WorkItemFields.default
     ) {
 
@@ -56,4 +53,21 @@ class SubmissionOrchestrationRepository @Inject() (
 
   override val inProgressRetryAfter: JavaDuration =
     duration.Duration(configuration.get[Long]("work-items.retry-after-seconds"), TimeUnit.SECONDS).toJava
+
+  def updateAndMarkFailed(id: ObjectId, retry: NotificationRetry): Future[Boolean] =
+    collection
+      .updateOne(
+        filter = Filters.and(
+          Filters.equal(workItemFields.id, id),
+          Filters.equal(workItemFields.status, ProcessingStatus.InProgress)
+        ),
+        update = Updates.combine(
+          Updates.set(workItemFields.item, Codecs.toBson(retry)),
+          Updates.set(workItemFields.status, ProcessingStatus.Failed),
+          Updates.set(workItemFields.updatedAt, now()),
+          Updates.inc(workItemFields.failureCount, 1)
+        )
+      )
+      .toFuture()
+      .map(_.getModifiedCount > 0)
 }

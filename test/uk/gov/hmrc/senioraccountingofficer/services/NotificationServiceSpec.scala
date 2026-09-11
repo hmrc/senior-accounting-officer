@@ -19,7 +19,8 @@ package uk.gov.hmrc.senioraccountingofficer.services
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.mockito.ArgumentMatchers.{any, eq as meq}
+import org.mockito.ArgumentMatchers.{any, argThat, eq as meq}
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
 import org.mockito.internal.verification.Times
 import org.scalatest.BeforeAndAfterEach
@@ -35,8 +36,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, PreparedSdesSubmission}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.models.workitems.SubmissionStep
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService
+import uk.gov.hmrc.senioraccountingofficer.models.workitems.{NotificationRetry, NotificationStep}
+import uk.gov.hmrc.senioraccountingofficer.services.EmailService.EmailRejected
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn, generateUtr}
@@ -44,6 +45,7 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn,
 import scala.concurrent.{ExecutionContext, Future}
 
 import java.util.UUID
+import javax.inject.Provider
 
 import NotificationService.PostNotificationResponse.*
 import NotificationServiceSpec.*
@@ -61,23 +63,25 @@ class NotificationServiceSpec
   given ExecutionContext = ExecutionContext.global
   given HeaderCarrier    = HeaderCarrier()
 
-  val mockNotificationDpsConnector: NotificationConnector    = mock[NotificationConnector]
-  val mockGetSubscriptionConnector: GetSubscriptionConnector = mock[GetSubscriptionConnector]
-  val mockCrmmConnector: CrmmConnector                       = mock[CrmmConnector]
-  val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
-  val mockPdfService: PdfService                             = mock[PdfService]
-  val mockEmailService: EmailService                         = mock[EmailService]
-  val mockSubmissionWorkItemService: SubmissionWorkItemService = mock[SubmissionWorkItemService]
+  val mockNotificationDpsConnector: NotificationConnector                  = mock[NotificationConnector]
+  val mockGetSubscriptionConnector: GetSubscriptionConnector               = mock[GetSubscriptionConnector]
+  val mockCrmmConnector: CrmmConnector                                     = mock[CrmmConnector]
+  val mockDocumentumPackageService: DocumentumPackageService               = mock[DocumentumPackageService]
+  val mockPdfService: PdfService                                           = mock[PdfService]
+  val mockEmailService: EmailService                                       = mock[EmailService]
+  val mockNotificationRetryService: NotificationRetryService               = mock[NotificationRetryService]
+  val notificationRetryServiceProvider: Provider[NotificationRetryService] =
+    () => mockNotificationRetryService
 
-  val service = new NotificationService(
+  val workflow = new NotificationWorkflow(
     mockNotificationDpsConnector,
     mockGetSubscriptionConnector,
     mockCrmmConnector,
     mockDocumentumPackageService,
     mockPdfService,
-    mockEmailService,
-    mockSubmissionWorkItemService
+    mockEmailService
   )
+  val service = new NotificationService(workflow, notificationRetryServiceProvider)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -87,11 +91,10 @@ class NotificationServiceSpec
     reset(mockEmailService)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
-    reset(mockSubmissionWorkItemService)
-    when(mockEmailService.sendNotificationEmailStrict(any(), any(), any())(using any()))
+    reset(mockNotificationRetryService)
+    when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
-    when(mockSubmissionWorkItemService.enqueueRetry(any(), any())).thenReturn(Future.successful(()))
-    when(mockSubmissionWorkItemService.saveProgress(any())).thenReturn(Future.successful(()))
+    when(mockNotificationRetryService.enqueue(any())).thenReturn(Future.successful(()))
   }
 
   def configureSubscriptionResponse(
@@ -182,7 +185,7 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendNotificationEmailStrict(
+          verify(mockEmailService, Times(1)).sendNotificationEmail(
             exampleContacts,
             exampleNominatedCompany.name,
             exampleNotificationReference
@@ -194,7 +197,7 @@ class NotificationServiceSpec
             any()
           )
           result mustBe Success(exampleNotificationReference)
-          verifyNoInteractions(mockSubmissionWorkItemService)
+          verifyNoInteractions(mockNotificationRetryService)
         }
 
         "Unparsable response; Return malformed response error" in {
@@ -245,7 +248,9 @@ class NotificationServiceSpec
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
         result mustBe DownstreamServiceUnavailable(Subscription)
-        verify(mockSubmissionWorkItemService).enqueueRetry(any(), meq(SubmissionStep.GetSubscription))
+        verify(mockNotificationRetryService).enqueue(
+          argThat(retry => retry.failedStep == NotificationStep.GetSubscription)
+        )
       }
 
       "an unknown response code; Return unknown failure error" in {
@@ -413,7 +418,7 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendNotificationEmailStrict(
+          verify(mockEmailService, Times(1)).sendNotificationEmail(
             exampleContacts,
             exampleNominatedCompany.name,
             exampleNotificationReference
@@ -515,18 +520,67 @@ class NotificationServiceSpec
     }
 
     "a side effect fails after DPS accepts the notification" - {
+      "do not enqueue a permanent email rejection" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse()
+        when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
+          .thenReturn(Future.failed(EmailRejected(400, "notification", "correlation-id")))
+
+        val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe Success(exampleNotificationReference)
+        verifyNoInteractions(mockNotificationRetryService)
+        verifyNoInteractions(mockDocumentumPackageService)
+      }
+
       "persist the completed steps and enqueue the failed email step" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
         configureDpsResponse()
-        when(mockEmailService.sendNotificationEmailStrict(any(), any(), any())(using any()))
+        when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
           .thenReturn(Future.failed(new RuntimeException("email unavailable")))
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
         result mustBe Success(exampleNotificationReference)
-        verify(mockSubmissionWorkItemService).enqueueRetry(any(), meq(SubmissionStep.SendEmail))
+        verify(mockNotificationRetryService).enqueue(
+          argThat(retry => retry.failedStep == NotificationStep.SendEmail)
+        )
         verifyNoInteractions(mockDocumentumPackageService)
+      }
+
+      "resume from the failed step without repeating completed steps" in {
+        configureSubscriptionResponse()
+        configureCrmmResponse()
+        configureDpsResponse()
+        when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
+          .thenReturn(Future.failed(new RuntimeException("email unavailable")))
+
+        service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
+
+        val retryCaptor = ArgumentCaptor.forClass(classOf[NotificationRetry])
+        verify(mockNotificationRetryService).enqueue(retryCaptor.capture())
+
+        reset(
+          mockGetSubscriptionConnector,
+          mockCrmmConnector,
+          mockNotificationDpsConnector,
+          mockEmailService,
+          mockDocumentumPackageService,
+          mockPdfService
+        )
+        when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
+          .thenReturn(Future.successful(()))
+        configurePdfGeneration()
+        configureDocumentumPackageService()
+
+        workflow.run(retryCaptor.getValue.checkpoint).futureValue.isRight mustBe true
+
+        verifyNoInteractions(mockGetSubscriptionConnector, mockCrmmConnector, mockNotificationDpsConnector)
+        verify(mockEmailService).sendNotificationEmail(any(), any(), any())(using any())
+        verify(mockDocumentumPackageService).preparePackage(any(), any())(using any())
+        verify(mockDocumentumPackageService).notifySdes(any())(using any())
       }
     }
   }

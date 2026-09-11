@@ -31,30 +31,14 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 
+import uk.gov.hmrc.senioraccountingofficer.services.EmailService.EmailRejected
+
 class EmailService @Inject() (
     emailConnector: EmailConnector
 )(using ExecutionContext)
     extends Logging {
 
   private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
-
-  private def sendEmailStrict(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
-    val correlationId = summon[HeaderCarrier].extraHeaders
-      .collectFirst { case (name, value) if name.equalsIgnoreCase("correlationId") => value }
-      .fold("not-provided")(identity)
-
-    emailConnector
-      .postEmail(email)
-      .flatMap {
-        case HttpResponse(ACCEPTED, _, _)    => Future.successful(())
-        case HttpResponse(BAD_REQUEST, _, _) =>
-          Future.failed(new IllegalStateException(s"Email service returned 400 for $emailType [CorrelationId=$correlationId]"))
-        case HttpResponse(status, _, _)      =>
-          Future.failed(
-            new IllegalStateException(s"Email service returned $status for $emailType [CorrelationId=$correlationId]")
-          )
-      }
-  }
 
   private def sendEmail(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
     val correlationId = summon[HeaderCarrier].extraHeaders
@@ -63,83 +47,48 @@ class EmailService @Inject() (
 
     emailConnector
       .postEmail(email)
-      .map {
-        case HttpResponse(ACCEPTED, _, _)    => ()
-        case HttpResponse(BAD_REQUEST, _, _) =>
-          logger.warn(s"Error from HMRC email service: status=400 [CorrelationId=$correlationId]")
-        case HttpResponse(status, _, _)      =>
-          logger.warn(s"Unexpected response from HMRC email service: status=$status [CorrelationId=$correlationId]")
+      .flatMap {
+        case HttpResponse(ACCEPTED, _, _) => Future.unit
+        case HttpResponse(status, _, _)   => Future.failed(EmailRejected(status, emailType, correlationId))
       }
-      .recover { case NonFatal(e) =>
+  }
+
+  private def sendEmailBestEffort(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
+    val correlationId = summon[HeaderCarrier].extraHeaders
+      .collectFirst { case (name, value) if name.equalsIgnoreCase("correlationId") => value }
+      .fold("not-provided")(identity)
+
+    sendEmail(email, emailType).recover {
+      case EmailRejected(BAD_REQUEST, _, _) =>
+        logger.warn(s"Error from HMRC email service: status=400 [CorrelationId=$correlationId]")
+      case EmailRejected(status, _, _) =>
+        logger.warn(s"Unexpected response from HMRC email service: status=$status [CorrelationId=$correlationId]")
+      case NonFatal(e) =>
         logger.warn(
           s"Unable to send ${emailType} confirmation email: ${e.getClass.getSimpleName} [CorrelationId=$correlationId]"
         )
-      }
+    }
   }
 
-  def sendNotificationEmailStrict(
+  private def notificationEmails(
       contacts: List[Contact],
       companyName: String,
       referenceId: String
-  )(using HeaderCarrier): Future[Unit] = {
+  ): List[NotificationEmail] = {
     val datetime = LocalDateTime.now().format(dateFormatter)
 
-    val emailRequests = contacts.map(contact => {
-      val emailParameters = NotificationEmailParameters(
-        recipientName = contact.name,
-        companyName = companyName,
-        submittedDateTime = datetime,
-        referenceId = referenceId
-      )
-      val emailModel = NotificationEmail(
+    contacts.map(contact =>
+      NotificationEmail(
         List(contact.email),
         templateId = EmailTemplate.NotificationConfirmation,
-        parameters = emailParameters
+        parameters = NotificationEmailParameters(
+          recipientName = contact.name,
+          companyName = companyName,
+          submittedDateTime = datetime,
+          referenceId = referenceId
+        )
       )
-      sendEmailStrict(emailModel.asInstanceOf[Email], "notification")
-    })
-
-    Future.sequence(emailRequests).map(_ => ())
-  }
-
-  def sendSubmitterCertificateEmailStrict(
-      email: String,
-      recipientName: String,
-      companyName: String,
-      referenceId: String,
-      submitterName: String,
-      saoName: String
-  )(using HeaderCarrier): Future[Unit] = {
-    val datetime        = LocalDateTime.now().format(dateFormatter)
-    val emailParameters = SubmitterCertificateEmailParameters(
-      recipientName = recipientName,
-      companyName = companyName,
-      submittedDateTime = datetime,
-      referenceId = referenceId,
-      submitterName = Some(submitterName),
-      saoName = saoName
     )
-    val emailModel = SubmitterCertificateEmail(List(email), parameters = emailParameters)
-    sendEmailStrict(emailModel, "certificate")
-  }
-
-  def sendSaoCertificateEmailStrict(
-      email: String,
-      recipientName: String,
-      companyName: String,
-      referenceId: String,
-      saoName: String
-  )(using HeaderCarrier): Future[Unit] = {
-    val datetime        = LocalDateTime.now().format(dateFormatter)
-    val emailParameters = SaoCertificateEmailParameters(
-      recipientName = recipientName,
-      companyName = companyName,
-      submittedDateTime = datetime,
-      referenceId = referenceId,
-      saoName = saoName
-    )
-    val emailModel = SaoCertificateEmail(List(email), parameters = emailParameters)
-    sendEmailStrict(emailModel, "certificate")
   }
 
   def sendNotificationEmail(
@@ -147,24 +96,21 @@ class EmailService @Inject() (
       companyName: String,
       referenceId: String
   )(using HeaderCarrier): Future[Unit] = {
-    val datetime = LocalDateTime.now().format(dateFormatter)
+    Future
+      .traverse(notificationEmails(contacts, companyName, referenceId))(email => sendEmail(email, "notification"))
+      .map(_ => ())
+  }
 
-    val emailRequests = contacts.map(contact => {
-      val emailParameters = NotificationEmailParameters(
-        recipientName = contact.name,
-        companyName = companyName,
-        submittedDateTime = datetime,
-        referenceId = referenceId
+  def sendNotificationEmailBestEffort(
+      contacts: List[Contact],
+      companyName: String,
+      referenceId: String
+  )(using HeaderCarrier): Future[Unit] = {
+    Future
+      .traverse(notificationEmails(contacts, companyName, referenceId))(email =>
+        sendEmailBestEffort(email, "notification")
       )
-      val emailModel = NotificationEmail(
-        List(contact.email),
-        templateId = EmailTemplate.NotificationConfirmation,
-        parameters = emailParameters
-      )
-      sendEmail(emailModel.asInstanceOf[Email], "notification")
-    })
-
-    Future.sequence(emailRequests).map(_ => ())
+      .map(_ => ())
   }
 
   def sendSubmitterCertificateEmail(
@@ -185,7 +131,7 @@ class EmailService @Inject() (
       saoName = saoName
     )
     val emailModel = SubmitterCertificateEmail(List(email), parameters = emailParameters)
-    sendEmail(emailModel, "certificate")
+    sendEmailBestEffort(emailModel, "certificate")
   }
 
   def sendSaoCertificateEmail(
@@ -204,7 +150,14 @@ class EmailService @Inject() (
       saoName = saoName
     )
     val emailModel = SaoCertificateEmail(List(email), parameters = emailParameters)
-    sendEmail(emailModel, "certificate")
+    sendEmailBestEffort(emailModel, "certificate")
   }
 
+}
+
+object EmailService {
+  final case class EmailRejected(status: Int, emailType: String, correlationId: String)
+      extends RuntimeException(s"Email service returned $status for $emailType [CorrelationId=$correlationId]") {
+    val retriable: Boolean = status >= 500
+  }
 }

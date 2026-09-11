@@ -35,6 +35,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.EmailConnector
 import uk.gov.hmrc.senioraccountingofficer.models.*
 import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
+import uk.gov.hmrc.senioraccountingofficer.services.EmailService.EmailRejected
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
@@ -120,7 +121,7 @@ class EmailServiceSpec
 
     "send notification email to no contacts" in {
       when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(202)))
-      val result: Unit = emailService.sendNotificationEmail(List(), "companyName", "ABC").futureValue
+      val result: Unit = emailService.sendNotificationEmailBestEffort(List(), "companyName", "ABC").futureValue
 
       verify(mockEmailConnector, Times(0)).postEmail(any[Email])(using any())
       result shouldBe ()
@@ -129,7 +130,7 @@ class EmailServiceSpec
       val expectedEmails                = createNotificationEmails(contacts)
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
       when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
-      val result: Unit = emailService.sendNotificationEmail(contacts, "companyName", "abc").futureValue
+      val result: Unit = emailService.sendNotificationEmailBestEffort(contacts, "companyName", "abc").futureValue
 
       verify(mockEmailConnector, Times(1)).postEmail(
         captor.capture()
@@ -145,7 +146,7 @@ class EmailServiceSpec
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
       when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
-      val result: Unit = emailService.sendNotificationEmail(twoContacts, "companyName", "abc").futureValue
+      val result: Unit = emailService.sendNotificationEmailBestEffort(twoContacts, "companyName", "abc").futureValue
 
       verify(mockEmailConnector, Times(2)).postEmail(captor.capture())(using any())
       val actualEmails = captor.getAllValues.asScala.map(email => email.asInstanceOf[NotificationEmail])
@@ -160,7 +161,7 @@ class EmailServiceSpec
         .thenReturn(Future.successful(HttpResponse(Status.BAD_REQUEST, "")))
 
       val logs = withEmailServiceLogs {
-        emailService.sendNotificationEmail(contacts, "companyName", "abc").futureValue
+        emailService.sendNotificationEmailBestEffort(contacts, "companyName", "abc").futureValue
       }
 
       logs should contain(s"Error from HMRC email service: status=400 [CorrelationId=$testCorrelationId]")
@@ -171,7 +172,7 @@ class EmailServiceSpec
         .thenReturn(Future.successful(HttpResponse(Status.BAD_REQUEST, "")))
 
       val logs = withEmailServiceLogs {
-        emailService.sendNotificationEmail(contacts, "companyName", "abc").futureValue
+        emailService.sendNotificationEmailBestEffort(contacts, "companyName", "abc").futureValue
       }
 
       logs should contain("Error from HMRC email service: status=400 [CorrelationId=not-provided]")
@@ -183,7 +184,7 @@ class EmailServiceSpec
         .thenReturn(Future.successful(HttpResponse(Status.INTERNAL_SERVER_ERROR, "")))
 
       val logs = withEmailServiceLogs {
-        emailService.sendNotificationEmail(contacts, "companyName", "abc").futureValue
+        emailService.sendNotificationEmailBestEffort(contacts, "companyName", "abc").futureValue
       }
 
       logs should contain(s"Unexpected response from HMRC email service: status=500 [CorrelationId=$testCorrelationId]")
@@ -209,6 +210,17 @@ class EmailServiceSpec
       logs should contain(
         s"Unable to send certificate confirmation email: RuntimeException [CorrelationId=$testCorrelationId]"
       )
+    }
+
+    "expose a rejected notification email to the workflow" in {
+      given HeaderCarrier = HeaderCarrier(extraHeaders = Seq("correlationId" -> testCorrelationId))
+      when(mockEmailConnector.postEmail(any)(using any))
+        .thenReturn(Future.successful(HttpResponse(Status.BAD_REQUEST, "")))
+
+      val error = emailService.sendNotificationEmail(contacts, "companyName", "abc").failed.futureValue
+
+      error shouldBe EmailRejected(Status.BAD_REQUEST, "notification", testCorrelationId)
+      error.asInstanceOf[EmailRejected].retriable shouldBe false
     }
   }
 }
