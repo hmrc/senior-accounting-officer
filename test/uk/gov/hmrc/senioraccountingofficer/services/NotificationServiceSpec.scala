@@ -19,8 +19,8 @@ package uk.gov.hmrc.senioraccountingofficer.services
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
-import org.mockito.ArgumentMatchers.{any, argThat, eq as meq}
 import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{any, argThat, eq as meq}
 import org.mockito.Mockito.*
 import org.mockito.internal.verification.Times
 import org.scalatest.BeforeAndAfterEach
@@ -31,6 +31,7 @@ import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, PreparedSdesSubmission}
@@ -70,6 +71,7 @@ class NotificationServiceSpec
   val mockPdfService: PdfService                                           = mock[PdfService]
   val mockEmailService: EmailService                                       = mock[EmailService]
   val mockNotificationRetryService: NotificationRetryService               = mock[NotificationRetryService]
+  val mockAppConfig: AppConfig                                               = mock[AppConfig]
   val notificationRetryServiceProvider: Provider[NotificationRetryService] =
     () => mockNotificationRetryService
 
@@ -81,7 +83,7 @@ class NotificationServiceSpec
     mockPdfService,
     mockEmailService
   )
-  val service = new NotificationService(workflow, notificationRetryServiceProvider)
+  val service = new NotificationService(mockAppConfig, workflow, notificationRetryServiceProvider)
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -92,6 +94,8 @@ class NotificationServiceSpec
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
     reset(mockNotificationRetryService)
+    reset(mockAppConfig)
+    when(mockAppConfig.workItemsEnabled).thenReturn(true)
     when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
     when(mockNotificationRetryService.enqueue(any())).thenReturn(Future.successful(()))
@@ -251,6 +255,16 @@ class NotificationServiceSpec
         verify(mockNotificationRetryService).enqueue(
           argThat(retry => retry.failedStep == NotificationStep.GetSubscription)
         )
+      }
+
+      "503 Service Unavailable with work items disabled; Return the error without enqueueing" in {
+        when(mockAppConfig.workItemsEnabled).thenReturn(false)
+        configureSubscriptionResponse(503)
+
+        val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
+
+        result mustBe DownstreamServiceUnavailable(Subscription)
+        verifyNoInteractions(mockNotificationRetryService)
       }
 
       "an unknown response code; Return unknown failure error" in {

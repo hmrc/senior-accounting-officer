@@ -38,8 +38,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.workitems.{
   NotificationStep,
   NotificationStepStatus
 }
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationWorkflow.WorkflowFailure
 import uk.gov.hmrc.senioraccountingofficer.services.EmailService.EmailRejected
+import uk.gov.hmrc.senioraccountingofficer.services.NotificationWorkflow.WorkflowFailure
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 
 import scala.concurrent.{ExecutionContext, Future}

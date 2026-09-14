@@ -81,7 +81,7 @@ class DocumentumPackageService @Inject() (
     val zipPath          = zipObjectStorePath(context.submissionId, zipFileName)
     val reconciliationId =
       s"$documentBaseFileName-${submissionDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))}"
-    val metadataXml      = metadataXmlGenerator.generate(context, documentBaseFileName, reconciliationId)
+    val metadataXml = metadataXmlGenerator.generate(context, documentBaseFileName, reconciliationId)
 
     val stagedPdfSource = Source.lazyFutureSource(() => getStagedPdf(stagedPdfPath).map(_.content))
     val zipSource       = zipBuilder.build(stagedPdfSource, pdfFileName, metadataXml, metadataXmlName)
@@ -102,18 +102,20 @@ class DocumentumPackageService @Inject() (
   def notifySdes(
       preparedSubmission: PreparedSdesSubmission
   )(using HeaderCarrier): Future[Unit] = {
-    sdesConnector.notifyFileReady(
-      preparedSubmission.fileName,
-      preparedSubmission.owner,
-      preparedSubmission.objectStorePath,
-      preparedSubmission.checksum,
-      preparedSubmission.contentLength
-    ).map { response =>
-      if response.status < 200 || response.status >= 300 then
-        throw new IllegalStateException(
-          s"Unexpected SDES status ${response.status} for ${preparedSubmission.submissionId}"
-        )
-    }
+    sdesConnector
+      .notifyFileReady(
+        preparedSubmission.fileName,
+        preparedSubmission.owner,
+        preparedSubmission.objectStorePath,
+        preparedSubmission.checksum,
+        preparedSubmission.contentLength
+      )
+      .map { response =>
+        if response.status < 200 || response.status >= 300 then
+          throw new IllegalStateException(
+            s"Unexpected SDES status ${response.status} for ${preparedSubmission.submissionId}"
+          )
+      }
   }
 
   def download(submissionId: String, fileName: String)(using

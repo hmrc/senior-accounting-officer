@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.apache.pekko.util.ByteString
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.http.HeaderNames
 import play.api.libs.ws.WSResponse
@@ -74,7 +74,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
           SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
-          EmailHelper.mock(200)
+          EmailHelper.mock(202)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
             200,
@@ -117,7 +117,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
           SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
-          EmailHelper.mock(200)
+          EmailHelper.mock(202)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
             200,
@@ -350,13 +350,12 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
     "Email" when {
       "Fails" must {
-        "despite the failure return 200 and continue to upload to object store" in {
+        "return 200 and stop before uploading to object store" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
           SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
           EmailHelper.mock(400)
-          ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
 
           val response = makeRequest(requestBody)
 
@@ -373,7 +372,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(Some(emailRequestFirstContact), 1)
-            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
+            ObjectStoreHelper.verifyPdfUpload(pdfFilename, 0)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 0)
             ObjectStoreHelper.verifyNotificationZipUpload(zipFilename, 0)
             SdesHelper.verifyCalled(sdesRequest, 0)
@@ -390,7 +389,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
             SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
-            EmailHelper.mock(200)
+            EmailHelper.mock(202)
             ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
 
             val response = makeRequest(requestBody)
@@ -426,7 +425,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
             SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
-            EmailHelper.mock(200)
+            EmailHelper.mock(202)
             ObjectStoreHelper.mockPdfUpload(
               pdfFilename,
               200,
@@ -467,7 +466,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
             GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
             SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
-            EmailHelper.mock(200)
+            EmailHelper.mock(202)
             ObjectStoreHelper.mockPdfUpload(
               pdfFilename,
               200,
@@ -514,7 +513,7 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
           SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
-          EmailHelper.mock(200)
+          EmailHelper.mock(202)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
             200,

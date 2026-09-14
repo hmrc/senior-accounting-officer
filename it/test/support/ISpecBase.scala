@@ -65,7 +65,8 @@ abstract class ISpecBase
   private def configs: Map[String, Any]   =
     Map(
       "microservice.services.auth.port" -> wireMockPort.toString,
-      "play.ws.followRedirects"         -> "false"
+      "play.ws.followRedirects"         -> "false",
+      "work-items.enabled"              -> false
     ) ++ additionalConfigs
 
   protected def applicationBuilder: GuiceApplicationBuilder = GuiceApplicationBuilder()

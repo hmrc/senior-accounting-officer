@@ -60,14 +60,21 @@ class CertificateService @Inject() (
         sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
       )
       _ <- EitherT.right[PostCertificateResponse with Failure](
-        documentumPackageService.packageAndSubmit(
-          DocumentumPackageContext
-            .certificate(dpsResult.certificateRef, subscriptionId, dpsSubscription.nominatedCompany, requestWithCustomerId),
-          pdfService.generateCertificatePdf(
-            CertificateDpsRequest.toPdfCertificate(dpsResult.certificateRef, requestWithCustomerId),
-            dpsSubscription
+        documentumPackageService
+          .packageAndSubmit(
+            DocumentumPackageContext
+              .certificate(
+                dpsResult.certificateRef,
+                subscriptionId,
+                dpsSubscription.nominatedCompany,
+                requestWithCustomerId
+              ),
+            pdfService.generateCertificatePdf(
+              CertificateDpsRequest.toPdfCertificate(dpsResult.certificateRef, requestWithCustomerId),
+              dpsSubscription
+            )
           )
-        ).map(_ => ())
+          .map(_ => ())
       )
     } yield Success(certificateReference = dpsResult.certificateRef)
   }.merge

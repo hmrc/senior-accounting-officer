@@ -18,6 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer.services
 
 import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.NotificationResult
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.models.workitems.{NotificationCheckpoint, NotificationRetry}
@@ -30,6 +31,7 @@ import scala.util.control.NonFatal
 import javax.inject.{Inject, Provider}
 
 class NotificationService @Inject() (
+    appConfig: AppConfig,
     notificationWorkflow: NotificationWorkflow,
     notificationRetryService: Provider[NotificationRetryService]
 )(using ExecutionContext)
@@ -41,7 +43,7 @@ class NotificationService @Inject() (
     notificationWorkflow.run(NotificationCheckpoint.start(subscriptionId, request)).flatMap {
       case Right(checkpoint) =>
         Future.successful(Success(checkpoint.notificationReference.get))
-      case Left(failure) if failure.retriable =>
+      case Left(failure) if failure.retriable && appConfig.workItemsEnabled =>
         notificationRetryService
           .get()
           .enqueue(NotificationRetry(failure.step, failure.checkpoint))

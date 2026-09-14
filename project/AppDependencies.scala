@@ -11,11 +11,11 @@ object AppDependencies {
   private val jacksonVersion   = "2.21.1"
 
   val compile: Seq[ModuleID] = Seq(
-    "uk.gov.hmrc"                     %% "bootstrap-backend-play-30" % bootstrapVersion,
-    "uk.gov.hmrc"                     %% "domain-test-play-30"       % "13.0.0",
+    "uk.gov.hmrc"                     %% "bootstrap-backend-play-30"         % bootstrapVersion,
+    "uk.gov.hmrc"                     %% "domain-test-play-30"               % "13.0.0",
     "uk.gov.hmrc.mongo"               %% "hmrc-mongo-work-item-repo-play-30" % hmrcMongoVersion,
-    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"   % jacksonVersion,
-    ("com.networknt"                   % "json-schema-validator"     % "2.0.4")
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml"           % jacksonVersion,
+    ("com.networknt"                   % "json-schema-validator"             % "2.0.4")
       .exclude("com.fasterxml.jackson.core", "jackson-databind")
       .exclude("com.fasterxml.jackson.core", "jackson-core")
       .exclude("com.fasterxml.jackson.core", "jackson-annotations")

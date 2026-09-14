@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.workitems
 
-import play.api.libs.json.{Format, JsError, JsString, JsSuccess, Json, Reads, Writes}
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.PreparedSdesSubmission
 import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse

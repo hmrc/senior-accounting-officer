@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.EmailConnector
 import uk.gov.hmrc.senioraccountingofficer.models.*
 import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
+import uk.gov.hmrc.senioraccountingofficer.services.EmailService.EmailRejected
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -30,8 +31,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
-
-import uk.gov.hmrc.senioraccountingofficer.services.EmailService.EmailRejected
 
 class EmailService @Inject() (
     emailConnector: EmailConnector
