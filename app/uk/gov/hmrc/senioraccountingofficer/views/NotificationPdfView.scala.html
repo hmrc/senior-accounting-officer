@@ -39,62 +39,101 @@
             <div class="logo-text">Senior Accounting Officer notification and certificate</div>
         </div>
         <bookmarks>
-            <bookmark name="Nominated company details" href="#company-details"/>
-            <bookmark name="Contact details" href="#contact-details"/>
-            @notification.additionalInformation.filter(_.nonEmpty).map { _ =>
-                <bookmark name="Additional information" href="#additional-information"/>
-            }
-            <bookmark name="List of companies" href="#companies-list"/>
+            <bookmark name="Submission" href="#submission"/>
+            <bookmark name="Registration" href="#registration" />
+            <bookmark name="Senior Accounting Officer(SAO)" href="#senior-accounting-officer"/>
+            <bookmark name="Additional information about your notification" href="#additional-information"/>
+            <bookmark name="Companies in your notification" href="#companies-list"/>
         </bookmarks>
         <main>
             <div>
                 <h1>Notification submission record</h1>
-                <p>This document is a record of the information submitted to HMRC through the Digital SAO service at the time of submission. It includes the SAO's name, the dates they held the role during the notification period, contact details recorded for service updates and compliance purposes, and the information uploaded in the submission template for the notification.</p>
-                <h2 id="company-details">Submission details</h2>
+                <h2 id="submission">Submission</h2>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Company name</th>
-                            <th>Submission date</th>
-                            <th>Reference number</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         <tr>
-                            <td>@notification.companyName</td>
-                            <td>@notification.submissionDate</td>
+                            <th class="bold">Date of submission</th>
+                            <td>@notification.submissionDateTime UK time</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">Submission reference number</th>
                             <td>@notification.submissionId</td>
                         </tr>
                     </tbody>
                 </table>
-                <h2 id="contact-details">Senior Accounting Officer details</h2>
+                <h2 id="registration">Registration</h2>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Full name</th>
-                            <th>Role start date</th>
-                            <th>Role end date</th>
-                        </tr>
-                    </thead>
                     <tbody>
-                        @for(saoTenure <- notification.saoHistory) {
-                          <tr>
-                            <td>@saoTenure.name</td>
-                            <td>@saoTenure.startDate.fold("")(identity)</td>
-                            <td>@saoTenure.endDate.fold("")(identity)</td>
-                          </tr>
-                        }
+                        <tr>
+                            <th class="bold">Company name</th>
+                            <td>@notification.nominatedCompany.name</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">CRN</th>
+                            <td>@notification.nominatedCompany.crn.getOrElse("Not provided")</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">UTR</th>
+                            <td>@notification.nominatedCompany.utr</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">Date of registration</th>
+                            <td>@notification.subscriptionCreationDateTime UK time</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">Registration reference number</th>
+                            <td>@notification.subscriptionId</td>
+                        </tr>
                     </tbody>
                 </table>
-                @notification.additionalInformation.filter(_.nonEmpty).map { additionalInformation =>
-                    <h2 id="additional-information">Additional information</h2>
-                    <p>Information about your notification</p>
-                    @additionalInformation.split("\n").map { paragraph =>
+                <h2 id="senior-accounting-officer">Senior Accounting Officer(SAO)</h2>
+                <table>
+                    @notification.saoHistory match {
+                      case sao:: Nil => {
+                          <tr>
+                              <th class="bold">SAO name</th>
+                              <td>@sao.name</td>
+                          </tr>
+                      }
+                      case lastSao::tail => {
+                          <tr>
+                              <th class="bold">SAO at the end of the financial year</th>
+                              <td>@lastSao.name</td>
+                          </tr>
+                          <tr>
+                              <th class="bold">Start date</th>
+                              <td>@lastSao.startDate.fold("")(identity)</td>
+                          </tr>
+                        @tail.toArray.zipWithIndex.map { case (sao, index) =>
+                            <tr>
+                                @if(index == 0 ) {
+                                   <th class="bold">SAO before @lastSao.name</th>
+                                } else {
+                                   <th class="bold">SAO before @tail(index - 1).name</th>
+                                }
+                                <td>@sao.name</td>
+                            </tr>
+                            <tr>
+                                <th class="bold">Start date</th>
+                                <td>@sao.startDate.fold("")(identity)</td>
+                            </tr>
+                            <tr>
+                                <th class="bold">End date</th>
+                                <td>@sao.endDate.fold("")(identity)</td>
+                            </tr>
+                        }
+                      }
+                    }
+                </table>
+                <tables-page>
+                    <h2 id="additional-information">Additional information about your notification</h2>
+                    @notification.additionalInformation.fold("Not provided")(identity).split("\n").map { paragraph =>
                         <p>@paragraph</p>
                     }
-                }
+                </tables-page>
                 <tables-page>
-                    <h2 id="companies-list">List of companies</h2>
+                    <h2 id="companies-list">Companies in your notification</h2>
+                    <p>This list is from your submission template. It shows 10 companies Jackson Brown was responsible for in the financial year.</p>
                     <table>
                         <thead>
                             <tr>
@@ -109,7 +148,7 @@
                         <tbody>
                             @for(company <- notification.companies) {
                                 <tr>
-                                    <td>@company.companyName</td>
+                                    <td class="bold">@company.companyName</td>
                                     <td>@company.crn</td>
                                     <td>@company.utr</td>
                                     <td>@company.companyType</td>

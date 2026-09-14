@@ -38,6 +38,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackage
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+import java.time.{LocalDateTime, ZoneId}
 import javax.inject.Inject
 
 class NotificationService @Inject() (
@@ -58,7 +59,8 @@ class NotificationService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
       dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
-      _         <- EitherT.right[PostNotificationResponse with Failure](
+      submissionDateTime = LocalDateTime.now(ukTimeZone)
+      _ <- EitherT.right[PostNotificationResponse with Failure](
         emailService.sendNotificationEmail(
           dpsSubscription.contacts,
           dpsSubscription.nominatedCompany.name,
@@ -70,6 +72,7 @@ class NotificationService @Inject() (
         customerId,
         dpsSubscription,
         dpsResult.notificationRef,
+        submissionDateTime,
         request
       )
     } yield Success(
@@ -157,6 +160,7 @@ class NotificationService @Inject() (
       customerId: Option[String],
       dpsSubscription: GetSubscriptionDpsResponse,
       notificationReference: String,
+      notificationDateTime: LocalDateTime,
       request: NotificationRequest
   )(using
       HeaderCarrier
@@ -167,9 +171,11 @@ class NotificationService @Inject() (
           .notification(notificationReference, customerId, subscriptionId, dpsSubscription.nominatedCompany, request),
         pdfService.generateNotificationPdf(
           NotificationDpsRequest.toPdfNotification(
+            subscriptionId,
+            dpsSubscription,
             notificationReference,
-            request,
-            dpsSubscription.nominatedCompany.name
+            notificationDateTime,
+            request
           )
         )
       )
@@ -177,6 +183,8 @@ class NotificationService @Inject() (
 }
 
 object NotificationService {
+  private val ukTimeZone = ZoneId.of("Europe/London")
+
   enum DownstreamService {
     case Subscription, DPS, CRMM
   }

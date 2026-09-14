@@ -18,6 +18,8 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 
 import play.api.libs.json.{Json, OFormat}
 
+import java.time.LocalDateTime
+
 final case class Contact(
     name: String,
     email: String,
@@ -38,7 +40,10 @@ object NominatedCompany {
 final case class GetSubscriptionDpsResponse(
     etmpSafeId: String,
     nominatedCompany: NominatedCompany,
-    contacts: List[Contact]
+    contacts: List[Contact],
+    // DPS will return the dates in UK local date time format
+    created: LocalDateTime,
+    updated: LocalDateTime
 )
 
 object GetSubscriptionDpsResponse {

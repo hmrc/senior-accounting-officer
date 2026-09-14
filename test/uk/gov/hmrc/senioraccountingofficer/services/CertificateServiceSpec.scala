@@ -42,6 +42,7 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import CertificateService.PostCertificateResponse.*
@@ -433,7 +434,9 @@ class CertificateServiceSpec
                     name = nominatedCompanyName,
                     utr = nominatedCompanyUtr
                   ),
-                  contacts = exampleContacts
+                  contacts = exampleContacts,
+                  created = created,
+                  updated = updated
                 )
               )
             )
@@ -477,7 +480,9 @@ class CertificateServiceSpec
                     name = nominatedCompanyName,
                     utr = nominatedCompanyUtr
                   ),
-                  contacts = exampleContacts
+                  contacts = exampleContacts,
+                  created = created,
+                  updated = updated
                 )
               )
             )
@@ -621,8 +626,10 @@ object CertificateServiceSpec {
     Contact("contact 2", "contact2@example.com", "en", "active"),
     Contact("contact 3", "contact3@example.com", "en", "active")
   )
-  val expectedSaoName  = "Firstname Lastname"
-  val expectedSaoEmail = "firstname.lastname@example.com"
+  val created: LocalDateTime = LocalDateTime.now().minusDays(2)
+  val updated: LocalDateTime = LocalDateTime.now()
+  val expectedSaoName        = "Firstname Lastname"
+  val expectedSaoEmail       = "firstname.lastname@example.com"
 
   val validDpsResponseBody: String = s"""{"certificateRef":"$exampleCertificateReference"}"""
 
@@ -637,6 +644,8 @@ object CertificateServiceSpec {
   val subscriptionResponse: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
     etmpSafeId = exampleSafeId,
     nominatedCompany = exampleNominatedCompany,
-    contacts = Nil
+    contacts = Nil,
+    created = created,
+    updated = updated
   )
 }

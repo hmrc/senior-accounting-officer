@@ -21,7 +21,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, Compa
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 final case class NotificationDpsRequest(
     companies: List[Company],
@@ -49,13 +49,19 @@ final case class Sao(
 object NotificationDpsRequest {
   given OFormat[NotificationDpsRequest] = Json.format[NotificationDpsRequest]
 
-  def toPdfNotification(notificationRef: String, request: NotificationRequest, companyName: String): Notification = {
+  def toPdfNotification(
+      subscriptionId: String,
+      dpsSubscription: GetSubscriptionDpsResponse,
+      notificationRef: String,
+      notificationDateTime: LocalDateTime,
+      request: NotificationRequest
+  ): Notification = {
     val companies = request.companies.value.map(company => {
 
       Notification.Row(
         companyName = company.name.value,
         utr = company.utr.value,
-        crn = company.crn.fold("Not Provided")(_.value),
+        crn = company.crn.fold("Not provided")(_.value),
         companyType = company.`type`,
         status = company.status,
         financialYearEndDate = company.accPeriodEnd.format(dateFormatter)
@@ -69,8 +75,11 @@ object NotificationDpsRequest {
       )
     )
     Notification(
-      companyName = companyName,
-      submissionDate = LocalDate.now().format(dateFormatter),
+      subscriptionId = subscriptionId,
+      subscriptionCreationDateTime =
+        dpsSubscription.created.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
+      nominatedCompany = dpsSubscription.nominatedCompany,
+      submissionDateTime = notificationDateTime.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
       submissionId = notificationRef,
       saoHistory = saos,
       companies = companies,

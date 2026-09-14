@@ -21,7 +21,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
 import org.apache.pekko.util.ByteString
 import play.api.Logger
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
@@ -58,7 +58,8 @@ class PdfService @Inject() (
 
 object PdfService {
 
-  val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
+  val dateFormatter: DateTimeFormatter     = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy hh:mma", Locale.ENGLISH)
 
   final case class Certificate(
       saoName: String,
@@ -126,8 +127,10 @@ object PdfService {
   final case class SaoTenure(name: String, startDate: Option[String] = None, endDate: Option[String] = None)
 
   final case class Notification(
-      companyName: String,
-      submissionDate: String,
+      subscriptionId: String,
+      subscriptionCreationDateTime: String,
+      nominatedCompany: NominatedCompany,
+      submissionDateTime: String,
       submissionId: String,
       saoHistory: Seq[SaoTenure],
       companies: Seq[Notification.Row],

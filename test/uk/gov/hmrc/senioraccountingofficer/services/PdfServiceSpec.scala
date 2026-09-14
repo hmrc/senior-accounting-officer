@@ -37,6 +37,8 @@ import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, Notif
 
 import scala.concurrent.ExecutionContext
 
+import java.time.LocalDateTime
+
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
   given ExecutionContext = ExecutionContext.global
@@ -82,9 +84,14 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
 }
 
 object PdfServiceSpec {
+  val created: LocalDateTime = LocalDateTime.now()
+  val updated: LocalDateTime = LocalDateTime.now().minusDays(1)
+
   val dummySubscription: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
     "etmpSafeId",
     NominatedCompany(None, "example name", generateUtr),
-    Nil
+    Nil,
+    created = created,
+    updated = updated
   )
 }

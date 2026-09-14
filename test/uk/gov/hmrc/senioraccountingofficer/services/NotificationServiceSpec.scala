@@ -42,6 +42,7 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn,
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import NotificationService.PostNotificationResponse.*
@@ -95,7 +96,9 @@ class NotificationServiceSpec
           GetSubscriptionDpsResponse(
             etmpSafeId = exampleSafeId,
             nominatedCompany = exampleNominatedCompany,
-            contacts = exampleContacts
+            contacts = exampleContacts,
+            created = created,
+            updated = updated
           )
         )
       )
@@ -520,6 +523,8 @@ object NotificationServiceSpec {
   val nominatedCompanyName         = "company name"
   val exampleSafeId                = "safe id"
   val exampleCustomerId            = "customer id"
+  val created: LocalDateTime       = LocalDateTime.now()
+  val updated: LocalDateTime       = LocalDateTime.now().minusDays(1)
 
   val validDpsResponseBody: String = s"""{"notificationRef":"$exampleNotificationReference"}"""
   val objectStorePath: String      = s"/senior-accounting-officer/${exampleNotificationReference}/"

@@ -18,6 +18,7 @@ package uk.gov.hmrc.senioraccountingofficer
 
 import org.apache.pekko.stream.Materializer
 import uk.gov.hmrc.domain.SaUtrGenerator
+import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
 import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
@@ -27,13 +28,15 @@ import scala.concurrent.ExecutionContext
 import scala.util.Random
 
 object PdfTestData {
+  private val rand = Random(1L)
+
   private def generateCrn = {
-    val num = Random.nextInt(1000000)
+    val num = rand.nextInt(1000000)
     f"$num%08d"
   }
 
   private def generateUtr = {
-    val seed = Random.nextInt(1000000)
+    val seed = rand.nextInt(1000000)
     SaUtrGenerator(seed).nextSaUtr.toString
   }
   private val testCompanySeeds: Seq[Certificate.Row] = Seq(
@@ -358,12 +361,15 @@ object PdfTestData {
       ExecutionContext
   ): Notification = {
     Notification(
-      companyName = "Test ABC Limited",
-      submissionDate = "12 May 2025",
-      submissionId = "XMPLR0123456789",
+      nominatedCompany = NominatedCompany(Some(generateCrn), "Test ABC Limited", generateUtr),
+      subscriptionId = "XMPLR0123456789",
+      subscriptionCreationDateTime = "10 May 2025 10:15am",
+      submissionId = "Noti0987654321",
+      submissionDateTime = "12 May 2025 10:15am",
       saoHistory = List(
         SaoTenure(name = "Fake Jackson Brown", startDate = Some("01 June 2024")),
-        SaoTenure(name = "Fake Ashley Ross", startDate = Some("01 January 2024"), endDate = Some("31 May 20204"))
+        SaoTenure(name = "Fake Ashley Ross", startDate = Some("01 January 2024"), endDate = Some("31 May 2024")),
+        SaoTenure(name = "Fake John Smith", startDate = Some("01 January 2023"), endDate = Some("31 May 2023"))
       ),
       companies = genNotificationTestCompanies(rows),
       additionalInformation = additionalInformation
@@ -378,7 +384,7 @@ object PdfTestData {
       saoName = "Test Jackson Brown",
       saoEmail = "jbrown@test.co.uk",
       submitterName = submitterName,
-      submissionDate = "12 May 2025",
+      submissionDate = "12 May 2025 10:15am",
       submissionId = "XMPLR0123456789",
       companies = genCertificateTestCompanies(rows, additionalInfo),
       additionalInformation = additionalInfo
