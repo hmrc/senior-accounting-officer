@@ -39,6 +39,11 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
 
   def crmmEnabled: Boolean =
     sys.props.get("feature-toggles.crmm").fold(config.get[Boolean]("feature-toggles.crmm"))(_ == "true")
+
+  def workItemsEnabled: Boolean =
+    sys.props.get("work-items.enabled").fold(config.get[Boolean]("work-items.enabled"))(_ == "true")
+
+  def workItemsPollIntervalSeconds: Int = config.get[Int]("work-items.poll-interval-seconds")
 }
 
 object AppConfig {

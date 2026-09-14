@@ -52,7 +52,7 @@ class TestOnlyEmailController @Inject() (
       template.map(_.trim.toLowerCase).getOrElse("notification") match {
         case "notification" =>
           emailService
-            .sendNotificationEmail(
+            .sendNotificationEmailBestEffort(
               contacts = List(Contact(name = recipientName, email = email, language = "en-GB", status = "valid")),
               companyName = testCompanyName,
               referenceId = testNotificationReference

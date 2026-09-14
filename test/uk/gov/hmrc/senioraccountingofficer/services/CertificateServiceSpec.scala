@@ -628,7 +628,6 @@ object CertificateServiceSpec {
 
   val exampleZipFilename: String = s"20260728_${exampleCertificateReference}_SAO_Certificate_OFFICIAL_SENSITIVE.ZIP"
   val examplePdfFilename: String = s"${exampleCertificateReference}_SAO_Certificate.pdf"
-
   val objectStoreFileContent: Source[ByteString, NotUsed] = Source.single(ByteString("dummy file content"))
 
   val exampleNominatedCompany: NominatedCompany =

@@ -26,7 +26,11 @@ import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
-import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
+  DocumentumPackageContext,
+  DocumentumPackageResult,
+  PreparedSdesSubmission
+}
 import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,6 +52,24 @@ class DocumentumPackageService @Inject() (
       context: DocumentumPackageContext,
       pdfSource: Source[ByteString, ?]
   )(using HeaderCarrier): Future[DocumentumPackageResult] = {
+    preparePackage(context, pdfSource)
+      .map { preparedSubmission =>
+        val _ = notifySdes(preparedSubmission)
+        DocumentumPackageResult(packageAvailable = true, Some(preparedSubmission.fileName))
+      }
+      .recover { case NonFatal(exception) =>
+        logger.warn(
+          s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=${context.submissionId}",
+          exception
+        )
+        DocumentumPackageResult(packageAvailable = false)
+      }
+  }
+
+  def preparePackage(
+      context: DocumentumPackageContext,
+      pdfSource: Source[ByteString, ?]
+  )(using HeaderCarrier): Future[PreparedSdesSubmission] = {
     val submissionDateTime   = LocalDateTime.now(ZoneOffset.UTC)
     val submissionDate       = submissionDateTime.toLocalDate
     val documentBaseFileName = documentBaseFileNameFor(context, submissionDate)
@@ -61,59 +83,39 @@ class DocumentumPackageService @Inject() (
       s"$documentBaseFileName-${submissionDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))}"
     val metadataXml = metadataXmlGenerator.generate(context, documentBaseFileName, reconciliationId)
 
-    uploadStagedPdf(stagedPdfPath, pdfSource)
-      .map { _ =>
-        val _ = submitPackageToSdes(
-          stagedPdfPath,
-          pdfFileName,
-          metadataXml,
-          metadataXmlName,
-          zipPath,
-          zipFileName,
-          context.submissionId
-        )
-
-        DocumentumPackageResult(packageAvailable = true, Some(zipFileName))
-      }
-      .recover { case NonFatal(exception) =>
-        logger.warn(
-          s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=${context.submissionId}",
-          exception
-        )
-        DocumentumPackageResult(packageAvailable = false)
-      }
-  }
-
-  private def submitPackageToSdes(
-      stagedPdfPath: Path.File,
-      pdfFileName: String,
-      metadataXml: String,
-      metadataXmlName: String,
-      zipPath: Path.File,
-      zipFileName: String,
-      submissionId: String
-  )(using HeaderCarrier): Future[Unit] = {
     val stagedPdfSource = Source.lazyFutureSource(() => getStagedPdf(stagedPdfPath).map(_.content))
     val zipSource       = zipBuilder.build(stagedPdfSource, pdfFileName, metadataXml, metadataXmlName)
 
-    (for {
+    for {
+      _          <- uploadStagedPdf(stagedPdfPath, pdfSource)
       zipSummary <- uploadZip(zipPath, zipSource)
-      response   <- sdesConnector.notifyFileReady(
-        zipFileName,
-        owner,
-        zipPath.asUri,
-        zipSummary.contentMd5.value,
-        zipSummary.contentLength
+    } yield PreparedSdesSubmission(
+      submissionId = context.submissionId,
+      fileName = zipFileName,
+      owner = owner,
+      objectStorePath = zipPath.asUri,
+      checksum = zipSummary.contentMd5.value,
+      contentLength = zipSummary.contentLength
+    )
+  }
+
+  def notifySdes(
+      preparedSubmission: PreparedSdesSubmission
+  )(using HeaderCarrier): Future[Unit] = {
+    sdesConnector
+      .notifyFileReady(
+        preparedSubmission.fileName,
+        preparedSubmission.owner,
+        preparedSubmission.objectStorePath,
+        preparedSubmission.checksum,
+        preparedSubmission.contentLength
       )
-    } yield {
-      if response.status < 200 || response.status >= 300 then
-        logger.warn(
-          s"[DocumentumPackage][SDES][UnexpectedStatus][CorrelationId=$getCorrelationId][Status=${response.status}]"
-        )
-    }).recover { case NonFatal(exception) =>
-      logger.warn(s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=$submissionId", exception)
-      ()
-    }
+      .map { response =>
+        if response.status < 200 || response.status >= 300 then
+          throw new IllegalStateException(
+            s"Unexpected SDES status ${response.status} for ${preparedSubmission.submissionId}"
+          )
+      }
   }
 
   def download(submissionId: String, fileName: String)(using
