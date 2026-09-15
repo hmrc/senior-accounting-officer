@@ -21,7 +21,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
 import org.apache.pekko.util.ByteString
 import play.api.Logger
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
+import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
 import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
@@ -47,8 +47,7 @@ class PdfService @Inject() (
   }
 
   def generateCertificatePdf(
-      certificate: Certificate,
-      subscription: GetSubscriptionDpsResponse // subscription is not used, will be used in the coming changes to the certificate pdf template
+      certificate: Certificate
   ): Source[ByteString, ?] = {
     val html = certificatePdfTemplate(certificate).toString
     openHtmlToPdfService.builderFor(html).asSource
@@ -62,11 +61,14 @@ object PdfService {
   val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy hh:mma", Locale.ENGLISH)
 
   final case class Certificate(
+      subscriptionId: String,
+      subscriptionCreationDateTime: String,
+      nominatedCompany: NominatedCompany,
+      submissionId: String,
+      submissionDateTime: String,
       saoName: String,
       saoEmail: String,
       submitterName: Option[String],
-      submissionDate: String,
-      submissionId: String,
       companies: Seq[Certificate.Row],
       additionalInformation: Option[String] = None
   )

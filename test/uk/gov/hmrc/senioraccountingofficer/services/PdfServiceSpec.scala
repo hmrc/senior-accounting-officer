@@ -30,7 +30,6 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.Html
 import uk.gov.hmrc.senioraccountingofficer.PdfTestData
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
-import uk.gov.hmrc.senioraccountingofficer.services.PdfServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
@@ -74,7 +73,7 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
       when(mockCertificatePdfTemplate.toString).thenReturn(txt)
       when(mockOpenHtmlToPdfService.builderFor(txt)).thenReturn(mockPdfRendererBuilder)
 
-      val res = service.generateCertificatePdf(certificate, dummySubscription)
+      val res = service.generateCertificatePdf(certificate)
       verify(mockOpenHtmlToPdfService, times(1)).builderFor(html)
       res mustBe a[Source[ByteString, ?]]
     }

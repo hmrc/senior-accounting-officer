@@ -381,10 +381,13 @@ object PdfTestData {
       ExecutionContext
   ): Certificate = {
     Certificate(
+      nominatedCompany = NominatedCompany(Some(generateCrn), "Test ABC Limited", generateUtr),
+      subscriptionId = "XMPLR0123456789",
+      subscriptionCreationDateTime = "10 May 2025 10:15am",
       saoName = "Test Jackson Brown",
       saoEmail = "jbrown@test.co.uk",
       submitterName = submitterName,
-      submissionDate = "12 May 2025 10:15am",
+      submissionDateTime = "12 May 2025 10:15am",
       submissionId = "XMPLR0123456789",
       companies = genCertificateTestCompanies(rows, additionalInfo),
       additionalInformation = additionalInfo

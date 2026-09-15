@@ -40,126 +40,211 @@
             <div class="logo-text">Senior Accounting Officer notification and certificate</div>
         </div>
         <bookmarks>
-            <bookmark name="Submission details" href="#submission-details"/>
-            @if(certificate.additionalInformation.nonEmpty) {
-                <bookmark name="Additional information" href="#additional-information"/>
-            }
-            @if(certificate.qualified.nonEmpty) {
-                <bookmark name="Qualified certificates" href="#qualified-certificates"/>
-            }
-            @if(certificate.unqualified.nonEmpty) {
-                <bookmark name="Unqualified certificates" href="#unqualified-certificates"/>
-            }
+            <bookmark name="Submission" href="#submission" />
+            <bookmark name="Registration" href="#registration" />
+            <bookmark name="Senior Accounting Officer(SAO)" href="#senior-accounting-officer" />
+            <bookmark name="Declaration" href="#declaration" />
+            <bookmark name="Additional information about your certificate" href="#additional-information" />
+            <bookmark name="Companies with a qualified certificate" href="#qualified-certificates" />
+            <bookmark name="Companies with an unqualified certificate" href="#unqualified-certificates" />
         </bookmarks>
         <main>
             <div>
-                    <!-- SUBMISSION DETAILS -->
+                <!-- SUBMISSION DETAILS -->
                 <h1>Certificate submission record</h1>
-                <p>This document records the information submitted to HMRC through the Digital SAO service at the time of submission, including the SAO's name as it appears on the certificate, the declaration made by the SAO or their authorised representative, the certificate type (unqualified or qualified), and the group's tax accounting arrangements.</p>
-                <h2 id="submission-details">Submission details</h2>
+                <h2 id="submission">Submission</h2>
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Senior Accounting Officer</th>
-                            <th>Email address</th>
-                            @{if (certificate.submitterName.nonEmpty) <th>Authorised submitter</th> else ""}
-                            <th>Submission date</th>
-                            <th>Reference number</th>
-                        </tr>
-                    </thead>
                     <tbody>
                         <tr>
-                            <td>@certificate.saoName</td>
-                            <td>@certificate.saoEmail</td>
-                            @{if (certificate.submitterName.nonEmpty) <td>{certificate.submitterName.get}</td> else ""}
-                            <td>@certificate.submissionDate</td>
+                            <th class="bold">Date of submission</th>
+                            <td>@certificate.submissionDateTime UK time</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">Submission reference number</th>
                             <td>@certificate.submissionId</td>
                         </tr>
                     </tbody>
                 </table>
-                    <!-- ADDITIONAL INFORMATION -->
-                    @certificate.additionalInformation.filter(_.nonEmpty).map{ additionalInformation =>
-                        <h2 id="additional-information">Additional information and explanation</h2>
-                        <h4>Information about your certificate</h4>
-                        @additionalInformation.split("\n").map { paragraph =>
-                            <p>@paragraph</p>
+
+                <!-- SUBSCRIPTION INFO -->
+                <h2 id="registration">Registration</h2>
+                <table>
+                    <tbody>
+                        <tr>
+                            <th class="bold">Company name</th>
+                            <td>@certificate.nominatedCompany.name</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">CRN</th>
+                            <td>@certificate.nominatedCompany.crn.getOrElse("Not provided")</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">UTR</th>
+                            <td>@certificate.nominatedCompany.utr</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">Date of registration</th>
+                            <td>@certificate.subscriptionCreationDateTime UK time</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">Registration reference number</th>
+                            <td>@certificate.subscriptionId</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- SAO -->
+                <h2 id="senior-accounting-officer">Senior Accounting Officer(SAO)</h2>
+                <table>
+                    <tbody>
+                        <tr>
+                            <th class="bold">SAO name</th>
+                            <td>@certificate.saoName</td>
+                        </tr>
+                        <tr>
+                            <th class="bold">SAO email address</th>
+                            <td>@certificate.saoEmail</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- DECLARATION -->
+                <h2 id="declaration">Declaration</h2>
+                <table>
+                    <tbody>
+                        @certificate.submitterName match {
+                            case Some(submitterName) => {
+                                <tr>
+                                    <th class="bold">Who is submitting the certificate?</th>
+                                    <td>A person authorised to submit on behalf of the SAO</td>
+                                </tr>
+                                <tr>
+                                    <th class="bold">Authorised name on the declaration</th>
+                                    <td>@submitterName</td>
+                                </tr>
+                                <tr>
+                                    <th class="bold">SAO name on the declaration</th>
+                                    <td>@certificate.saoName</td>
+                                </tr>
+                            }
+                            case _ => {
+                                <tr>
+                                    <th class="bold">Who is submitting the certificate?</th>
+                                    <td>The SAO</td>
+                                </tr>
+                                <tr>
+                                    <th class="bold">SAO name on the declaration</th>
+                                    <td>@certificate.saoName</td>
+                                </tr>
+                            }
                         }
+                    </tbody>
+
+                </table>
+
+                <!-- ADDITIONAL INFORMATION -->
+                <tables-page>
+                    <h2 id="additional-information">Additional information about your certificate</h2>
+                    @certificate.additionalInformation.fold("Not provided")(identity).split("\n").map { paragraph =>
+                        <p>@paragraph</p>
                     }
-                    <!-- QUALIFIED CERTIFICATES -->
-                    @if(certificate.qualified.nonEmpty) {
-                        <qualified-page>
-                            <h2 id="qualified-certificates">Companies with qualified certificates</h2>
-                            <p>In accordance with paragraph 2 of Schedule 46 to the Finance Act 2009, I
-                                @{if (certificate.submitterName.nonEmpty)
-                                    s"${certificate.submitterName.get}, on the behalf of, ${certificate.saoName}"
-                                else
-                                    certificate.saoName
-                                }
-                                the Senior Accounting Officer, hereby certify that throughout the company's financial year ended 31 December 2024, @certificate.qualified.length companies did not have appropriate tax accounting arrangements.</p>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Company name</th>
-                                        <th>UTR</th>
-                                        <th>Tax regimes</th>
-                                        <th>Additional information</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @certificate.qualified.map { company =>
-                                        <tr>
-                                            <td>@company.companyName</td>
-                                            <td>@company.utr</td>
-                                            <td>@company.qualifiedRegimesAsText</td>
-                                            <td>
-                                                @company.additionalInformation.map { text =>
-                                                @Html(HtmlFormat.escape(text).body.replace("\n", "<br>"))
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </qualified-page>
+                </tables-page>
+
+                <!-- QUALIFIED CERTIFICATES -->
+                @certificate.qualified match {
+                  case Nil => {
+                    <qulified-page>
+                      <h2 id="qualified-certificates">Companies with a qualified certificate</h2>
+                      <p>Not provided</p>
+                    </qulified-page>
+                  }
+                  case head :: tail => {
+                      @qualifiedRow(head,  Some(certificate.saoName -> certificate.qualified.size))
+                      @tail.map { row =>
+                          @qualifiedRow(row,  None)
+                      }
+                  }
+                }
+
+                <!-- UNQUALIFIED CERTIFICATES -->
+                <unqualified-page>
+                    <h2 id="unqualified-certificates">Companies with an unqualified certificate</h2>
+                    @if(certificate.unqualified.isEmpty) {
+                      <p>Not provided</p>
+                    } else {
+                        <p>In accordance with Paragraph 2, Schedule 46 of the Finance Act 2009, I @certificate.saoName, the Senior Accounting Officer hereby certify that @certificate.unqualified.size companies had appropriate tax accounting arrangements throughout the year.</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Company name</th>
+                                    <th>CRN</th>
+                                    <th>UTR</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Financial year end</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @certificate.unqualified.map { company =>
+                                <tr>
+                                    <td>@company.companyName</td>
+                                    <td>@company.crn</td>
+                                    <td>@company.utr</td>
+                                    <td>@company.companyType</td>
+                                    <td>@company.status</td>
+                                    <td>@company.financialYearEndDate</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
                     }
-                    <!-- UNQUALIFIED CERTIFICATES -->
-                    @if(certificate.unqualified.nonEmpty) {
-                        <unqualified-page>
-                            <h2 id="unqualified-certificates">Companies with unqualified certificates</h2>
-                            <p>In accordance with Paragraph 2 Schedule 46 Finance Act 2009, I
-                                @{if (certificate.submitterName.nonEmpty)
-                                    s"${certificate.submitterName.get}, on the behalf of, ${certificate.saoName}"
-                                else
-                                    certificate.saoName
-                                }
-                                the Senior Accounting Officer hereby certify, in respect of the financial year ended 31 December 2024 that @certificate.unqualified.length companies had appropriate tax accounting arrangements throughout the year.</p>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Company name</th>
-                                        <th>CRN</th>
-                                        <th>UTR</th>
-                                        <th>Type</th>
-                                        <th>Status</th>
-                                        <th>Financial year end</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                @certificate.unqualified.map { company =>
-                                    <tr>
-                                        <td>@company.companyName</td>
-                                        <td>@company.crn</td>
-                                        <td>@company.utr</td>
-                                        <td>@company.companyType</td>
-                                        <td>@company.status</td>
-                                        <td>@company.financialYearEndDate</td>
-                                    </tr>
-                                }
-                                </tbody>
-                            </table>
-                        </unqualified-page>
-                    }
+                </unqualified-page>
             </div>
         </main>
     </body>
 </html>
+
+@qualifiedRow(row: Certificate.Row,  saoName: Option[(String, Int)]) = {
+    <qualified-page>
+        @saoName.map { case (sao, total) =>
+            <h2 id="qualified-certificates">Companies with a qualified certificate</h2>
+            <p>In accordance with paragraph 2, Schedule 46 of the Finance Act 2009, I @sao, the Senior Accounting Officer, hereby certify that @total companies did not have appropriate tax accounting arrangements.</p>
+        }
+        <table>
+            <tbody>
+                <tr>
+                    <th class="bold">Company name</th>
+                    <td>@row.companyName</td>
+                </tr>
+                <tr>
+                    <th class="bold">CRN</th>
+                    <td>@row.crn</td>
+                </tr>
+                <tr>
+                    <th class="bold">UTR</th>
+                    <td>@row.utr</td>
+                </tr>
+                <tr>
+                    <th class="bold">Type</th>
+                    <td>@row.companyType</td>
+                </tr>
+                <tr>
+                    <th class="bold">Status</th>
+                    <td>@row.status</td>
+                </tr>
+                <tr>
+                    <th class="bold">Financial year end</th>
+                    <td>@row.financialYearEndDate</td>
+                </tr>
+                <tr>
+                    <th class="bold">Tax regimes</th>
+                    <td>@row.qualifiedRegimesAsText</td>
+                </tr>
+                <tr>
+                    <th class="bold">Explain why the certificate is qualified</th>
+                    <td>@row.additionalInformation.fold("")(identity)</td>
+                </tr>
+            </tbody>
+        </table>
+    </qualified-page>
+}

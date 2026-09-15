@@ -36,6 +36,8 @@
 
 body {
     font-family: Helvetica, sans-serif;
+    font-size: 1em;
+    line-height: 1.5em;
 }
 table {
     border-collapse: collapse;
@@ -49,6 +51,16 @@ table {
     -fs-page-break-min-height: 1.5cm;
 }
 
+.continued:before {
+    /**
+   * For repeated table headers (thead elements), show " - Continued"
+   * before each table header repeat on subsequent (not initial) pages.
+   * See https://github.com/danfickle/openhtmltopdf/pull/32
+   */
+    content: " - Continued";
+    visibility: -fs-table-paginate-repeated-visible;
+}
+
 tr, thead, tfoot {
     page-break-inside: avoid;
 }
@@ -56,6 +68,10 @@ tr, thead, tfoot {
 td, th {
     padding: 8px;
     color: #0b0c0c;
+    text-align: left;
+    height: 1.5em;
+    white-space: wrap;
+    vertical-align: top;
 }
 
 tbody:nth-child(even){}
@@ -63,9 +79,13 @@ tbody:nth-child(even){}
 tr:hover {background-color: #f2f2f2;}
 
 td {
-    vertical-align: baseline;
     border-bottom:1px solid #cecece;
 }
+th.bold, td.bold {
+    font-weight: 700;
+    width: 30%;
+}
+
 th {
     padding-top: 12px;
     padding-bottom: 12px;
@@ -73,6 +93,14 @@ th {
     background-color: none;
     color: #0b0c0c;
     border-bottom:1px solid #cecece;
+}
+
+tables-page {
+    page: tables;
+    page-break-before: always;
+    page-break-inside: avoid;
+    /* The page property allows us to marry up an element with a @page rule. */
+    display: block;
 }
 
 qualified-page {

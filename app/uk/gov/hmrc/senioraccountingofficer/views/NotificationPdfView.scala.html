@@ -104,9 +104,9 @@
                               <th class="bold">Start date</th>
                               <td>@lastSao.startDate.fold("")(identity)</td>
                           </tr>
-                        @tail.toArray.zipWithIndex.map { case (sao, index) =>
+                          @tail.toArray.zipWithIndex.map { case (sao, index) =>
                             <tr>
-                                @if(index == 0 ) {
+                                @if(index == 0) {
                                    <th class="bold">SAO before @lastSao.name</th>
                                 } else {
                                    <th class="bold">SAO before @tail(index - 1).name</th>
@@ -121,7 +121,7 @@
                                 <th class="bold">End date</th>
                                 <td>@sao.endDate.fold("")(identity)</td>
                             </tr>
-                        }
+                          }
                       }
                     }
                 </table>

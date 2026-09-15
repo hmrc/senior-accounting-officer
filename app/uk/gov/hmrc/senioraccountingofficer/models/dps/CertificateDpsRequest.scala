@@ -19,7 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 final case class CertificateDpsRequest(
     submitterName: Option[String],
@@ -53,7 +53,7 @@ object CertificateDpsRequest {
       Certificate.Row(
         companyName = company.name,
         utr = company.utr,
-        crn = company.crn.fold("")(identity),
+        crn = company.crn.fold("Not provided")(identity),
         companyType = company.`type`,
         status = company.status,
         financialYearEndDate = company.accPeriodEnd,
@@ -63,13 +63,23 @@ object CertificateDpsRequest {
     })
   }
 
-  def toPdfCertificate(certificateReference: String, request: CertificateDpsRequest): Certificate = {
+  def toPdfCertificate(
+      subscriptionId: String,
+      subscription: GetSubscriptionDpsResponse,
+      certificateReference: String,
+      request: CertificateDpsRequest,
+      submissionDateTime: LocalDateTime
+  ): Certificate = {
     val companies = toPdfCertificateCompany(request.companies)
     Certificate(
+      subscriptionId = subscriptionId,
+      subscriptionCreationDateTime =
+        subscription.created.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
+      nominatedCompany = subscription.nominatedCompany,
       saoName = request.saoName,
       saoEmail = request.saoEmail,
       submitterName = request.submitterName,
-      submissionDate = LocalDate.now().format(dateFormatter),
+      submissionDateTime = submissionDateTime.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
       submissionId = certificateReference,
       companies = companies,
       additionalInformation = request.remarks
