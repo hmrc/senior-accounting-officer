@@ -185,7 +185,10 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
     }
     "display the 'companies-list' section of the pdf view" in {
       doc.companiesSubheading.text mustBe subheadings(4)
-      doc.companiesParagraph1.text mustBe companyListParagraph1
+      doc.companiesParagraph1.text mustBe companyListParagraph(
+        notificationData.companies.size,
+        notificationData.saoHistory.head.name
+      )
 
       notificationData.companies.mkString("\n") mustBe
         """Row(Test Company 1,6000032741,00970313,PLC,Active,31 Jan 2025)
@@ -230,6 +233,16 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         |  </tr>
         | </tbody>
         |</table>""".stripMargin
+    }
+
+    "derive the companies-list summary from the notification" in {
+      val notification = notificationData.copy(
+        saoHistory = Seq(notificationData.saoHistory.head.copy(name = "Different SAO")),
+        companies = notificationData.companies.take(1)
+      )
+      val variableDoc = Jsoup.parse(notificationPdfTemplate(notification).body)
+
+      variableDoc.companiesParagraph1.text mustBe companyListParagraph(1, "Different SAO")
     }
   }
 }
@@ -293,8 +306,8 @@ object NotificationPdfTemplateViewSpec {
       "Companies in your notification"
     )
 
-  val companyListParagraph1 =
-    "This list is from your submission template. It shows 10 companies Jackson Brown was responsible for in the financial year."
+  def companyListParagraph(companyCount: Int, saoName: String): String =
+    s"This list is from your submission template. It shows $companyCount companies $saoName was responsible for in the financial year."
 
   val subscriptionHeaders: Seq[String] =
     Seq("Company name", "CRN", "UTR", "Date of registration", "Registration reference number")

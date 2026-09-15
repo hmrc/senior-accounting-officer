@@ -41,7 +41,6 @@ final case class GetSubscriptionDpsResponse(
     etmpSafeId: String,
     nominatedCompany: NominatedCompany,
     contacts: List[Contact],
-    // DPS will return the dates in UK local date time format
     created: LocalDateTime,
     updated: LocalDateTime
 )

@@ -153,10 +153,10 @@
                 <!-- QUALIFIED CERTIFICATES -->
                 @certificate.qualified match {
                   case Nil => {
-                    <qulified-page>
+                    <qualified-page>
                       <h2 id="qualified-certificates">Companies with a qualified certificate</h2>
                       <p>Not provided</p>
-                    </qulified-page>
+                    </qualified-page>
                   }
                   case head :: tail => {
                       @qualifiedRow(head,  Some(certificate.saoName -> certificate.qualified.size))
@@ -242,7 +242,7 @@
                 </tr>
                 <tr>
                     <th class="bold">Explain why the certificate is qualified</th>
-                    <td>@row.additionalInformation.fold("")(identity)</td>
+                    <td>@Html(row.additionalInformation.fold("")(text => HtmlFormat.escape(text).body.replace("\n", "<br>")))</td>
                 </tr>
             </tbody>
         </table>

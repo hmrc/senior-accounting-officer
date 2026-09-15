@@ -274,7 +274,8 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           |   </tr>
           |   <tr>
           |    <th class="bold">Explain why the certificate is qualified</th>
-          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
+          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<br>
+          |     Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
           |   </tr>
           |  </tbody>
           | </table>
@@ -312,7 +313,8 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           |   </tr>
           |   <tr>
           |    <th class="bold">Explain why the certificate is qualified</th>
-          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
+          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<br>
+          |     Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
           |   </tr>
           |  </tbody>
           | </table>
@@ -323,10 +325,23 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       val certificate   = certificateData.copy(companies = Seq())
       val doc: Document = Jsoup.parse(certificatePdfTemplate(certificate).body)
 
+      doc.select("qualified-page").size() mustBe 1
+      doc.select("qulified-page").isEmpty mustBe true
       doc.qualCertSubheading.text mustBe "Companies with a qualified certificate"
       doc.qualCertParagraph.text mustBe "Not provided"
       doc.qualCertTableHeaders.size() mustBe 0
       doc.qualCertTableData.size() mustBe 0
+    }
+
+    "preserve line breaks and escape HTML in qualification statements" in {
+      val qualification = "First line\nSecond <unsafe> line"
+      val qualified      = certificateData.qualified.head.copy(additionalInformation = Some(qualification))
+      val certificate    = certificateData.copy(companies = Seq(qualified))
+      val doc            = Jsoup.parse(certificatePdfTemplate(certificate).body)
+      val statementCell  = doc.select("qualified-page table td").last()
+
+      statementCell.select("br").size() mustBe 1
+      statementCell.wholeText() mustBe "First line\nSecond <unsafe> line"
     }
 
     "display the 'unqualified certificates' section on the pdf view" in {
