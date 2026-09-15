@@ -335,10 +335,10 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
 
     "render qualification statements as escaped plain text" in {
       val qualification = "First line\nSecond <unsafe> line"
-      val qualified      = certificateData.qualified.head.copy(additionalInformation = Some(qualification))
-      val certificate    = certificateData.copy(companies = Seq(qualified))
-      val doc            = Jsoup.parse(certificatePdfTemplate(certificate).body)
-      val statementCell  = doc.select("qualified-page table td").last()
+      val qualified     = certificateData.qualified.head.copy(additionalInformation = Some(qualification))
+      val certificate   = certificateData.copy(companies = Seq(qualified))
+      val doc           = Jsoup.parse(certificatePdfTemplate(certificate).body)
+      val statementCell = doc.select("qualified-page table td").last()
 
       statementCell.select("br").isEmpty mustBe true
       statementCell.text() mustBe "First line Second <unsafe> line"
