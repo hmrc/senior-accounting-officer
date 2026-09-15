@@ -15,7 +15,6 @@
  *@
 
 @import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
-@import play.twirl.api.HtmlFormat
 @import scala.io.Source
 
 @this()
@@ -145,9 +144,7 @@
                 <!-- ADDITIONAL INFORMATION -->
                 <tables-page>
                     <h2 id="additional-information">Additional information about your certificate</h2>
-                    @certificate.additionalInformation.fold("Not provided")(identity).split("\n").map { paragraph =>
-                        <p>@paragraph</p>
-                    }
+                    <p>@certificate.additionalInformation.getOrElse("Not provided")</p>
                 </tables-page>
 
                 <!-- QUALIFIED CERTIFICATES -->
@@ -242,7 +239,7 @@
                 </tr>
                 <tr>
                     <th class="bold">Explain why the certificate is qualified</th>
-                    <td>@Html(row.additionalInformation.fold("")(text => HtmlFormat.escape(text).body.replace("\n", "<br>")))</td>
+                    <td>@row.additionalInformation.getOrElse("")</td>
                 </tr>
             </tbody>
         </table>

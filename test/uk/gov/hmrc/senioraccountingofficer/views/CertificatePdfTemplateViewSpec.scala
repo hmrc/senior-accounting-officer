@@ -204,14 +204,16 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
     }
 
     "display the 'additional information' section of the pdf view when there is additional information" in {
-      val expectedAddInfo = certificateData.additionalInformation.getOrElse("").split("\n")
-      val actualAddInfo   = doc.addInfo.eachText()
+      val additionalInformation = "1. First item\r\n2. Second item\n\nA new paragraph with <unsafe> text"
+      val certificate           = certificateData.copy(additionalInformation = Some(additionalInformation))
+      val additionalInfoDoc     = Jsoup.parse(certificatePdfTemplate(certificate).body)
+      val actualAddInfo         = additionalInfoDoc.addInfo.first()
 
-      doc.addInfoSubheading.text mustBe subheadings(4)
-
-      expectedAddInfo
-        .zip(actualAddInfo)
-        .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph.stripTrailing())
+      additionalInfoDoc.addInfoSubheading.text mustBe subheadings(4)
+      additionalInfoDoc.addInfo.size() mustBe 1
+      actualAddInfo.select("br").isEmpty mustBe true
+      actualAddInfo.text() mustBe "1. First item 2. Second item A new paragraph with <unsafe> text"
+      actualAddInfo.html() must include("&lt;unsafe&gt;")
     }
     "not display the 'additional information' section when additional information is not given" in {
       val certificate     = PdfTestData.testCertificateData(3, None, None)
@@ -274,8 +276,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           |   </tr>
           |   <tr>
           |    <th class="bold">Explain why the certificate is qualified</th>
-          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<br>
-          |     Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
+          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
           |   </tr>
           |  </tbody>
           | </table>
@@ -313,8 +314,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           |   </tr>
           |   <tr>
           |    <th class="bold">Explain why the certificate is qualified</th>
-          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<br>
-          |     Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
+          |    <td>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad</td>
           |   </tr>
           |  </tbody>
           | </table>
@@ -333,15 +333,16 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       doc.qualCertTableData.size() mustBe 0
     }
 
-    "preserve line breaks and escape HTML in qualification statements" in {
+    "render qualification statements as escaped plain text" in {
       val qualification = "First line\nSecond <unsafe> line"
       val qualified      = certificateData.qualified.head.copy(additionalInformation = Some(qualification))
       val certificate    = certificateData.copy(companies = Seq(qualified))
       val doc            = Jsoup.parse(certificatePdfTemplate(certificate).body)
       val statementCell  = doc.select("qualified-page table td").last()
 
-      statementCell.select("br").size() mustBe 1
-      statementCell.wholeText() mustBe "First line\nSecond <unsafe> line"
+      statementCell.select("br").isEmpty mustBe true
+      statementCell.text() mustBe "First line Second <unsafe> line"
+      statementCell.html() must include("&lt;unsafe&gt;")
     }
 
     "display the 'unqualified certificates' section on the pdf view" in {

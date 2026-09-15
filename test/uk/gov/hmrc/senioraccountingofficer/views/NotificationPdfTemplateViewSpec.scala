@@ -164,14 +164,16 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         |</table>""".stripMargin
     }
     "display the 'additional information' section of the pdf view when there is additional information" in {
-      val expectedAddInfo = notificationData.additionalInformation.getOrElse("").split("\n")
-      val actualAddInfo   = doc.addInfo.eachText()
+      val additionalInformation = "1. First item\r\n2. Second item\n\nA new paragraph with <unsafe> text"
+      val notification          = notificationData.copy(additionalInformation = Some(additionalInformation))
+      val additionalInfoDoc    = Jsoup.parse(notificationPdfTemplate(notification).body)
+      val actualAddInfo        = additionalInfoDoc.addInfo.first()
 
-      doc.addInfoSubheading.text mustBe subheadings(3)
-
-      expectedAddInfo
-        .zip(actualAddInfo)
-        .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph.stripTrailing())
+      additionalInfoDoc.addInfoSubheading.text mustBe subheadings(3)
+      additionalInfoDoc.addInfo.size() mustBe 1
+      actualAddInfo.select("br").isEmpty mustBe true
+      actualAddInfo.text() mustBe "1. First item 2. Second item A new paragraph with <unsafe> text"
+      actualAddInfo.html() must include("&lt;unsafe&gt;")
     }
     "not display the 'additional information' section when additional information is not given" in {
       val notification    = PdfTestData.testNotificationData(3, None)

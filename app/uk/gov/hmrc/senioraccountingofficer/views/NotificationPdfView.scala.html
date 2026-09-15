@@ -127,9 +127,7 @@
                 </table>
                 <tables-page>
                     <h2 id="additional-information">Additional information about your notification</h2>
-                    @notification.additionalInformation.fold("Not provided")(identity).split("\n").map { paragraph =>
-                        <p>@paragraph</p>
-                    }
+                    <p>@notification.additionalInformation.getOrElse("Not provided")</p>
                 </tables-page>
                 <tables-page>
                     <h2 id="companies-list">Companies in your notification</h2>
