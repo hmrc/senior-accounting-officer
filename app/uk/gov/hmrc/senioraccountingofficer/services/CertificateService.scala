@@ -37,6 +37,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackage
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+import java.time.{LocalDateTime, ZoneId}
 import javax.inject.Inject
 
 class CertificateService @Inject() (
@@ -56,13 +57,15 @@ class CertificateService @Inject() (
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toCertificateDpsRequest(customerId)
       dpsResult <- postCertificateDps(subscriptionId, requestWithCustomerId)
-      _         <- EitherT.right[PostCertificateResponse with Failure](
+      submissionDateTime = LocalDateTime.now(ukTimeZone)
+      _ <- EitherT.right[PostCertificateResponse with Failure](
         sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)
       )
       _ <- packageAndSubmitDocumentumFile(
         subscriptionId,
         dpsSubscription,
         dpsResult.certificateRef,
+        submissionDateTime,
         requestWithCustomerId
       )
     } yield Success(certificateReference = dpsResult.certificateRef)
@@ -190,6 +193,7 @@ class CertificateService @Inject() (
       subscriptionId: String,
       dpsSubscription: GetSubscriptionDpsResponse,
       certificateReference: String,
+      submissionDateTime: LocalDateTime,
       request: CertificateDpsRequest
   )(using
       HeaderCarrier
@@ -199,14 +203,21 @@ class CertificateService @Inject() (
         DocumentumPackageContext
           .certificate(certificateReference, subscriptionId, dpsSubscription.nominatedCompany, request),
         pdfService.generateCertificatePdf(
-          CertificateDpsRequest.toPdfCertificate(certificateReference, request),
-          dpsSubscription
+          CertificateDpsRequest.toPdfCertificate(
+            subscriptionId,
+            dpsSubscription,
+            certificateReference,
+            request,
+            submissionDateTime: LocalDateTime
+          )
         )
       )
     )
 }
 
 object CertificateService {
+  private val ukTimeZone = ZoneId.of("Europe/London")
+
   enum DownstreamService {
     case Subscription, DPS, CRMM
   }

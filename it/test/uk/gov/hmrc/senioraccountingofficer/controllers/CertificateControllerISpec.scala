@@ -768,7 +768,9 @@ object CertificateControllerISpec {
                                    |    "crn": "$crn",
                                    |    "name": "$companyName",
                                    |    "utr": "$utr"
-                                   |  }
+                                   |  },
+                                   |  "created": "2025-09-14T14:50:58.361379",
+                                   |  "updated": "2025-10-14T14:50:58.361379"
                                    |}""".stripMargin
 
   val customerId = "02839521"

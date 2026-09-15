@@ -30,12 +30,13 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.Html
 import uk.gov.hmrc.senioraccountingofficer.PdfTestData
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
-import uk.gov.hmrc.senioraccountingofficer.services.PdfServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
 import scala.concurrent.ExecutionContext
+
+import java.time.LocalDateTime
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
@@ -72,7 +73,7 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
       when(mockCertificatePdfTemplate.toString).thenReturn(txt)
       when(mockOpenHtmlToPdfService.builderFor(txt)).thenReturn(mockPdfRendererBuilder)
 
-      val res = service.generateCertificatePdf(certificate, dummySubscription)
+      val res = service.generateCertificatePdf(certificate)
       verify(mockOpenHtmlToPdfService, times(1)).builderFor(html)
       res mustBe a[Source[ByteString, ?]]
     }
@@ -82,9 +83,14 @@ class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with Gu
 }
 
 object PdfServiceSpec {
+  val created: LocalDateTime = LocalDateTime.now()
+  val updated: LocalDateTime = LocalDateTime.now().minusDays(1)
+
   val dummySubscription: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
     "etmpSafeId",
     NominatedCompany(None, "example name", generateUtr),
-    Nil
+    Nil,
+    created = created,
+    updated = updated
   )
 }

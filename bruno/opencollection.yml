@@ -18,6 +18,9 @@ request:
   variables:
     - name: subscriptionId
       value: "1234567890"
+  scripts:
+    - type: before-request
+      code: bru.cookies.jar().clear();
 bundled: false
 extensions:
   bruno:

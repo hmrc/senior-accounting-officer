@@ -8,6 +8,7 @@
     @top-left {
         content: element(header)
     }
+
     @top-right {
         /* Note the use of the -fs-if-cut-off function below. */
         content: "Page " counter(page) -fs-if-cut-off(" (continued)") " of " counter(pages);
@@ -23,10 +24,12 @@
     /* border-bottom: 1px solid #cecece; */
     padding-bottom: 1em;
 }
+
 .logo {
     height: 2em;
     vertical-align: middle;
 }
+
 .logo-text {
     font-size: 2rcap;
     font-weight: bold;
@@ -36,7 +39,10 @@
 
 body {
     font-family: Helvetica, sans-serif;
+    font-size: 1em;
+    line-height: 1.5em;
 }
+
 table {
     border-collapse: collapse;
     /* hack: width: 100%; doesn't seem to work for a named page turned to landscape,
@@ -48,6 +54,7 @@ table {
     -fs-table-paginate: paginate;
     -fs-page-break-min-height: 1.5cm;
 }
+
 .continued:before {
     /**
      * For repeated table headers (thead elements), show " - Continued"
@@ -65,14 +72,25 @@ tr, thead, tfoot {
 td, th {
     padding: 8px;
     color: #0b0c0c;
+    text-align: left;
+    height: 1.5em;
+    white-space: wrap;
+    vertical-align: top;
 }
 
-tbody:nth-child(even){}
+tbody:nth-child(even) {}
 
-tr:hover {background-color: #f2f2f2;}
+tr:hover {
+    background-color: #f2f2f2;
+}
 
-td {
-    border-bottom:1px solid #cecece;
+td, th {
+    border-bottom: 1px solid #cecece;
+}
+
+th.bold, td.bold {
+    font-weight: 700;
+    width: 30%;
 }
 
 th {
@@ -81,13 +99,13 @@ th {
     text-align: left;
     background-color: none;
     color: #0b0c0c;
-    border-bottom:1px solid #cecece;
+    border-bottom: 1px solid #cecece;
 }
 
 tables-page {
     page: tables;
     page-break-before: always;
     page-break-inside: avoid;
-    /* The page property allows us to marry up an element with a @@page rule. */
+    /* The page property allows us to marry up an element with a @page rule. */
     display: block;
 }

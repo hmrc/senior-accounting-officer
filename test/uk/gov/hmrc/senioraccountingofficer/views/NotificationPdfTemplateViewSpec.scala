@@ -65,7 +65,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
       doc.logo.eachAttr("alt").size mustBe 1
     }
     "check the 'bookmarks' section of the pdf view, when 'additional information' notification attribute exist" in {
-      doc.bookmarks.select("bookmark").size mustBe 4
+      doc.bookmarks.select("bookmark").size mustBe 5
       bookmarkNames
         .zip(doc.bookmarks.select("bookmark").eachAttr("name"))
         .foreach((expectedName, actualName) => actualName mustBe expectedName)
@@ -78,105 +78,173 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
       val notification  = PdfTestData.testNotificationData(3, None).copy(companies = Seq())
       val doc: Document = Jsoup.parse(notificationPdfTemplate(notification).body)
       val bookmark      = doc.bookmarks.select("bookmark")
-      bookmark.size mustBe 3
-      bookmark.eachAttr("name").size mustBe 3
-      bookmark.eachAttr("href").size mustBe 3
-      bookmark.eachAttr("name").get(0) mustBe "Nominated company details"
-      bookmark.eachAttr("href").get(0) mustBe "#company-details"
-      bookmark.eachAttr("name").get(1) mustBe "Contact details"
-      bookmark.eachAttr("href").get(1) mustBe "#contact-details"
-      bookmark.eachAttr("name").get(2) mustBe "List of companies"
-      bookmark.eachAttr("href").get(2) mustBe "#companies-list"
+      bookmark.size mustBe 5
+      bookmark.eachAttr("name").size mustBe 5
+      bookmark.eachAttr("href").size mustBe 5
+      bookmark.eachAttr("name").get(0) mustBe "Submission"
+      bookmark.eachAttr("href").get(0) mustBe "#submission"
+      bookmark.eachAttr("name").get(1) mustBe "Registration"
+      bookmark.eachAttr("href").get(1) mustBe "#registration"
+      bookmark.eachAttr("name").get(2) mustBe "Senior Accounting Officer(SAO)"
+      bookmark.eachAttr("href").get(2) mustBe "#senior-accounting-officer"
+      bookmark.eachAttr("name").get(3) mustBe "Additional information about your notification"
+      bookmark.eachAttr("href").get(3) mustBe "#additional-information"
+      bookmark.eachAttr("name").get(4) mustBe "Companies in your notification"
+      bookmark.eachAttr("href").get(4) mustBe "#companies-list"
     }
     "display 'notification submission record' section of the pdf" in {
       doc.heading.size() mustBe 1
       doc.heading.text() mustBe notificationHeader
-      doc.paragraph1.text() mustBe paragraph1
     }
-    "display the 'company details' section of the pdf view" in {
-      doc.submissionDetailsSubheading.text() mustBe subheadings(0)
-      companyDetailsHeaders
+    "display the 'submission' section of the pdf view" in {
+      doc.submissionDetailsSubheading.text() mustBe subheadings.head
+    }
+    "display the 'subscription' section of the pdf view" in {
+      doc.companyDetailsSubheading.text() mustBe subheadings(1)
+      subscriptionHeaders
         .zip(doc.companyDetailsTableHeaders.eachText())
         .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
-      doc.companyDetailsTableHeaders.size() mustBe 3
+      doc.companyDetailsTableHeaders.size() mustBe 5
 
       val actualCompanyDetails = List(
-        notificationData.companyName,
-        notificationData.submissionDate,
-        notificationData.submissionId
+        notificationData.nominatedCompany.name,
+        notificationData.nominatedCompany.crn.getOrElse(""),
+        notificationData.nominatedCompany.utr,
+        s"${notificationData.subscriptionCreationDateTime} UK time",
+        notificationData.subscriptionId
       )
       actualCompanyDetails
         .zip(doc.companyDetailsTableData.eachText())
-        .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
-      actualCompanyDetails.size mustBe 3
+        .foreach((expectedData, actualData) => actualData mustBe expectedData)
+      actualCompanyDetails.size mustBe 5
     }
-    "display the 'contact details' section of the pdf view" in {
-      doc.saoDetailSubheading.text() mustBe subheadings(1)
+    "display the 'senior accounting officer' section of the pdf view" in {
+      doc.saoHistorySubheading.text() mustBe subheadings(2)
 
-      saoDetailsTableHeaders
-        .zip(doc.saoDetailTableHeaders.eachText())
-        .foreach((expectedHeader, actualHeader) => actualHeader mustBe expectedHeader)
-
-      val expectedSaoDetailsData = notificationData.saoHistory
-      expectedSaoDetailsData
-        .zip(doc.saoDetailTableData)
-        .foreach((expectedRow, actualRow) => {
-          val expectedStartDate = expectedRow.startDate.getOrElse("")
-          val expectedEndDate   = expectedRow.endDate.getOrElse("")
-          val colVals           = actualRow.select("td").eachText()
-          colVals.get(0) mustBe expectedRow.name
-          colVals.get(1) mustBe expectedStartDate
-          if colVals.size == 3 then colVals.get(2) mustBe expectedEndDate
-        })
-
+      notificationData.saoHistory.mkString("\n") mustBe
+        """SaoTenure(Fake Jackson Brown,Some(01 June 2024),None)
+          |SaoTenure(Fake Ashley Ross,Some(01 January 2024),Some(31 May 2024))
+          |SaoTenure(Fake John Smith,Some(01 January 2023),Some(31 May 2023))""".stripMargin
+      doc.saoHistoryTable.toString mustBe
+        """<table>
+        | <tbody>
+        |  <tr>
+        |   <th class="bold">SAO at the end of the financial year</th>
+        |   <td>Fake Jackson Brown</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">Start date</th>
+        |   <td>01 June 2024</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">SAO before Fake Jackson Brown</th>
+        |   <td>Fake Ashley Ross</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">Start date</th>
+        |   <td>01 January 2024</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">End date</th>
+        |   <td>31 May 2024</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">SAO before Fake Ashley Ross</th>
+        |   <td>Fake John Smith</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">Start date</th>
+        |   <td>01 January 2023</td>
+        |  </tr>
+        |  <tr>
+        |   <th class="bold">End date</th>
+        |   <td>31 May 2023</td>
+        |  </tr>
+        | </tbody>
+        |</table>""".stripMargin
     }
     "display the 'additional information' section of the pdf view when there is additional information" in {
-      val expectedAddInfo = notificationData.additionalInformation.getOrElse("").split("\n")
-      val actualAddInfo   = doc.addInfo.eachText()
+      val additionalInformation = "1. First item\r\n2. Second item\n\nA new paragraph with <unsafe> text"
+      val notification          = notificationData.copy(additionalInformation = Some(additionalInformation))
+      val additionalInfoDoc     = Jsoup.parse(notificationPdfTemplate(notification).body)
+      val actualAddInfo         = additionalInfoDoc.addInfo.first()
 
-      doc.addInfoSubheading.text mustBe subheadings(2)
-
-      expectedAddInfo
-        .zip(actualAddInfo)
-        .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph.stripTrailing())
+      additionalInfoDoc.addInfoSubheading.text mustBe subheadings(3)
+      additionalInfoDoc.addInfo.size() mustBe 1
+      actualAddInfo.select("br").isEmpty mustBe true
+      actualAddInfo.text() mustBe "1. First item 2. Second item A new paragraph with <unsafe> text"
+      actualAddInfo.html() must include("&lt;unsafe&gt;")
     }
     "not display the 'additional information' section when additional information is not given" in {
       val notification    = PdfTestData.testNotificationData(3, None)
       val doc: Document   = Jsoup.parse(notificationPdfTemplate(notification).body)
-      val expectedAddInfo = notification.additionalInformation.getOrElse("").split("\n")
+      val expectedAddInfo = "Not provided"
       val actualAddInfo   = doc.addInfo.eachText()
 
-      doc.addInfoSubheading.text mustBe ""
+      doc.addInfoSubheading.text mustBe "Additional information about your notification"
 
-      expectedAddInfo
-        .zip(actualAddInfo)
-        .foreach((expectedParagraph, actualParagraph) => actualParagraph mustBe expectedParagraph)
-
+      actualAddInfo.mkString mustBe expectedAddInfo
     }
     "display the 'companies-list' section of the pdf view" in {
-      doc.companiesSubheading.text mustBe subheadings(3)
-      companiesTableHeaders
-        .zip(doc.companiesTableHeaders.eachText())
-        .foreach((expectedHeader, actualHeader) => expectedHeader mustBe actualHeader)
-      doc.companiesTableHeaders.size() mustBe 6
+      doc.companiesSubheading.text mustBe subheadings(4)
+      doc.companiesParagraph1.text mustBe companyListParagraph(
+        notificationData.companies.size,
+        notificationData.saoHistory.head.name
+      )
 
-      notificationData.companies
-        .zip(doc.companiesTableData)
-        .foreach((expectedRow, actualRow) => {
-          val flattened = List(
-            expectedRow.companyName,
-            expectedRow.crn,
-            expectedRow.utr,
-            expectedRow.companyType.toString,
-            expectedRow.status.toString,
-            expectedRow.financialYearEndDate
-          )
-          flattened
-            .zip(actualRow.select("td").eachText())
-            .foreach((expectedCol, actualCol) => actualCol mustBe expectedCol)
-        })
+      notificationData.companies.mkString("\n") mustBe
+        """Row(Test Company 1,6000032741,00970313,PLC,Active,31 Jan 2025)
+          |Row(Test Halcyon Merchants International 2,8000018620,00814904,PLC,Active,31 Mar 2025)
+          |Row(Test Pinnacle Freight and Forwarding Solutions 3,1000049581,00906606,PLC,Administration,31 Mar 2025)""".stripMargin
+      doc.companiesTable.toString mustBe
+        """<table>
+        | <thead>
+        |  <tr>
+        |   <th>Company name</th>
+        |   <th>CRN</th>
+        |   <th>UTR</th>
+        |   <th>Type</th>
+        |   <th>Status</th>
+        |   <th>Financial year end</th>
+        |  </tr>
+        | </thead>
+        | <tbody>
+        |  <tr>
+        |   <td class="bold">Test Company 1</td>
+        |   <td>00970313</td>
+        |   <td>6000032741</td>
+        |   <td>PLC</td>
+        |   <td>Active</td>
+        |   <td>31 Jan 2025</td>
+        |  </tr>
+        |  <tr>
+        |   <td class="bold">Test Halcyon Merchants International 2</td>
+        |   <td>00814904</td>
+        |   <td>8000018620</td>
+        |   <td>PLC</td>
+        |   <td>Active</td>
+        |   <td>31 Mar 2025</td>
+        |  </tr>
+        |  <tr>
+        |   <td class="bold">Test Pinnacle Freight and Forwarding Solutions 3</td>
+        |   <td>00906606</td>
+        |   <td>1000049581</td>
+        |   <td>PLC</td>
+        |   <td>Administration</td>
+        |   <td>31 Mar 2025</td>
+        |  </tr>
+        | </tbody>
+        |</table>""".stripMargin
+    }
 
-      doc.companiesTableData.size() mustBe notificationData.companies.size
+    "derive the companies-list summary from the notification" in {
+      val notification = notificationData.copy(
+        saoHistory = Seq(notificationData.saoHistory.head.copy(name = "Different SAO")),
+        companies = notificationData.companies.take(1)
+      )
+      val variableDoc = Jsoup.parse(notificationPdfTemplate(notification).body)
+
+      variableDoc.companiesParagraph1.text mustBe companyListParagraph(1, "Different SAO")
     }
   }
 }
@@ -189,21 +257,22 @@ object NotificationPdfTemplateViewSpec {
     def bookmarks: Elements = doc.select("bookmarks")
 
     def heading: Elements                     = doc.select("h1")
-    def paragraph1: Elements                  = doc.select("h1 + p")
-    def submissionDetailsSubheading: Elements = doc.select("h1 + p + h2")
-    def companyDetailsTableHeaders: Elements  = doc.select("h1 + p + h2 + table").select("thead").select("th")
-    def companyDetailsTableData: Elements     = doc.select("h1 + p + h2 + table").select("tbody > tr > td")
+    def submissionDetailsSubheading: Elements = doc.select("#submission")
 
-    def saoDetailSubheading: Elements   = doc.select("#contact-details")
-    def saoDetailTableHeaders: Elements = doc.select("#contact-details + table > thead > tr > th")
-    def saoDetailTableData: Elements    = doc.select("#contact-details + table > tbody > tr")
+    def companyDetailsSubheading: Elements   = doc.select("#registration")
+    def companyDetailsTableHeaders: Elements = doc.select("#registration + table tr > th")
+    def companyDetailsTableData: Elements    = doc.select("#registration + table tr > td")
+
+    def saoHistorySubheading: Elements = doc.select("#senior-accounting-officer")
+    def saoHistoryTable: Elements      = doc.select("#senior-accounting-officer + table")
 
     def addInfoSubheading: Elements     = doc.select("#additional-information")
-    def addInfoParagraph1: Elements     = doc.select("#additional-information+p")
-    def addInfo: Elements               = doc.select("#additional-information + p ~ p")
+    def addInfo: Elements               = doc.select("#additional-information + p")
     def companiesSubheading             = doc.select("#companies-list")
-    def companiesTableHeaders: Elements = doc.select("tables-page > h2 + table > thead > tr > th")
-    def companiesTableData: Elements    = doc.select("tables-page > h2 + table > tbody > tr")
+    def companiesParagraph1: Elements   = doc.select("#companies-list + p")
+    def companiesTable: Elements        = doc.select("#companies-list ~ table")
+    def companiesTableHeaders: Elements = doc.select("#companies-list ~ table th")
+    def companiesTableData: Elements    = doc.select("#companies-list ~ table tr")
 
   }
 
@@ -212,9 +281,15 @@ object NotificationPdfTemplateViewSpec {
   val logoText    = "Senior Accounting Officer notification and certificate"
 
   val bookmarkNames: List[String] =
-    List("Nominated company details", "Contact details", "Additional information", "List of companies")
+    List(
+      "Submission",
+      "Registration",
+      "Senior Accounting Officer(SAO)",
+      "Additional information about your notification",
+      "Companies in your notification"
+    )
   val bookmarkHrefs: List[String] =
-    List("#company-details", "#contact-details", "#additional-information", "#companies-list")
+    List("#submission", "#registration", "#senior-accounting-officer", "#additional-information", "#companies-list")
 
   val notificationHeader              = "Notification submission record"
   val pageTitle                       = "Senior Accounting Officer Notification submission record"
@@ -223,14 +298,22 @@ object NotificationPdfTemplateViewSpec {
     ("subject", "SAO notification submission record"),
     ("Creator", "HMRC forms service")
   )
-  val paragraph1 =
-    "This document is a record of the information submitted to HMRC through the Digital SAO service at the time of submission. It includes the SAO's name, the dates they held the role during the notification period, contact details recorded for service updates and compliance purposes, and the information uploaded in the submission template for the notification."
-  val subheadings: Seq[String] =
-    Seq("Submission details", "Senior Accounting Officer details", "Additional information", "List of companies")
-  val companyDetailsHeaders: Seq[String] =
-    Seq("Company name", "Submission date", "Reference number")
 
-  val addInfoParagraph1                   = "Information about your notification"
+  val subheadings: Seq[String] =
+    Seq(
+      "Submission",
+      "Registration",
+      "Senior Accounting Officer(SAO)",
+      "Additional information about your notification",
+      "Companies in your notification"
+    )
+
+  def companyListParagraph(companyCount: Int, saoName: String): String =
+    s"This list is from your submission template. It shows $companyCount companies $saoName was responsible for in the financial year."
+
+  val subscriptionHeaders: Seq[String] =
+    Seq("Company name", "CRN", "UTR", "Date of registration", "Registration reference number")
+
   val saoDetailsTableHeaders: Seq[String] = Seq("Full name", "Role start date", "Role end date")
 
   val companiesTableHeaders: Seq[String] = Seq("Company name", "CRN", "UTR", "Type", "Status", "Financial year end")

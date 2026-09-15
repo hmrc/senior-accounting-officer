@@ -17,14 +17,11 @@
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import org.apache.pekko.util.ByteString
-import org.scalatest.concurrent.{Eventually, IntegrationPatience}
+import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.http.HeaderNames
-import play.api.libs.ws.WSResponse
-import play.api.libs.ws.readableAsString
-import play.api.libs.ws.{BodyWritable, InMemoryBody}
+import play.api.libs.ws.{BodyWritable, InMemoryBody, WSResponse, readableAsString}
 import support.*
-import support.MockAuthHelper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerISpec.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
@@ -615,7 +612,9 @@ object NotificationControllerISpec {
                                    |    "crn": "$crn",
                                    |    "name": "Fake Company Ltd",
                                    |    "utr": "$utr"
-                                   |  }
+                                   |  },
+                                   |  "created": "2025-09-14T14:50:58.361379",
+                                   |  "updated": "2025-10-14T14:50:58.361379"
                                    |}""".stripMargin
 
   val customerId = "02839521"
