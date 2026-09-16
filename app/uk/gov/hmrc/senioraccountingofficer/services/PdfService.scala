@@ -57,8 +57,10 @@ class PdfService @Inject() (
 
 object PdfService {
 
-  val dateFormatter: DateTimeFormatter     = DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.ENGLISH)
-  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy hh:mma", Locale.ENGLISH)
+  val dateFormatter: DateTimeFormatter     = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
+  val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy h:mma", Locale.ENGLISH)
+
+  def companyNoun(count: Int): String = if count == 1 then "company" else "companies"
 
   final case class Certificate(
       subscriptionId: String,
