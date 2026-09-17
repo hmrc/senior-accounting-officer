@@ -21,7 +21,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 import CertificateDpsRequestSpec.*
 
@@ -122,6 +122,36 @@ class CertificateDpsRequestSpec extends AnyWordSpec with Matchers with OptionVal
         )
 
       sut.toDpsCertificateCompany shouldBe expected
+    }
+  }
+
+  "toPdfCertificate" should {
+    "format PDF dates without leading zeroes and use 12-hour time" in {
+      val subscription = GetSubscriptionDpsResponse(
+        etmpSafeId = "safe-id",
+        nominatedCompany = NominatedCompany(Some(crn), companyName, utr),
+        contacts = Nil,
+        created = LocalDateTime.of(2025, 6, 1, 9, 5),
+        updated = LocalDateTime.of(2025, 6, 1, 9, 5)
+      )
+      val request = CertificateDpsRequest(
+        submitterName = None,
+        saoName = "SAO name",
+        saoEmail = "sao@example.com",
+        companies = List(certificateCompanyWithOptionalFields.toDpsCertificateCompany)
+      )
+
+      val result = CertificateDpsRequest.toPdfCertificate(
+        subscriptionId = "subscription-id",
+        subscription = subscription,
+        certificateReference = "certificate-reference",
+        request = request,
+        submissionDateTime = LocalDateTime.of(2025, 6, 2, 14, 42)
+      )
+
+      result.subscriptionCreationDateTime shouldBe "1 June 2025 9:05am"
+      result.submissionDateTime shouldBe "2 June 2025 2:42pm"
+      result.companies.head.financialYearEndDate shouldBe "31 December 2020"
     }
   }
 }

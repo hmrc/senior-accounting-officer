@@ -85,7 +85,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
       bookmark.eachAttr("href").get(0) mustBe "#submission"
       bookmark.eachAttr("name").get(1) mustBe "Registration"
       bookmark.eachAttr("href").get(1) mustBe "#registration"
-      bookmark.eachAttr("name").get(2) mustBe "Senior Accounting Officer(SAO)"
+      bookmark.eachAttr("name").get(2) mustBe "Senior Accounting Officer (SAO)"
       bookmark.eachAttr("href").get(2) mustBe "#senior-accounting-officer"
       bookmark.eachAttr("name").get(3) mustBe "Additional information about your notification"
       bookmark.eachAttr("href").get(3) mustBe "#additional-information"
@@ -122,9 +122,9 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
       doc.saoHistorySubheading.text() mustBe subheadings(2)
 
       notificationData.saoHistory.mkString("\n") mustBe
-        """SaoTenure(Fake Jackson Brown,Some(01 June 2024),None)
-          |SaoTenure(Fake Ashley Ross,Some(01 January 2024),Some(31 May 2024))
-          |SaoTenure(Fake John Smith,Some(01 January 2023),Some(31 May 2023))""".stripMargin
+        """SaoTenure(Fake Jackson Brown,Some(1 June 2024),None)
+          |SaoTenure(Fake Ashley Ross,Some(1 January 2024),Some(31 May 2024))
+          |SaoTenure(Fake John Smith,Some(1 January 2023),Some(31 May 2023))""".stripMargin
       doc.saoHistoryTable.toString mustBe
         """<table>
         | <tbody>
@@ -134,7 +134,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         |  </tr>
         |  <tr>
         |   <th class="bold">Start date</th>
-        |   <td>01 June 2024</td>
+        |   <td>1 June 2024</td>
         |  </tr>
         |  <tr>
         |   <th class="bold">SAO before Fake Jackson Brown</th>
@@ -142,7 +142,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         |  </tr>
         |  <tr>
         |   <th class="bold">Start date</th>
-        |   <td>01 January 2024</td>
+        |   <td>1 January 2024</td>
         |  </tr>
         |  <tr>
         |   <th class="bold">End date</th>
@@ -154,7 +154,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         |  </tr>
         |  <tr>
         |   <th class="bold">Start date</th>
-        |   <td>01 January 2023</td>
+        |   <td>1 January 2023</td>
         |  </tr>
         |  <tr>
         |   <th class="bold">End date</th>
@@ -284,7 +284,7 @@ object NotificationPdfTemplateViewSpec {
     List(
       "Submission",
       "Registration",
-      "Senior Accounting Officer(SAO)",
+      "Senior Accounting Officer (SAO)",
       "Additional information about your notification",
       "Companies in your notification"
     )
@@ -303,7 +303,7 @@ object NotificationPdfTemplateViewSpec {
     Seq(
       "Submission",
       "Registration",
-      "Senior Accounting Officer(SAO)",
+      "Senior Accounting Officer (SAO)",
       "Additional information about your notification",
       "Companies in your notification"
     )

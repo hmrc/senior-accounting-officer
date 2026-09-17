@@ -41,7 +41,7 @@
         <bookmarks>
             <bookmark name="Submission" href="#submission" />
             <bookmark name="Registration" href="#registration" />
-            <bookmark name="Senior Accounting Officer(SAO)" href="#senior-accounting-officer" />
+            <bookmark name="Senior Accounting Officer (SAO)" href="#senior-accounting-officer" />
             <bookmark name="Declaration" href="#declaration" />
             <bookmark name="Additional information about your certificate" href="#additional-information" />
             <bookmark name="Companies with a qualified certificate" href="#qualified-certificates" />
@@ -93,7 +93,7 @@
                 </table>
 
                 <!-- SAO -->
-                <h2 id="senior-accounting-officer">Senior Accounting Officer(SAO)</h2>
+                <h2 id="senior-accounting-officer">Senior Accounting Officer (SAO)</h2>
                 <table>
                     <tbody>
                         <tr>
@@ -169,7 +169,7 @@
                     @if(certificate.unqualified.isEmpty) {
                       <p>Not provided</p>
                     } else {
-                        <p>In accordance with Paragraph 2, Schedule 46 of the Finance Act 2009, I @certificate.saoName, the Senior Accounting Officer hereby certify that @certificate.unqualified.size companies had appropriate tax accounting arrangements throughout the year.</p>
+                        <p>In accordance with Paragraph 2, Schedule 46 of the Finance Act 2009, I @certificate.saoName, the Senior Accounting Officer hereby certify that @certificate.unqualified.size @companyNoun(certificate.unqualified.size) had appropriate tax accounting arrangements throughout the year.</p>
                         <table>
                             <thead>
                                 <tr>
@@ -205,7 +205,7 @@
     <qualified-page>
         @saoName.map { case (sao, total) =>
             <h2 id="qualified-certificates">Companies with a qualified certificate</h2>
-            <p>In accordance with paragraph 2, Schedule 46 of the Finance Act 2009, I @sao, the Senior Accounting Officer, hereby certify that @total companies did not have appropriate tax accounting arrangements.</p>
+            <p>In accordance with paragraph 2, Schedule 46 of the Finance Act 2009, I @sao, the Senior Accounting Officer, hereby certify that @total @companyNoun(total) did not have appropriate tax accounting arrangements.</p>
         }
         <table>
             <tbody>

@@ -89,7 +89,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       doc.bookmarks.select("bookmark").eachAttr("href").get(0) mustBe "#submission"
       doc.bookmarks.select("bookmark").eachAttr("name").get(1) mustBe "Registration"
       doc.bookmarks.select("bookmark").eachAttr("href").get(1) mustBe "#registration"
-      doc.bookmarks.select("bookmark").eachAttr("name").get(2) mustBe "Senior Accounting Officer(SAO)"
+      doc.bookmarks.select("bookmark").eachAttr("name").get(2) mustBe "Senior Accounting Officer (SAO)"
       doc.bookmarks.select("bookmark").eachAttr("href").get(2) mustBe "#senior-accounting-officer"
       doc.bookmarks.select("bookmark").eachAttr("name").get(3) mustBe "Declaration"
       doc.bookmarks.select("bookmark").eachAttr("href").get(3) mustBe "#declaration"
@@ -321,6 +321,14 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           |</qualified-page>""".stripMargin
     }
 
+    "use singular company wording for one qualified certificate" in {
+      val certificate      = certificateData.copy(companies = certificateData.qualified.take(1))
+      val singleCompanyDoc = Jsoup.parse(certificatePdfTemplate(certificate).body)
+
+      singleCompanyDoc.qualCertParagraph.text mustBe
+        "In accordance with paragraph 2, Schedule 46 of the Finance Act 2009, I Test Jackson Brown, the Senior Accounting Officer, hereby certify that 1 company did not have appropriate tax accounting arrangements."
+    }
+
     "display 'Not provided' the 'qualified certificates' section on the pdf view, when there is no qualified companies " in {
       val certificate   = certificateData.copy(companies = Seq())
       val doc: Document = Jsoup.parse(certificatePdfTemplate(certificate).body)
@@ -379,6 +387,14 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
           cols.get(5) mustBe expectedUnqualRow.financialYearEndDate
         })
       doc.unqualCertTableData.size() mustBe certificateData.unqualified.size
+    }
+
+    "use singular company wording for one unqualified certificate" in {
+      val certificate      = certificateData.copy(companies = certificateData.unqualified.take(1))
+      val singleCompanyDoc = Jsoup.parse(certificatePdfTemplate(certificate).body)
+
+      singleCompanyDoc.unqualCertParagraph.text mustBe
+        "In accordance with Paragraph 2, Schedule 46 of the Finance Act 2009, I Test Jackson Brown, the Senior Accounting Officer hereby certify that 1 company had appropriate tax accounting arrangements throughout the year."
     }
 
     "display 'Not provided' under the 'unqualified certificates' section on the pdf view, when there are no unqualified companies" in {
@@ -441,7 +457,7 @@ object CertificatePdfTemplateViewSpec {
     List(
       "Submission",
       "Registration",
-      "Senior Accounting Officer(SAO)",
+      "Senior Accounting Officer (SAO)",
       "Declaration",
       "Additional information about your certificate",
       "Companies with a qualified certificate",
@@ -469,7 +485,7 @@ object CertificatePdfTemplateViewSpec {
     Seq(
       "Submission",
       "Registration",
-      "Senior Accounting Officer(SAO)",
+      "Senior Accounting Officer (SAO)",
       "Declaration",
       "Additional information about your certificate",
       "Companies with a qualified certificate",

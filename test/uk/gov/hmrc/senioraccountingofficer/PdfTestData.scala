@@ -363,13 +363,13 @@ object PdfTestData {
     Notification(
       nominatedCompany = NominatedCompany(Some(generateCrn), "Test ABC Limited", generateUtr),
       subscriptionId = "XMPLR0123456789",
-      subscriptionCreationDateTime = "10 May 2025 10:15am",
+      subscriptionCreationDateTime = "1 May 2025 9:15am",
       submissionId = "Noti0987654321",
-      submissionDateTime = "12 May 2025 10:15am",
+      submissionDateTime = "2 May 2025 2:42pm",
       saoHistory = List(
-        SaoTenure(name = "Fake Jackson Brown", startDate = Some("01 June 2024")),
-        SaoTenure(name = "Fake Ashley Ross", startDate = Some("01 January 2024"), endDate = Some("31 May 2024")),
-        SaoTenure(name = "Fake John Smith", startDate = Some("01 January 2023"), endDate = Some("31 May 2023"))
+        SaoTenure(name = "Fake Jackson Brown", startDate = Some("1 June 2024")),
+        SaoTenure(name = "Fake Ashley Ross", startDate = Some("1 January 2024"), endDate = Some("31 May 2024")),
+        SaoTenure(name = "Fake John Smith", startDate = Some("1 January 2023"), endDate = Some("31 May 2023"))
       ),
       companies = genNotificationTestCompanies(rows),
       additionalInformation = additionalInformation
@@ -383,11 +383,11 @@ object PdfTestData {
     Certificate(
       nominatedCompany = NominatedCompany(Some(generateCrn), "Test ABC Limited", generateUtr),
       subscriptionId = "XMPLR0123456789",
-      subscriptionCreationDateTime = "10 May 2025 10:15am",
+      subscriptionCreationDateTime = "1 May 2025 9:15am",
       saoName = "Test Jackson Brown",
       saoEmail = "jbrown@test.co.uk",
       submitterName = submitterName,
-      submissionDateTime = "12 May 2025 10:15am",
+      submissionDateTime = "2 May 2025 2:42pm",
       submissionId = "XMPLR0123456789",
       companies = genCertificateTestCompanies(rows, additionalInfo),
       additionalInformation = additionalInfo

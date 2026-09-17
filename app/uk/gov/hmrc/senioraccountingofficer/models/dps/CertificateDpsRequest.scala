@@ -19,7 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime}
 
 final case class CertificateDpsRequest(
     submitterName: Option[String],
@@ -56,7 +56,7 @@ object CertificateDpsRequest {
         crn = company.crn.fold("Not provided")(identity),
         companyType = company.`type`,
         status = company.status,
-        financialYearEndDate = company.accPeriodEnd,
+        financialYearEndDate = LocalDate.parse(company.accPeriodEnd).format(dateFormatter),
         qualifiedRegimes = taxRegimes,
         additionalInformation = company.qualificationStatement
       )
