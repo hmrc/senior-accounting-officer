@@ -26,7 +26,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.TwirlHelperImports.twirlJavaCollectionToScala
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService.Notification
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.{Notification, companyNoun}
 import uk.gov.hmrc.senioraccountingofficer.views.html.NotificationPdfView
 import uk.gov.hmrc.senioraccountingofficer.{AdditionalInformationGenerator, PdfTestData}
 import views.NotificationPdfTemplateViewSpec.*
@@ -237,7 +237,7 @@ class NotificationPdfTemplateViewSpec extends AnyWordSpec with Matchers with Moc
         |</table>""".stripMargin
     }
 
-    "derive the companies-list summary from the notification" in {
+    "use singular company wording in the companies-list summary" in {
       val notification = notificationData.copy(
         saoHistory = Seq(notificationData.saoHistory.head.copy(name = "Different SAO")),
         companies = notificationData.companies.take(1)
@@ -309,7 +309,7 @@ object NotificationPdfTemplateViewSpec {
     )
 
   def companyListParagraph(companyCount: Int, saoName: String): String =
-    s"This list is from your submission template. It shows $companyCount companies $saoName was responsible for in the financial year."
+    s"This list is from your submission template. It shows $companyCount ${companyNoun(companyCount)} $saoName was responsible for in the financial year."
 
   val subscriptionHeaders: Seq[String] =
     Seq("Company name", "CRN", "UTR", "Date of registration", "Registration reference number")
