@@ -40,7 +40,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
-import java.time.LocalDateTime
+import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -55,7 +55,7 @@ class EmailServiceSpec
   given ExecutionContext                 = ExecutionContext.global
   given HeaderCarrier                    = HeaderCarrier()
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
-  val emailService: EmailService         = EmailService(mockEmailConnector)
+  val emailService: EmailService = EmailService(mockEmailConnector, Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
 
   private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
   private val testCorrelationId                = "e6b3b05b-1fd7-4b88-8fd5-06e7c9268885"
@@ -120,11 +120,12 @@ class EmailServiceSpec
 
     "send notification email to no contacts" in {
       when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(202)))
-      val result: Unit = emailService.sendNotificationEmail(List(), "companyName", "ABC").futureValue
+      val result: Unit = emailService.sendNotificationEmail(Nil, "companyName", "ABC").futureValue
 
       verify(mockEmailConnector, Times(0)).postEmail(any[Email])(using any())
       result shouldBe ()
     }
+
     "send notification email to one contact" in {
       val expectedEmails                = createNotificationEmails(contacts)
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
@@ -209,6 +210,96 @@ class EmailServiceSpec
       logs should contain(
         s"Unable to send certificate confirmation email: RuntimeException [CorrelationId=$testCorrelationId]"
       )
+    }
+
+    "send notification email with a date in BST" in {
+      val bstDateTime = ZonedDateTime.of(2026, 9, 21, 12, 1, 0, 0, ZoneId.of("UTC"))
+
+      val emailService: EmailService =
+        EmailService(
+          mockEmailConnector,
+          Clock.fixed(bstDateTime.toInstant(), ZoneId.of("UTC"))
+        )
+
+      val expectedEmails                = createNotificationEmails(contacts)
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      val result: Unit = emailService.sendNotificationEmail(contacts, "companyName", "abc").futureValue
+
+      verify(mockEmailConnector, Times(1)).postEmail(
+        captor.capture()
+      )(using any())
+      val actualEmail: NotificationEmail = captor.getValue.asInstanceOf[NotificationEmail]
+
+      val expectedEmail = expectedEmails.head
+
+      val actualParams   = actualEmail.parameters
+      val expectedParams = expectedEmail.parameters
+
+      actualEmail.to shouldBe expectedEmail.to
+      actualEmail.templateId shouldBe EmailTemplate.NotificationConfirmation
+
+      actualParams.recipientName shouldBe expectedParams.recipientName
+      actualParams.companyName shouldBe expectedParams.companyName
+
+      val actualDateTry = Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter))
+
+      actualDateTry.isSuccess shouldBe true
+
+      val actualDate = actualDateTry.get
+
+      withClue("hour must be 13 instead of 12 here, as the time should be represented in BST\n") {
+        actualDate.getHour() shouldBe 13
+      }
+
+      actualParams.referenceId shouldBe expectedParams.referenceId
+
+      result shouldBe ()
+    }
+
+    "send notification email with a date in GMT" in {
+      val gmtDateTime = ZonedDateTime.of(2026, 3, 21, 12, 1, 0, 0, ZoneId.of("UTC"))
+
+      val emailService: EmailService =
+        EmailService(
+          mockEmailConnector,
+          Clock.fixed(gmtDateTime.toInstant(), ZoneId.of("UTC"))
+        )
+
+      val expectedEmails                = createNotificationEmails(contacts)
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      val result: Unit = emailService.sendNotificationEmail(contacts, "companyName", "abc").futureValue
+
+      verify(mockEmailConnector, Times(1)).postEmail(
+        captor.capture()
+      )(using any())
+      val actualEmail: NotificationEmail = captor.getValue.asInstanceOf[NotificationEmail]
+
+      val expectedEmail = expectedEmails.head
+
+      val actualParams   = actualEmail.parameters
+      val expectedParams = expectedEmail.parameters
+
+      actualEmail.to shouldBe expectedEmail.to
+      actualEmail.templateId shouldBe EmailTemplate.NotificationConfirmation
+
+      actualParams.recipientName shouldBe expectedParams.recipientName
+      actualParams.companyName shouldBe expectedParams.companyName
+
+      val actualDateTry = Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter))
+
+      actualDateTry.isSuccess shouldBe true
+
+      val actualDate = actualDateTry.get
+
+      withClue("hour must be 12 here, as the time should be represented in GMT, which is the same as UTC\n") {
+        actualDate.getHour() shouldBe 12
+      }
+
+      actualParams.referenceId shouldBe expectedParams.referenceId
+
+      result shouldBe ()
     }
   }
 }

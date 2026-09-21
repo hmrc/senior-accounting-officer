@@ -30,9 +30,11 @@ import java.time.format.DateTimeFormatter
 import java.time.{ZoneId, ZonedDateTime}
 import java.util.Locale
 import javax.inject.Inject
+import java.time.Clock
 
 class EmailService @Inject() (
-    emailConnector: EmailConnector
+    emailConnector: EmailConnector,
+    clock: Clock
 )(using ExecutionContext)
     extends Logging {
 
@@ -140,10 +142,12 @@ class EmailService @Inject() (
     sendEmail(emailModel, "certificate")
   }
 
+  private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
+
   private def timestamp: String = {
     ZonedDateTime
-      .now(ZoneId.of("UTC"))
+      .now(clock)
       .withZoneSameInstant(ZoneId.of("Europe/London"))
-      .format(DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH))
+      .format(formatter)
   }
 }
