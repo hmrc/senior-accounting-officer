@@ -26,17 +26,17 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.{ZoneId, ZonedDateTime}
 import java.util.Locale
 import javax.inject.Inject
+import java.time.Clock
 
 class EmailService @Inject() (
-    emailConnector: EmailConnector
+    emailConnector: EmailConnector,
+    clock: Clock
 )(using ExecutionContext)
     extends Logging {
-
-  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
 
   private def sendEmail(email: Email, emailType: String)(using HeaderCarrier): Future[Unit] = {
     val correlationId = summon[HeaderCarrier].extraHeaders
@@ -58,18 +58,17 @@ class EmailService @Inject() (
         )
       }
   }
+
   def sendNotificationEmail(
       contacts: List[Contact],
       companyName: String,
       referenceId: String
   )(using HeaderCarrier): Future[Unit] = {
-    val datetime = LocalDateTime.now().format(dateFormatter)
-
     val emailRequests = contacts.map(contact => {
       val emailParameters = NotificationEmailParameters(
         recipientName = contact.name,
         companyName = companyName,
-        submittedDateTime = datetime,
+        submittedDateTime = timestamp,
         referenceId = referenceId
       )
       val emailModel = NotificationEmail(
@@ -91,11 +90,10 @@ class EmailService @Inject() (
       submitterName: String,
       saoName: String
   )(using HeaderCarrier): Future[Unit] = {
-    val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = SubmitterCertificateEmailParameters(
       recipientName = recipientName,
       companyName = companyName,
-      submittedDateTime = datetime,
+      submittedDateTime = timestamp,
       referenceId = referenceId,
       submitterName = Some(submitterName),
       saoName = saoName
@@ -111,11 +109,10 @@ class EmailService @Inject() (
       referenceId: String,
       saoName: String
   )(using HeaderCarrier): Future[Unit] = {
-    val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = SaoCertificateEmailParameters(
       recipientName = recipientName,
       companyName = companyName,
-      submittedDateTime = datetime,
+      submittedDateTime = timestamp,
       referenceId = referenceId,
       saoName = saoName
     )
@@ -130,11 +127,10 @@ class EmailService @Inject() (
       referenceId: String,
       saoName: String
   )(using HeaderCarrier): Future[Unit] = {
-    val datetime        = LocalDateTime.now().format(dateFormatter)
     val emailParameters = SaoCertificateEmailParameters(
       recipientName = recipientName,
       companyName = companyName,
-      submittedDateTime = datetime,
+      submittedDateTime = timestamp,
       referenceId = referenceId,
       saoName = saoName
     )
@@ -146,4 +142,12 @@ class EmailService @Inject() (
     sendEmail(emailModel, "certificate")
   }
 
+  private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
+
+  private def timestamp: String = {
+    ZonedDateTime
+      .now(clock)
+      .withZoneSameInstant(ZoneId.of("Europe/London"))
+      .format(formatter)
+  }
 }
