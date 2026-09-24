@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.controllers
+package uk.gov.hmrc.senioraccountingofficer.controllers.legacy
 
 import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
@@ -31,20 +31,22 @@ import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerSpec.*
+import uk.gov.hmrc.senioraccountingofficer.controllers.{routes as currentRoutes}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.notification.NotificationIdempotencyResponse
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
 import java.time.LocalDate
 import java.util.UUID
+
+import NotificationControllerSpec.*
 
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
@@ -286,7 +288,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
         val request =
           requestWithCorrelationId(
             "POST",
-            routes.NotificationController.postNotificationWithFaultTolerance().url
+            currentRoutes.NotificationController.postNotificationWithFaultTolerance().url
           ).withTextBody(
             (validPayload + ("idempotencyKey" -> JsString("TestKey"))).toString
           )
@@ -303,7 +305,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
         val request =
           requestWithCorrelationId(
             "POST",
-            routes.NotificationController.postNotificationWithFaultTolerance().url
+            currentRoutes.NotificationController.postNotificationWithFaultTolerance().url
           ).withTextBody(validPayload.toString)
 
         val result = routeResult(request)
@@ -319,7 +321,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       val request =
         requestWithCorrelationId(
           "GET",
-          routes.NotificationController.getStateOfWorkItem("TestKey").url
+          currentRoutes.NotificationController.getStateOfWorkItem("TestKey").url
         )
 
       status(route(app, request).value) mustBe Status.NO_CONTENT

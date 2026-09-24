@@ -17,13 +17,21 @@
 package uk.gov.hmrc.senioraccountingofficer.services
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
+import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.scaladsl.{Source, StreamConverters}
 import org.apache.pekko.util.ByteString
 import play.api.Logger
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.objectstore.client
+import uk.gov.hmrc.objectstore.client.play.Implicits.*
+import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
+import uk.gov.hmrc.objectstore.client.{ObjectSummaryWithMd5, RetentionPeriod}
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.SubmissionType
 import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
 import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyStatus, CompanyType}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
 import uk.gov.hmrc.senioraccountingofficer.views.html.{CertificatePdfView, NotificationPdfView}
 
@@ -38,13 +46,40 @@ import javax.inject.Inject
 class PdfService @Inject() (
     openHtmlToPdfService: OpenHtmlToPdfService,
     notificationPdfTemplate: NotificationPdfView,
-    certificatePdfTemplate: CertificatePdfView
+    certificatePdfTemplate: CertificatePdfView,
+    objectStoreClient: PlayObjectStoreClient
 )(implicit val ec: ExecutionContext, actorSystem: ActorSystem) {
 
   def generateNotificationPdf(notification: Notification): Source[ByteString, ?] = {
     val html = notificationPdfTemplate(notification).toString
     openHtmlToPdfService.builderFor(html).asSource
   }
+
+  def uploadNotificationPdf(notification: Notification)(using
+      HeaderCarrier
+  ): Future[ObjectSummaryWithMd5] =
+    objectStoreClient.putObject(
+      path = DocumentumPackageService.stagedPdfObjectStorePath(
+        subscriptionId = notification.subscriptionId,
+        submissionId = notification.submissionId,
+        submissionType = SubmissionType.Notification
+      ),
+      content = generateNotificationPdf(notification),
+      retentionPeriod = RetentionPeriod.OneWeek,
+      contentType = Some("application/pdf"),
+      owner = DocumentumPackageService.owner
+    )
+
+  def getNotificationPdf(notification: Notification)(using
+      HeaderCarrier
+  ): Future[Option[client.Object[Source[ByteString, NotUsed]]]] =
+    objectStoreClient.getObject(path =
+      DocumentumPackageService.stagedPdfObjectStorePath(
+        subscriptionId = notification.subscriptionId,
+        submissionId = notification.submissionId,
+        submissionType = SubmissionType.Notification
+      )
+    )
 
   def generateCertificatePdf(
       certificate: Certificate
