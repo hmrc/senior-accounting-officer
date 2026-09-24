@@ -20,7 +20,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.DocumentumPackageService
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal

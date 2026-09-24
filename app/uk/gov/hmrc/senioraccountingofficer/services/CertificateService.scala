@@ -32,7 +32,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.DocumentumPackageService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try

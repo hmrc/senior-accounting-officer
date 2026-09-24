@@ -14,61 +14,71 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services
+package uk.gov.hmrc.senioraccountingofficer.services.legacy
 
 import cats.data.EitherT
 import play.api.Logging
 import play.api.http.Status.*
-import play.api.libs.json.Json
+import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.senioraccountingofficer.connectors.{CrmmConnector, GetSubscriptionConnector}
+import uk.gov.hmrc.senioraccountingofficer.connectors.*
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest, RetrieveCustomerResponse}
-import uk.gov.hmrc.senioraccountingofficer.models.dps.GetSubscriptionDpsResponse
-import uk.gov.hmrc.senioraccountingofficer.models.mongo.SubmissionStatus
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.DocumentumPackageContext
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{
+  GetSubscriptionDpsResponse,
+  NotificationDpsRequest,
+  NotificationDpsResponse
+}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
-import uk.gov.hmrc.senioraccountingofficer.models.workitems.NotificationStep.SubmitDps
-import uk.gov.hmrc.senioraccountingofficer.models.workitems.{NotificationCheckpoint, NotificationRetry}
-import uk.gov.hmrc.senioraccountingofficer.repositories.SubmissionStatusRepository
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.*
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.{EmailService, PdfService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-import java.time.Clock
+import java.time.{LocalDateTime, ZoneId}
 import javax.inject.Inject
 
 class NotificationService @Inject() (
+    notificationConnector: NotificationConnector,
     getSubscriptionConnector: GetSubscriptionConnector,
     crmmConnector: CrmmConnector,
-    notificationRetryService: NotificationRetryService,
-    submissionStatusRepository: SubmissionStatusRepository,
-    implicit val clock: Clock
+    documentumPackageService: DocumentumPackageService,
+    pdfService: PdfService,
+    emailService: EmailService
 )(using ExecutionContext)
     extends Logging {
 
-  def postNotification(correlationId: String, subscriptionId: String, request: NotificationRequest)(using
+  def postNotification(subscriptionId: String, request: NotificationRequest)(using
       HeaderCarrier
-  ): Future[PostNotificationResponse] =
-    (for {
-      _               <- EitherT.right(submissionStatusRepository.set(SubmissionStatus(correlationId)))
+  ): Future[PostNotificationResponse] = {
+    for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
-      _ <- EitherT(
-        notificationRetryService
-          .enqueue(
-            NotificationRetry(
-              SubmitDps,
-              NotificationCheckpoint.start(correlationId, subscriptionId, dpsSubscription, request)
-            )
-          )
-          .map(Right.apply)
+      dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      submissionDateTime = LocalDateTime.now(ukTimeZone)
+      _ <- EitherT.right[PostNotificationResponse with Failure](
+        emailService.sendNotificationEmail(
+          dpsSubscription.contacts,
+          dpsSubscription.nominatedCompany.name,
+          dpsResult.notificationRef
+        )
       )
-    } yield {
-      Enqueued
-    }).merge
+      documentPackage <- packageAndSubmitDocumentumFile(
+        subscriptionId,
+        customerId,
+        dpsSubscription,
+        dpsResult.notificationRef,
+        submissionDateTime,
+        request
+      )
+    } yield Success(
+      notificationReference = dpsResult.notificationRef
+    )
+  }.merge
 
   private def getSubscriptionDps(
       subscriptionId: String
@@ -127,16 +137,60 @@ class NotificationService @Inject() (
         }
     }
   }
+
+  private def postNotificationDps(subscriptionId: String, request: NotificationDpsRequest)(using
+      HeaderCarrier
+  ): EitherT[Future, PostNotificationResponse with Failure, NotificationDpsResponse] = {
+    EitherT(notificationConnector.postNotification(subscriptionId, request).map {
+      case HttpResponse(CREATED, body, _) =>
+        Try(Json.parse(body).as[NotificationDpsResponse]).toEither.left.map { _ =>
+          MalformedResponse(DPS)
+        }
+      case HttpResponse(BAD_REQUEST, _, _)           => Left(Misalignment(DPS))
+      case HttpResponse(UNAUTHORIZED, _, _)          => Left(DownstreamUnauthorised(DPS))
+      case HttpResponse(FORBIDDEN, _, _)             => Left(DownstreamForbidden(DPS))
+      case HttpResponse(INTERNAL_SERVER_ERROR, _, _) => Left(DownstreamServiceError(DPS))
+      case HttpResponse(SERVICE_UNAVAILABLE, _, _)   => Left(DownstreamServiceUnavailable(DPS))
+      case HttpResponse(status, _, _)                => Left(UnknownFailure(DPS, status))
+    })
+  }
+
+  private def packageAndSubmitDocumentumFile(
+      subscriptionId: String,
+      customerId: Option[String],
+      dpsSubscription: GetSubscriptionDpsResponse,
+      notificationReference: String,
+      notificationDateTime: LocalDateTime,
+      request: NotificationRequest
+  )(using
+      HeaderCarrier
+  ) =
+    EitherT.right[PostNotificationResponse with Failure](
+      documentumPackageService.packageAndSubmit(
+        DocumentumPackageContext
+          .notification(notificationReference, customerId, subscriptionId, dpsSubscription.nominatedCompany, request),
+        pdfService.generateNotificationPdf(
+          NotificationDpsRequest.toPdfNotification(
+            subscriptionId,
+            dpsSubscription,
+            notificationReference,
+            notificationDateTime,
+            request
+          )
+        )
+      )
+    )
 }
 
 object NotificationService {
-  enum DownstreamService {
-    case Subscription, CRMM
-  }
+  private val ukTimeZone = ZoneId.of("Europe/London")
 
+  enum DownstreamService {
+    case Subscription, DPS, CRMM
+  }
   sealed trait Failure
   enum PostNotificationResponse {
-    case Enqueued
+    case Success(notificationReference: String)                       extends PostNotificationResponse
     case MalformedResponse(downstreamService: DownstreamService)      extends PostNotificationResponse with Failure
     case Misalignment(downstreamService: DownstreamService)           extends PostNotificationResponse with Failure
     case DownstreamUnauthorised(downstreamService: DownstreamService) extends PostNotificationResponse with Failure
@@ -147,5 +201,4 @@ object NotificationService {
         with Failure
     case UnknownFailure(downstreamService: DownstreamService, status: Int) extends PostNotificationResponse with Failure
   }
-
 }

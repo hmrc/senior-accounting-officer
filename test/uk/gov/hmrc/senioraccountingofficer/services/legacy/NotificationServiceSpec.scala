@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services
+package uk.gov.hmrc.senioraccountingofficer.services.legacy
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
@@ -35,18 +35,17 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.*
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationServiceSpec.*
+import uk.gov.hmrc.senioraccountingofficer.services.{EmailService, PdfService}
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn, generateUtr}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 import java.time.LocalDateTime
 import java.util.UUID
-
-import NotificationService.PostNotificationResponse.*
-import NotificationServiceSpec.*
 
 class NotificationServiceSpec
     extends AnyFreeSpec
