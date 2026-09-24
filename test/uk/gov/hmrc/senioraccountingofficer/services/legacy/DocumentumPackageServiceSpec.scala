@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services.documentum
+package uk.gov.hmrc.senioraccountingofficer.services.legacy
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
@@ -38,6 +38,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
   DocumentumPackageContext,
   SubmissionType
 }
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.{DocumentumMetadataXmlGenerator, DocumentumZipBuilder}
 import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
 import scala.concurrent.{ExecutionContext, Future}

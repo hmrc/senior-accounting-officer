@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services.documentum
+package uk.gov.hmrc.senioraccountingofficer.services.legacy
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
@@ -24,18 +24,14 @@ import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
-import uk.gov.hmrc.objectstore.client.{Object as _, *}
+import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnector
-import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
-  DocumentumPackageContext,
-  PreparedSdesSubmission,
-  SubmissionType
-}
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService.owner
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
+import uk.gov.hmrc.senioraccountingofficer.services.documentum.{DocumentumMetadataXmlGenerator, DocumentumZipBuilder}
 import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, LocalDateTime, ZoneOffset}
@@ -45,59 +41,80 @@ class DocumentumPackageService @Inject() (
     metadataXmlGenerator: DocumentumMetadataXmlGenerator,
     zipBuilder: DocumentumZipBuilder,
     objectStoreClient: PlayObjectStoreClient,
-    sdesConnector: SdesConnector,
-    pdfService: PdfService
+    sdesConnector: SdesConnector
 )(using ExecutionContext, Materializer)
     extends Logging {
 
-  def preparePackage(
+  def packageAndSubmit(
       context: DocumentumPackageContext,
       pdfSource: Source[ByteString, ?]
-  )(using HeaderCarrier): Future[PreparedSdesSubmission] = {
+  )(using HeaderCarrier): Future[DocumentumPackageResult] = {
     val submissionDateTime   = LocalDateTime.now(ZoneOffset.UTC)
     val submissionDate       = submissionDateTime.toLocalDate
     val documentBaseFileName = documentBaseFileNameFor(context, submissionDate)
     val pdfFileName          = s"$documentBaseFileName.pdf"
     val metadataXmlName      =
       s"$documentBaseFileName-${submissionDate.format(DateTimeFormatter.BASIC_ISO_DATE)}-metadata.xml"
-    val zipFileName = s"$documentBaseFileName.zip"
-    stagedPdfObjectStorePath(context)
+    val zipFileName      = s"$documentBaseFileName.zip"
+    val stagedPdfPath    = stagedPdfObjectStorePath(context)
     val zipPath          = zipObjectStorePath(context.submissionId, zipFileName)
     val reconciliationId =
       s"$documentBaseFileName-${submissionDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))}"
     val metadataXml = metadataXmlGenerator.generate(context, documentBaseFileName, reconciliationId)
 
-    val zipSource = zipBuilder.build(pdfSource, pdfFileName, metadataXml, metadataXmlName)
+    uploadStagedPdf(stagedPdfPath, pdfSource)
+      .map { _ =>
+        val _ = submitPackageToSdes(
+          stagedPdfPath,
+          pdfFileName,
+          metadataXml,
+          metadataXmlName,
+          zipPath,
+          zipFileName,
+          context.submissionId
+        )
 
-    for {
-      zipSummary <- uploadZip(zipPath, zipSource)
-    } yield PreparedSdesSubmission(
-      submissionId = context.submissionId,
-      fileName = zipFileName,
-      owner = owner,
-      objectStorePath = zipPath.asUri,
-      checksum = zipSummary.contentMd5.value,
-      contentLength = zipSummary.contentLength
-    )
+        DocumentumPackageResult(packageAvailable = true, Some(zipFileName))
+      }
+      .recover { case NonFatal(exception) =>
+        logger.warn(
+          s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=${context.submissionId}",
+          exception
+        )
+        DocumentumPackageResult(packageAvailable = false)
+      }
   }
 
-  def notifySdes(
-      preparedSubmission: PreparedSdesSubmission
+  private def submitPackageToSdes(
+      stagedPdfPath: Path.File,
+      pdfFileName: String,
+      metadataXml: String,
+      metadataXmlName: String,
+      zipPath: Path.File,
+      zipFileName: String,
+      submissionId: String
   )(using HeaderCarrier): Future[Unit] = {
-    sdesConnector
-      .notifyFileReady(
-        preparedSubmission.fileName,
-        preparedSubmission.owner,
-        preparedSubmission.objectStorePath,
-        preparedSubmission.checksum,
-        preparedSubmission.contentLength
+    val stagedPdfSource = Source.lazyFutureSource(() => getStagedPdf(stagedPdfPath).map(_.content))
+    val zipSource       = zipBuilder.build(stagedPdfSource, pdfFileName, metadataXml, metadataXmlName)
+
+    (for {
+      zipSummary <- uploadZip(zipPath, zipSource)
+      response   <- sdesConnector.notifyFileReady(
+        zipFileName,
+        owner,
+        zipPath.asUri,
+        zipSummary.contentMd5.value,
+        zipSummary.contentLength
       )
-      .map { response =>
-        if response.status < 200 || response.status >= 300 then
-          throw new IllegalStateException(
-            s"Unexpected SDES status ${response.status} for ${preparedSubmission.submissionId}"
-          )
-      }
+    } yield {
+      if response.status < 200 || response.status >= 300 then
+        logger.warn(
+          s"[DocumentumPackage][SDES][UnexpectedStatus][CorrelationId=$getCorrelationId][Status=${response.status}]"
+        )
+    }).recover { case NonFatal(exception) =>
+      logger.warn(s"[DocumentumPackage][Failed][CorrelationId=$getCorrelationId] submissionId=$submissionId", exception)
+      ()
+    }
   }
 
   def download(submissionId: String, fileName: String)(using
@@ -109,6 +126,27 @@ class DocumentumPackageService @Inject() (
         owner = owner
       )
       .map(_.map(_.content))
+
+  private def uploadStagedPdf(path: Path.File, pdfSource: Source[ByteString, ?])(using
+      HeaderCarrier
+  ): Future[ObjectSummaryWithMd5] =
+    objectStoreClient.putObject(
+      path = path,
+      content = pdfSource,
+      retentionPeriod = RetentionPeriod.OneWeek,
+      contentType = Some("application/pdf"),
+      owner = owner
+    )
+
+  private def getStagedPdf(path: Path.File)(using
+      HeaderCarrier
+  ): Future[ObjectStoreObject[Source[ByteString, NotUsed]]] =
+    objectStoreClient
+      .getObject[Source[ByteString, NotUsed]](
+        path = path,
+        owner = owner
+      )
+      .map(_.getOrElse(throw new IllegalStateException(s"PDF not found in object store: ${path.asUri}")))
 
   private def uploadZip(path: Path.File, zipSource: Source[ByteString, NotUsed])(using
       HeaderCarrier
@@ -125,27 +163,16 @@ class DocumentumPackageService @Inject() (
     s"${submissionDate.format(DateTimeFormatter.BASIC_ISO_DATE)}_${context.submissionId}_SAO_${context.submissionType.documentumName}_OFFICIAL_SENSITIVE"
 
   private def stagedPdfObjectStorePath(context: DocumentumPackageContext): Path.File =
-    DocumentumPackageService.stagedPdfObjectStorePath(
-      context.saoSubscriptionId,
-      context.submissionId,
-      context.submissionType
-    )
+    Path
+      .Directory(s"/senior-accounting-officer/${SubscriptionIdHash.hex(context.saoSubscriptionId)}/")
+      .file(s"${context.submissionId}_SAO_${context.submissionType.documentumName}.pdf")
 
   private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =
     Path.Directory(s"/sdes/$submissionId/").file(fileName)
 
-}
+  private val owner = "senior-accounting-officer"
 
-object DocumentumPackageService {
-  val owner = "senior-accounting-officer"
-
-  def stagedPdfObjectStorePath(
-      subscriptionId: String,
-      submissionId: String,
-      submissionType: SubmissionType
-  ): Path.File =
-    Path
-      .Directory(s"/senior-accounting-officer/${SubscriptionIdHash.hex(subscriptionId)}/")
-      .file(s"${submissionId}_SAO_${submissionType.documentumName}.pdf")
-
+  private def getCorrelationId(using hc: HeaderCarrier): String = hc.extraHeaders
+    .collectFirst { case ("correlationId", id) => id }
+    .getOrElse("Not Set")
 }

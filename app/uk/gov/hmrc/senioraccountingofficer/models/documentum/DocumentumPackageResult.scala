@@ -16,6 +16,21 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
+import play.api.libs.json.{Json, OFormat}
+
+final case class PreparedSdesSubmission(
+    submissionId: String,
+    fileName: String,
+    owner: String,
+    objectStorePath: String,
+    checksum: String,
+    contentLength: Long
+)
+
+object PreparedSdesSubmission {
+  given OFormat[PreparedSdesSubmission] = Json.format
+}
+
 final case class DocumentumPackageResult(
     packageAvailable: Boolean,
     fileName: Option[String] = None

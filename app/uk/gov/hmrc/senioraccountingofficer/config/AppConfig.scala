@@ -39,6 +39,11 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
 
   def crmmEnabled: Boolean =
     sys.props.get("feature-toggles.crmm").fold(config.get[Boolean]("feature-toggles.crmm"))(_ == "true")
+
+  def cacheTtl: Long = config.get[Long]("mongodb.timeToLiveInSeconds")
+
+  def workItemsPollIntervalSeconds: Int = config.get[Int]("work-items.poll-interval-seconds")
+
 }
 
 object AppConfig {

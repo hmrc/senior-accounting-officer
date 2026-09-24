@@ -37,7 +37,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.{ExecutionContext, Future}
