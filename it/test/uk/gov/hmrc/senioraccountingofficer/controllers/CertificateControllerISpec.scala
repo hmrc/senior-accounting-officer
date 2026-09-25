@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
+import support.JenkinsHelper.isJenkins
+
 import org.apache.pekko.util.ByteString
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -35,7 +37,7 @@ import java.time.format.DateTimeFormatter
 class CertificateControllerISpec extends ISpecBase with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = scaled(Span(30, Seconds)),
+    timeout = scaled(Span(if isJenkins then 40 else 20, Seconds)),
     interval = scaled(Span(150, Millis))
   )
 

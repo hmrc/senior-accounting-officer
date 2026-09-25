@@ -28,11 +28,12 @@ import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import support.JenkinsHelper.isJenkins
 
 class NotificationControllerISpec extends ISpecBase with Eventually {
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
-    timeout = scaled(Span(30, Seconds)),
+    timeout = scaled(Span(if isJenkins then 40 else 20, Seconds)),
     interval = scaled(Span(150, Millis))
   )
 
