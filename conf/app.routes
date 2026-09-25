@@ -98,7 +98,10 @@
 #    "502":
 #      description: Downstream server error
 ###
-POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
+POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.legacy.NotificationController.postNotification()
+
+POST        /notification/workitems               uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
+GET         /notification/status                  uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.getNotificationStatus()
 
 ###
 #  summary: Submit a certificate

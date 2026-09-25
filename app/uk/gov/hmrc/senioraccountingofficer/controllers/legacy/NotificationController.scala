@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.controllers
+package uk.gov.hmrc.senioraccountingofficer.controllers.legacy
 
 import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
+import uk.gov.hmrc.senioraccountingofficer.controllers.{BaseController, ValidateRequest}
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-import uk.gov.hmrc.senioraccountingofficer.models.mongo.SubmissionStatus
+import uk.gov.hmrc.senioraccountingofficer.models.notification.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
-import uk.gov.hmrc.senioraccountingofficer.repositories.SubmissionStatusRepository
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
 
 import scala.concurrent.ExecutionContext
 
@@ -36,58 +36,43 @@ class NotificationController @Inject() (
     cc: ControllerComponents,
     identify: IdentifierAction,
     ensureCorrelationId: EnsureCorrelationIdAction,
-    notificationService: NotificationService,
-    submissionStatusRepository: SubmissionStatusRepository
+    notificationService: NotificationService
 )(implicit ec: ExecutionContext)
     extends BaseController(cc)
     with Logging {
 
   def postNotification(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
     implicit request =>
-      val correlationId = getCorrelationId
       ValidateRequest.as[NotificationRequest] { notificationRequest =>
         notificationService
-          .postNotification(correlationId, request.saoSubscriptionId, notificationRequest)
+          .postNotification(request.saoSubscriptionId, notificationRequest)
           .map {
-            case Enqueued                        => Accepted
+            case Success(notificationId) =>
+              Ok(Json.toJson(NotificationResponse(notificationId)))
             case Misalignment(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][BadRequest][CorrelationId=$correlationId]")
+              logger.warn(s"[Notification][$downstreamService][BadRequest][CorrelationId=$getCorrelationId]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
             case MalformedResponse(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][MalformedResponse][CorrelationId=$correlationId]")
+              logger.warn(s"[Notification][$downstreamService][MalformedResponse][CorrelationId=$getCorrelationId]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
             case DownstreamUnauthorised(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][Unauthorised][CorrelationId=$correlationId]")
+              logger.warn(s"[Notification][$downstreamService][Unauthorised][CorrelationId=$getCorrelationId]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
             case DownstreamForbidden(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][Forbidden][CorrelationId=$correlationId]")
+              logger.warn(s"[Notification][$downstreamService][Forbidden][CorrelationId=$getCorrelationId]")
               InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
             case DownstreamServiceError(downstreamService) =>
               logger.warn(
-                s"[Notification][$downstreamService][DownstreamInternalServerError][CorrelationId=$correlationId]"
+                s"[Notification][$downstreamService][DownstreamInternalServerError][CorrelationId=$getCorrelationId]"
               )
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
             case DownstreamServiceUnavailable(downstreamService) =>
-              logger.warn(s"[Notification][$downstreamService][ServiceUnavailable][CorrelationId=$correlationId]")
+              logger.warn(s"[Notification][$downstreamService][ServiceUnavailable][CorrelationId=$getCorrelationId]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
             case UnknownFailure(downstreamService, status) =>
-              logger.warn(s"[Notification][$downstreamService][CorrelationId=$correlationId][Status=$status]")
+              logger.warn(s"[Notification][$downstreamService][CorrelationId=$getCorrelationId][Status=$status]")
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
           }
       }
   }
-
-  def getNotificationStatus(): Action[AnyContent] = (identify andThen ensureCorrelationId).async { implicit request =>
-    for {
-      status <- submissionStatusRepository.get(getCorrelationId)
-    } yield status match {
-      case Some(SubmissionStatus(_, _, true, _))                   => BadGateway
-      case Some(SubmissionStatus(_, Some(submissionId), false, _)) => Ok(submissionId)
-      case Some(_)                                                 => NoContent
-      case None                                                    =>
-        logger.warn(s"[NotificationStatus][CorrelationId=$getCorrelationId][NotFound]")
-        NotFound
-    }
-  }
-
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.controllers
+package uk.gov.hmrc.senioraccountingofficer.controllers.legacy
 
 import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
@@ -30,19 +30,20 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerSpec.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
 
 import java.time.LocalDate
 import java.util.UUID
+
+import NotificationControllerSpec.*
 
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
