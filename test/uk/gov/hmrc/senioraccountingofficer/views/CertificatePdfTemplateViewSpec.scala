@@ -195,7 +195,7 @@ class CertificatePdfTemplateViewSpec extends AnyWordSpec with Matchers with Mock
       val expectedDeclarationData = List(
         "A person authorised to submit on behalf of the SAO",
         certificateData.submitterName.fold("")(identity),
-        certificateData.saoName
+        certificateData.saoDeclarationName
       )
       expectedDeclarationData
         .zip(doc.declarationTableData.eachText())

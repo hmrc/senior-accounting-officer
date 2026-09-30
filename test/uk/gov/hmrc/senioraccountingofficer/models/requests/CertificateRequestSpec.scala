@@ -19,11 +19,12 @@ package uk.gov.hmrc.senioraccountingofficer.models.requests
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateAlphanumeric, generateCrn, generateUtr}
 
 import scala.util.Random
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 
 import CertificateRequestSpec.*
 import CertificateCompanySpec.genUnqualifiedCompany
@@ -53,18 +54,20 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         qualificationStatement = Some(FreeText(generateAlphanumeric(FreeText.maxFreeTextLength)))
       )
 
-      val testCompanies = CertificateCompanies(List(testCompany))
-      val submitterName = generateAlphanumeric(PersonName.maxPersonNameLength)
-      val saoName       = generateAlphanumeric(PersonName.maxPersonNameLength)
-      val saoEmail      = s"${generateAlphanumeric(Email.maxEmailLength - 2)}@a"
-      val staffPid      = generateAlphanumeric(StaffId.maxStaffIdLength)
-      val remarks       = generateAlphanumeric(FreeText.maxFreeTextLength)
+      val testCompanies      = CertificateCompanies(List(testCompany))
+      val submitterName      = generateAlphanumeric(PersonName.maxPersonNameLength)
+      val saoName            = generateAlphanumeric(PersonName.maxPersonNameLength)
+      val saoDeclarationName = generateAlphanumeric(PersonName.maxPersonNameLength)
+      val saoEmail           = s"${generateAlphanumeric(Email.maxEmailLength - 2)}@a"
+      val staffPid           = generateAlphanumeric(StaffId.maxStaffIdLength)
+      val remarks            = generateAlphanumeric(FreeText.maxFreeTextLength)
 
       val result = Json
         .parse(s"""
              |{
              | "submitterName": "$submitterName",
              | "saoName": "$saoName",
+             | "saoDeclarationName": "$saoDeclarationName",
              | "saoEmail": "$saoEmail",
              | "staffPid": "$staffPid",
              | "companies" : ${Json.toJson(testCompanies)},
@@ -76,6 +79,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         CertificateRequest(
           submitterName = Some(PersonName(submitterName)),
           saoName = PersonName(saoName),
+          saoDeclarationName = PersonName(saoDeclarationName),
           saoEmail = Email(saoEmail),
           staffPid = Some(StaffId(staffPid)),
           companies = testCompanies,
@@ -113,6 +117,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         .parse(s"""
              |{
              | "saoName": "$saoName",
+             | "saoDeclarationName": "$saoName",
              | "saoEmail": "$saoEmail",
              | "companies" : ${Json.toJson(testCompanies)}
              |}""".stripMargin)
@@ -122,6 +127,7 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         CertificateRequest(
           submitterName = None,
           saoName = PersonName(saoName),
+          saoDeclarationName = PersonName(saoName),
           saoEmail = Email(saoEmail),
           staffPid = None,
           companies = testCompanies,
@@ -169,12 +175,73 @@ class CertificateRequestSpec extends AnyWordSpec with Matchers {
         )
       }
     }
+    "toPdfCertificate" should {
+      import CertificateRequestSpec.*
 
+      "format PDF dates without leading zeroes and use 12-hour time" in {
+        val subscription = GetSubscriptionDpsResponse(
+          etmpSafeId = "safe-id",
+          nominatedCompany = NominatedCompany(Some(crn), companyName, utr),
+          contacts = Nil,
+          created = LocalDateTime.of(2025, 6, 1, 9, 5),
+          updated = LocalDateTime.of(2025, 6, 1, 9, 5)
+        )
+        val request = CertificateRequest(
+          submitterName = None,
+          saoName = PersonName("SAO name"),
+          saoDeclarationName = PersonName("SAO name"),
+          saoEmail = Email("sao@example.com"),
+          staffPid = None,
+          remarks = None,
+          companies = CertificateCompanies(List(CertificateRequestSpec.certificateCompanyWithOptionalFields))
+        )
+
+        val result = request.toPdfCertificate(
+          subscriptionId = "subscription-id",
+          subscription = subscription,
+          certificateReference = "certificate-reference",
+          submissionDateTime = LocalDateTime.of(2025, 6, 2, 14, 42)
+        )
+
+        result.subscriptionCreationDateTime mustBe "1 June 2025 9:05am"
+        result.submissionDateTime mustBe "2 June 2025 2:42pm"
+        result.companies.head.financialYearEndDate mustBe "31 December 2020"
+      }
+    }
   }
 
 }
 
 object CertificateRequestSpec {
+
+  val crn                    = "example crn"
+  val utr                    = "example utr"
+  val companyName            = "example company name"
+  val status                 = CompanyStatus.Active
+  val accPeriodEnd           = "2020-12-31"
+  val companyType            = CompanyType.LTD
+  val qualificationStatement = "example qualification statement"
+
+  val certificateCompanyWithOptionalFields: CertificateCompany =
+    CertificateCompany(
+      crn = Some(Crn(crn)),
+      utr = Utr(utr),
+      name = CompanyName(companyName),
+      accPeriodEnd = LocalDate.parse(accPeriodEnd),
+      status = status,
+      `type` = companyType,
+      isCorporationTaxQualified = true,
+      isVatQualified = true,
+      isPayeQualified = false,
+      isInsurancePremiumTaxQualified = false,
+      isStampDutyLandTaxQualified = false,
+      isStampDutyReserveTaxQualified = false,
+      isPetroleumRevenueTaxQualified = false,
+      isCustomsDutiesQualified = false,
+      isExciseDutiesQualified = false,
+      isBankLevyQualified = false,
+      qualificationStatement = Some(FreeText(qualificationStatement))
+    )
 
   def genUnqualifiedRequest(testCompany: CertificateCompany): CertificateRequest = {
 
@@ -185,6 +252,7 @@ object CertificateRequestSpec {
     CertificateRequest(
       submitterName = None,
       saoName = PersonName(saoName),
+      saoDeclarationName = PersonName(saoName),
       saoEmail = Email(saoEmail),
       staffPid = None,
       companies = testCompanies,

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import com.google.inject.AbstractModule
+
 import java.time.{Clock, ZoneOffset}
 
 class Module extends AbstractModule {

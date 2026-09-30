@@ -40,6 +40,8 @@ import scala.util.Try
 import java.time.{LocalDateTime, ZoneId}
 import javax.inject.Inject
 
+import CertificateRequest.*
+
 class CertificateService @Inject() (
     getSubscriptionConnector: GetSubscriptionConnector,
     crmmConnector: CrmmConnector,
@@ -66,7 +68,8 @@ class CertificateService @Inject() (
         dpsSubscription,
         dpsResult.certificateRef,
         submissionDateTime,
-        requestWithCustomerId
+        request,
+        customerId
       )
     } yield Success(certificateReference = dpsResult.certificateRef)
   }.merge
@@ -194,22 +197,17 @@ class CertificateService @Inject() (
       dpsSubscription: GetSubscriptionDpsResponse,
       certificateReference: String,
       submissionDateTime: LocalDateTime,
-      request: CertificateDpsRequest
+      request: CertificateRequest,
+      customerId: Option[String]
   )(using
       HeaderCarrier
   ) =
     EitherT.right[PostCertificateResponse with Failure](
       documentumPackageService.packageAndSubmit(
         DocumentumPackageContext
-          .certificate(certificateReference, subscriptionId, dpsSubscription.nominatedCompany, request),
+          .certificate(certificateReference, subscriptionId, dpsSubscription.nominatedCompany, customerId),
         pdfService.generateCertificatePdf(
-          CertificateDpsRequest.toPdfCertificate(
-            subscriptionId,
-            dpsSubscription,
-            certificateReference,
-            request,
-            submissionDateTime: LocalDateTime
-          )
+          request.toPdfCertificate(subscriptionId, dpsSubscription, certificateReference, submissionDateTime)
         )
       )
     )

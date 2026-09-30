@@ -17,11 +17,15 @@
 package uk.gov.hmrc.senioraccountingofficer.models.requests
 
 import play.api.libs.json.*
-import uk.gov.hmrc.senioraccountingofficer.models.dps.CertificateDpsRequest
+import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, GetSubscriptionDpsResponse}
+import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
+
+import java.time.LocalDateTime
 
 final case class CertificateRequest(
     submitterName: Option[PersonName],
     saoName: PersonName,
+    saoDeclarationName: PersonName,
     saoEmail: Email,
     staffPid: Option[StaffId],
     companies: CertificateCompanies,
@@ -42,6 +46,58 @@ object CertificateRequest {
         remarks = certificateRequest.remarks.map(_.value),
         staffPid = certificateRequest.staffPid.map(_.value),
         customerId = customerId
+      )
+    }
+
+    def toPdfCertificateCompany(certificateCompany: List[CertificateCompany]): Seq[Certificate.Row] = {
+      certificateCompany.map(company => {
+
+        val taxRegimes = TaxRegimes(
+          corporationTax = company.isCorporationTaxQualified,
+          vat = company.isVatQualified,
+          paye = company.isPayeQualified,
+          insurancePremiumTax = company.isInsurancePremiumTaxQualified,
+          stampDutyLandTax = company.isStampDutyLandTaxQualified,
+          stampDutyReserveTax = company.isStampDutyReserveTaxQualified,
+          petroleumRevenueTax = company.isPetroleumRevenueTaxQualified,
+          customsDuties = company.isCustomsDutiesQualified,
+          exciseDuties = company.isExciseDutiesQualified,
+          bankLevy = company.isBankLevyQualified
+        )
+
+        Certificate.Row(
+          companyName = company.name.value,
+          utr = company.utr.value,
+          crn = company.crn.fold("Not provided")(_.value),
+          companyType = company.`type`,
+          status = company.status,
+          financialYearEndDate = company.accPeriodEnd.format(dateFormatter),
+          qualifiedRegimes = taxRegimes,
+          additionalInformation = company.qualificationStatement.map(_.value)
+        )
+      })
+    }
+
+    def toPdfCertificate(
+        subscriptionId: String,
+        subscription: GetSubscriptionDpsResponse,
+        certificateReference: String,
+        submissionDateTime: LocalDateTime
+    ): Certificate = {
+      val companies = toPdfCertificateCompany(certificateRequest.companies._1)
+      Certificate(
+        subscriptionId = subscriptionId,
+        subscriptionCreationDateTime =
+          subscription.created.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
+        nominatedCompany = subscription.nominatedCompany,
+        saoName = certificateRequest.saoName.value,
+        saoDeclarationName = certificateRequest.saoDeclarationName.value,
+        saoEmail = certificateRequest.saoEmail.value,
+        submitterName = certificateRequest.submitterName.map(_.value),
+        submissionDateTime = submissionDateTime.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
+        submissionId = certificateReference,
+        companies = companies,
+        additionalInformation = certificateRequest.remarks.map(_.value)
       )
     }
   }

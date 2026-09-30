@@ -69,6 +69,7 @@ object PdfService {
       submissionId: String,
       submissionDateTime: String,
       saoName: String,
+      saoDeclarationName: String,
       saoEmail: String,
       submitterName: Option[String],
       companies: Seq[Certificate.Row],

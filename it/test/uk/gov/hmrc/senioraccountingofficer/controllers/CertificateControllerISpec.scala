@@ -691,6 +691,7 @@ object CertificateControllerISpec {
 
   val requestBody = s"""{
                        |  "saoName": "$thirdUserName",
+                       |  "saoDeclarationName": "$thirdUserName",
                        |  "saoEmail": "$thirdUserEmail",
                        |  "companies": [
                        |    {
@@ -720,6 +721,7 @@ object CertificateControllerISpec {
 
   val requestBodyWithSubmitterName = s"""{
                                         |  "submitterName": "$fourthUserName",
+                                        |  "saoDeclarationName": "$secondUserName",
                                         |  "saoName": "$thirdUserName",
                                         |  "saoEmail": "$thirdUserEmail",
                                         |  "companies": [
