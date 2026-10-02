@@ -22,12 +22,12 @@ import play.api.mvc.{Action, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-import uk.gov.hmrc.senioraccountingofficer.models.certificate.CertificateResponse
+import uk.gov.hmrc.senioraccountingofficer.models.certificate.{CertificateIdempotencyResponse, CertificateResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
@@ -74,5 +74,19 @@ class CertificateController @Inject() (
           }
       }
   }
+
+  def postCertificateWithFaultTolerance: Action[String] =
+    (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
+      ValidateRequest.as[CertificateRequest] { req =>
+        Future.successful(
+          Accepted(Json.toJson(CertificateIdempotencyResponse(req.idempotencyKey)))
+        )
+      }
+    }
+
+  def getStateOfWorkItem(idempotencyKey: String): Action[String] =
+    (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
+      Future.successful(NoContent)
+    }
 
 }
