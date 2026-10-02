@@ -22,7 +22,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.NotificationDpsRequest
 final case class NotificationRequest(
     companies: NotificationCompanies,
     saos: Saos,
-    remarks: Option[FreeText]
+    remarks: Option[FreeText],
+    idempotencyKey: Option[String] = None
 )
 
 object NotificationRequest {

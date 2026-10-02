@@ -27,7 +27,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
@@ -74,4 +74,18 @@ class NotificationController @Inject() (
           }
       }
   }
+
+  def postNotificationWithFaultTolerance: Action[String] =
+    (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
+      ValidateRequest.as[NotificationRequest] { req =>
+        Future.successful(
+          Accepted(Json.toJson(NotificationIdempotencyResponse(req.idempotencyKey)))
+        )
+      }
+    }
+
+  def getStateOfWorkItem(idempotencyKey: String): Action[String] =
+    (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
+      Future.successful(NoContent)
+    }
 }

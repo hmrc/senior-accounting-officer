@@ -26,11 +26,11 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+import java.time.Clock
 import java.time.format.DateTimeFormatter
 import java.time.{ZoneId, ZonedDateTime}
 import java.util.Locale
 import javax.inject.Inject
-import java.time.Clock
 
 class EmailService @Inject() (
     emailConnector: EmailConnector,

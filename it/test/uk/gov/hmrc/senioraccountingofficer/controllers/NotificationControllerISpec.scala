@@ -62,6 +62,9 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
       .futureValue
   }
 
+  val postNotificationV2Url = s"$baseUrl/senior-accounting-officer/v2/notification"
+  val getNotificationV2Url = s"$baseUrl/senior-accounting-officer/v2/notification/testKey"
+
   "POST /notification" when {
 
     "Succeeds" when {
@@ -551,6 +554,43 @@ class NotificationControllerISpec extends ISpecBase with Eventually {
       }
     }
   }
+
+  "POST /v2/notification endpoint" should {
+    "respond with 202 status" in {
+      MockAuthHelper.mockAuthOk()
+
+      val response =
+        wsClient
+          .url(postNotificationV2Url)
+          .withHttpHeaders(
+            HeaderNames.AUTHORIZATION -> MockAuthHelper.testBearerToken,
+            "correlationId" -> correlationId
+          )
+          .post(requestBodyWithIdempotencyKey)
+          .futureValue
+
+      response.status mustBe 202
+      response.body[String] mustBe s"""{"idempotencyKey":"testKey"}"""
+    }
+  }
+
+  "GET /v2/notification/:idempotencyKey endpoint" should {
+    "respond with 204 status" in {
+      MockAuthHelper.mockAuthOk()
+
+      val response =
+        wsClient
+          .url(getNotificationV2Url)
+          .withHttpHeaders(
+            HeaderNames.AUTHORIZATION -> MockAuthHelper.testBearerToken,
+            "correlationId" -> correlationId
+          )
+          .get()
+          .futureValue
+
+      response.status mustBe 204
+    }
+  }
 }
 
 object NotificationControllerISpec {
@@ -582,6 +622,29 @@ object NotificationControllerISpec {
                       |  ],
                       |  "remarks":"testremarks"
                       |}""".stripMargin
+
+  val requestBodyWithIdempotencyKey =
+    """{
+      |  "companies": [
+      |    {
+      |      "crn": "65476489",
+      |      "utr": "1233456679",
+      |      "name": "TestCompanyName",
+      |      "accPeriodEnd": "2009-09-09",
+      |      "status": "Dormant",
+      |      "type": "LTD"
+      |    }
+      |  ],
+      |  "saos": [
+      |    {
+      |      "name": "Testname",
+      |      "fromDate": "2020-03-10",
+      |      "toDate": "2021-03-10"
+      |    }
+      |  ],
+      |  "remarks":"testremarks",
+      |  "idempotencyKey": "testKey"
+      |}""".stripMargin
 
   val crn = generateCrn
 

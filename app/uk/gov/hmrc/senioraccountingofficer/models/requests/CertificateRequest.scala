@@ -25,7 +25,8 @@ final case class CertificateRequest(
     saoEmail: Email,
     staffPid: Option[StaffId],
     companies: CertificateCompanies,
-    remarks: Option[FreeText]
+    remarks: Option[FreeText],
+    idempotencyKey: Option[String] = None
 )
 
 object CertificateRequest {

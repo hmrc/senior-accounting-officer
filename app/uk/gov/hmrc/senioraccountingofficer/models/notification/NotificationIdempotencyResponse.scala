@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.models.notification
 
-import com.google.inject.AbstractModule
+import play.api.libs.json.{Json, OFormat}
 
-import java.time.{Clock, ZoneOffset}
+case class NotificationIdempotencyResponse(idempotencyKey: Option[String])
 
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
-  }
+object NotificationIdempotencyResponse {
+  given OFormat[NotificationIdempotencyResponse] = Json.format[NotificationIdempotencyResponse]
 }

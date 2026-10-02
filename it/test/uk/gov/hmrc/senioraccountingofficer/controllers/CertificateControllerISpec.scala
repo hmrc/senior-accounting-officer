@@ -65,6 +65,9 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       .futureValue
   }
 
+  val postCertificateV2Url = s"$baseUrl/senior-accounting-officer/v2/certificate"
+  val getCertificateV2Url = s"$baseUrl/senior-accounting-officer/v2/certificate/testKey"
+
   "POST /certificate" when {
 
     "Succeeds" when {
@@ -651,6 +654,43 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       }
     }
   }
+
+  "POST /v2/certificate endpoint" should {
+    "respond with 202 status" in {
+      MockAuthHelper.mockAuthOk()
+
+      val response =
+        wsClient
+          .url(postCertificateV2Url)
+          .withHttpHeaders(
+            HeaderNames.AUTHORIZATION -> MockAuthHelper.testBearerToken,
+            "correlationId" -> correlationId
+          )
+          .post(requestBodyWithIdempotencyKey)
+          .futureValue
+
+      response.status mustBe 202
+      response.body[String] mustBe s"""{"idempotencyKey":"testKey"}"""
+    }
+  }
+
+  "GET /v2/certificate/:idempotencyKey endpoint" should {
+    "respond with 204 status" in {
+      MockAuthHelper.mockAuthOk()
+
+      val response =
+        wsClient
+          .url(getCertificateV2Url)
+          .withHttpHeaders(
+            HeaderNames.AUTHORIZATION -> MockAuthHelper.testBearerToken,
+            "correlationId" -> correlationId
+          )
+          .get()
+          .futureValue
+
+      response.status mustBe 204
+    }
+  }
 }
 
 object CertificateControllerISpec {
@@ -747,6 +787,36 @@ object CertificateControllerISpec {
                                         |  "staffPid": "$staffPid"
                                         |}
                                         |""".stripMargin
+
+  val requestBodyWithIdempotencyKey = s"""{
+                       |  "saoName": "$thirdUserName",
+                       |  "saoEmail": "$thirdUserEmail",
+                       |  "companies": [
+                       |    {
+                       |      "crn": "$crn",
+                       |      "utr": "$utr",
+                       |      "name": "$companyName",
+                       |      "accPeriodEnd": "$accountingPeriodEnd",
+                       |      "status": "$status",
+                       |      "type": "LTD",
+                       |      "isCorporationTaxQualified": $isCorporationTaxQualified,
+                       |      "isVatQualified": $isVatQualified,
+                       |      "isPayeQualified": $isPayeQualified,
+                       |      "isInsurancePremiumTaxQualified": $isInsurancePremiumTaxQualified,
+                       |      "isStampDutyLandTaxQualified": $isStampDutyLandTaxQualified,
+                       |      "isStampDutyReserveTaxQualified": $isStampDutyReserveTaxQualified,
+                       |      "isPetroleumRevenueTaxQualified": $isPetroleumRevenueTaxQualified,
+                       |      "isCustomsDutiesQualified": $isCustomsDutiesQualified,
+                       |      "isExciseDutiesQualified": $isExciseDutiesQualified,
+                       |      "isBankLevyQualified": $isBankLevyQualified,
+                       |      "qualificationStatement": "$qualificationStatement"
+                       |    }
+                       |  ],
+                       |  "remarks": "$remarks",
+                       |  "staffPid": "$staffPid",
+                       |  "idempotencyKey": "testKey"
+                       |}
+                       |""".stripMargin
 
   val getSubscriptionResponse = s"""{
                                    |  "etmpSafeId": "1234567890",
