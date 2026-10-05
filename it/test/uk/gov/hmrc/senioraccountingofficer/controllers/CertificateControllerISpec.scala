@@ -791,6 +791,7 @@ object CertificateControllerISpec {
                                         |""".stripMargin
 
   val requestBodyWithIdempotencyKey = s"""{
+                       |  "saoDeclarationName": "$secondUserName",
                        |  "saoName": "$thirdUserName",
                        |  "saoEmail": "$thirdUserEmail",
                        |  "companies": [
