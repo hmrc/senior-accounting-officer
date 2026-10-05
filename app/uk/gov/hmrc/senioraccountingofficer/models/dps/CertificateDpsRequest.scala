@@ -19,8 +19,6 @@ package uk.gov.hmrc.senioraccountingofficer.models.dps
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.services.PdfService.*
 
-import java.time.{LocalDate, LocalDateTime}
-
 final case class CertificateDpsRequest(
     submitterName: Option[String],
     saoName: String,
@@ -34,55 +32,4 @@ final case class CertificateDpsRequest(
 object CertificateDpsRequest {
   given OFormat[CertificateDpsRequest] = Json.format[CertificateDpsRequest]
 
-  def toPdfCertificateCompany(certificateCompany: List[CertificateDpsCompany]): Seq[Certificate.Row] = {
-    certificateCompany.map(company => {
-
-      val taxRegimes = TaxRegimes(
-        corporationTax = company.isCorporationTaxQualified,
-        vat = company.isVatQualified,
-        paye = company.isPayeQualified,
-        insurancePremiumTax = company.isInsurancePremiumTaxQualified,
-        stampDutyLandTax = company.isStampDutyLandTaxQualified,
-        stampDutyReserveTax = company.isStampDutyReserveTaxQualified,
-        petroleumRevenueTax = company.isPetroleumRevenueTaxQualified,
-        customsDuties = company.isCustomsDutiesQualified,
-        exciseDuties = company.isExciseDutiesQualified,
-        bankLevy = company.isBankLevyQualified
-      )
-
-      Certificate.Row(
-        companyName = company.name,
-        utr = company.utr,
-        crn = company.crn.fold("Not provided")(identity),
-        companyType = company.`type`,
-        status = company.status,
-        financialYearEndDate = LocalDate.parse(company.accPeriodEnd).format(dateFormatter),
-        qualifiedRegimes = taxRegimes,
-        additionalInformation = company.qualificationStatement
-      )
-    })
-  }
-
-  def toPdfCertificate(
-      subscriptionId: String,
-      subscription: GetSubscriptionDpsResponse,
-      certificateReference: String,
-      request: CertificateDpsRequest,
-      submissionDateTime: LocalDateTime
-  ): Certificate = {
-    val companies = toPdfCertificateCompany(request.companies)
-    Certificate(
-      subscriptionId = subscriptionId,
-      subscriptionCreationDateTime =
-        subscription.created.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
-      nominatedCompany = subscription.nominatedCompany,
-      saoName = request.saoName,
-      saoEmail = request.saoEmail,
-      submitterName = request.submitterName,
-      submissionDateTime = submissionDateTime.format(dateTimeFormatter).replace("AM", "am").replace("PM", "pm"),
-      submissionId = certificateReference,
-      companies = companies,
-      additionalInformation = request.remarks
-    )
-  }
 }

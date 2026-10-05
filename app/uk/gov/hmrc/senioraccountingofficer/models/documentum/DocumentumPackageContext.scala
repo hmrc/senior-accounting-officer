@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
-import uk.gov.hmrc.senioraccountingofficer.models.dps.{CertificateDpsRequest, NominatedCompany}
+import uk.gov.hmrc.senioraccountingofficer.models.dps.NominatedCompany
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
 
 enum SubmissionType(val documentumName: String) {
@@ -60,7 +60,7 @@ object DocumentumPackageContext {
       submissionId: String,
       saoSubscriptionId: String,
       nominatedCompany: NominatedCompany,
-      request: CertificateDpsRequest
+      customerId: Option[String]
   ): DocumentumPackageContext =
     DocumentumPackageContext(
       submissionId = submissionId,
@@ -68,6 +68,6 @@ object DocumentumPackageContext {
       saoSubscriptionId = saoSubscriptionId,
       nominatedCompany =
         DocumentumCompany(name = nominatedCompany.name, utr = nominatedCompany.utr, crn = nominatedCompany.crn),
-      customerId = request.customerId
+      customerId = customerId
     )
 }

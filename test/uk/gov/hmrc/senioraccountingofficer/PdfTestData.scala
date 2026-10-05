@@ -385,6 +385,7 @@ object PdfTestData {
       subscriptionId = "XMPLR0123456789",
       subscriptionCreationDateTime = "1 May 2025 9:15am",
       saoName = "Test Jackson Brown",
+      saoDeclarationName = "Declaration Jackson Brown",
       saoEmail = "jbrown@test.co.uk",
       submitterName = submitterName,
       submissionDateTime = "2 May 2025 2:42pm",

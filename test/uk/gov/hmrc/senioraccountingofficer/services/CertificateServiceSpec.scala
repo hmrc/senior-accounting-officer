@@ -35,6 +35,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
+import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
@@ -416,7 +417,7 @@ class CertificateServiceSpec
                     exampleCertificateReference,
                     exampleSubscriptionId,
                     exampleNominatedCompany,
-                    expectedDpsRequest
+                    Some(exampleCustomerId)
                   )
               ),
               meq(objectStoreFileContent)
@@ -597,15 +598,15 @@ class CertificateServiceSpec
 
 object CertificateServiceSpec {
   val requestId                           = "123"
-  val incomingRequest: CertificateRequest =
-    CertificateRequest(
-      submitterName = Some(PersonName("Firstname Lastname")),
-      saoName = PersonName("Firstname Lastname"),
-      saoEmail = Email("firstname.lastname@example.com"),
-      companies = CertificateCompanies(List.empty),
-      remarks = None,
-      staffPid = None
-    )
+  val incomingRequest: CertificateRequest = CertificateRequest(
+    submitterName = Some(PersonName("Firstname Lastname")),
+    saoName = PersonName("Firstname Lastname"),
+    saoDeclarationName = PersonName("DeclarationFirstname Lastname"),
+    saoEmail = Email("firstname.lastname@example.com"),
+    companies = CertificateCompanies(List.empty),
+    remarks = None,
+    staffPid = None
+  )
   val baseDpsRequest: CertificateDpsRequest =
     CertificateDpsRequest(
       submitterName = Some("Firstname Lastname"),

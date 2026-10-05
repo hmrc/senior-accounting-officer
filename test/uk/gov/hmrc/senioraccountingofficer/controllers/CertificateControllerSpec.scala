@@ -101,6 +101,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
         CertificateRequest(
           submitterName = Some(PersonName("submitterName")),
           saoName = PersonName("saoName"),
+          saoDeclarationName = PersonName("saoDeclarationName"),
           saoEmail = Email("Firstname.Lastname@example.com"),
           companies = CertificateCompanies(
             List(
@@ -336,10 +337,11 @@ object CertificateControllerSpec {
   private val crn                    = generateCrn
   private val utr                    = generateUtr
   private val validPayload: JsObject = Json.obj(
-    "submitterName" -> "submitterName",
-    "saoName"       -> "saoName",
-    "saoEmail"      -> "Firstname.Lastname@example.com",
-    "companies"     -> Json.arr(
+    "submitterName"      -> "submitterName",
+    "saoName"            -> "saoName",
+    "saoDeclarationName" -> "saoDeclarationName",
+    "saoEmail"           -> "Firstname.Lastname@example.com",
+    "companies"          -> Json.arr(
       Json.obj(
         "crn"                            -> crn,
         "utr"                            -> utr,
