@@ -1,0 +1,43 @@
+info:
+  name: (202) duplicate-request
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v2/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "companies": [
+          {
+            "crn": "65476489",
+            "utr": "1233456679",
+            "name": "TestCompanyName",
+            "accPeriodEnd": "2009-09-09",
+            "status": "Dormant",
+            "type": "LTD"
+          }
+        ],
+        "saos": [
+          {
+            "name": "Testname",
+            "fromDate": "2020-03-10",
+            "toDate": "2021-03-10"
+          }
+        ],
+        "remarks": "testremarks",
+        "idempotencyKey": "{{notificationIdempotencyKey}}"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

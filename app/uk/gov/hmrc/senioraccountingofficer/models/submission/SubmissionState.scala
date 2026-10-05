@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models.mongo
+package uk.gov.hmrc.senioraccountingofficer.models.submission
 
-import play.api.libs.json.{Format, JsObject, Json}
+import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import java.time.{Clock, Instant}
+import java.time.Instant
 
-final case class SubmissionStatus(
+case class SubmissionState(
     _id: String,
-    submissionId: Option[String],
-    failed: Boolean,
-    lastUpdated: Instant
+    scopeKey: String,
+    reference: Option[String] = None,
+    pdfAttempted: Boolean = false,
+    pdfStored: Boolean = false,
+    failure: Option[SubmissionFailure] = None,
+    terminalAt: Option[Instant] = None,
+    expiresAt: Option[Instant] = None
 )
-
-object SubmissionStatus {
-  given instantFormat: Format[Instant]   = MongoJavatimeFormats.instantFormat
-  given format: Format[SubmissionStatus] = Json.format
-
-  def apply(correlationId: String, submissionId: Option[String] = None)(using Clock) =
-    new SubmissionStatus(
-      _id = correlationId,
-      submissionId = submissionId,
-      failed = false,
-      lastUpdated = Instant.now(summon[Clock])
-    )
+object SubmissionState {
+  given Format[Instant]          = MongoJavatimeFormats.instantFormat
+  given OFormat[SubmissionState] = Json.using[Json.WithDefaultValues].format
 }
