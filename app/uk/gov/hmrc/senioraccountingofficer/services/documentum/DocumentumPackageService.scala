@@ -31,7 +31,6 @@ import uk.gov.hmrc.senioraccountingofficer.models.documentum.{
   PreparedSdesSubmission,
   SubmissionType
 }
-import uk.gov.hmrc.senioraccountingofficer.services.PdfService
 import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService.owner
 import uk.gov.hmrc.senioraccountingofficer.utils.SubscriptionIdHash
 
@@ -45,23 +44,21 @@ class DocumentumPackageService @Inject() (
     metadataXmlGenerator: DocumentumMetadataXmlGenerator,
     zipBuilder: DocumentumZipBuilder,
     objectStoreClient: PlayObjectStoreClient,
-    sdesConnector: SdesConnector,
-    pdfService: PdfService
+    sdesConnector: SdesConnector
 )(using ExecutionContext, Materializer)
     extends Logging {
 
   def preparePackage(
       context: DocumentumPackageContext,
-      pdfSource: Source[ByteString, ?]
+      pdfSource: Source[ByteString, ?],
+      submissionDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
   )(using HeaderCarrier): Future[PreparedSdesSubmission] = {
-    val submissionDateTime   = LocalDateTime.now(ZoneOffset.UTC)
     val submissionDate       = submissionDateTime.toLocalDate
     val documentBaseFileName = documentBaseFileNameFor(context, submissionDate)
     val pdfFileName          = s"$documentBaseFileName.pdf"
     val metadataXmlName      =
       s"$documentBaseFileName-${submissionDate.format(DateTimeFormatter.BASIC_ISO_DATE)}-metadata.xml"
-    val zipFileName = s"$documentBaseFileName.zip"
-    stagedPdfObjectStorePath(context)
+    val zipFileName      = s"$documentBaseFileName.zip"
     val zipPath          = zipObjectStorePath(context.submissionId, zipFileName)
     val reconciliationId =
       s"$documentBaseFileName-${submissionDateTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))}"
@@ -123,13 +120,6 @@ class DocumentumPackageService @Inject() (
 
   private def documentBaseFileNameFor(context: DocumentumPackageContext, submissionDate: LocalDate): String =
     s"${submissionDate.format(DateTimeFormatter.BASIC_ISO_DATE)}_${context.submissionId}_SAO_${context.submissionType.documentumName}_OFFICIAL_SENSITIVE"
-
-  private def stagedPdfObjectStorePath(context: DocumentumPackageContext): Path.File =
-    DocumentumPackageService.stagedPdfObjectStorePath(
-      context.saoSubscriptionId,
-      context.submissionId,
-      context.submissionType
-    )
 
   private def zipObjectStorePath(submissionId: String, fileName: String): Path.File =
     Path.Directory(s"/sdes/$submissionId/").file(fileName)

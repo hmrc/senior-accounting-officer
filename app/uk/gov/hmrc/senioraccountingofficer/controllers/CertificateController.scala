@@ -16,77 +16,30 @@
 
 package uk.gov.hmrc.senioraccountingofficer.controllers
 
-import play.api.Logging
-import play.api.libs.json.Json
-import play.api.mvc.{Action, ControllerComponents}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError
-import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
-import uk.gov.hmrc.senioraccountingofficer.models.certificate.{CertificateIdempotencyResponse, CertificateResponse}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
-
-import scala.concurrent.{ExecutionContext, Future}
-
-import javax.inject.Inject
+import uk.gov.hmrc.senioraccountingofficer.models.submission.{SubmissionData, SubmissionKind}
+import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionService
+import javax.inject.{Inject, Provider}
+import scala.concurrent.ExecutionContext
 
 class CertificateController @Inject() (
     cc: ControllerComponents,
-    certificateService: CertificateService,
     identify: IdentifierAction,
-    ensureCorrelationId: EnsureCorrelationIdAction
+    ensureCorrelationId: EnsureCorrelationIdAction,
+    submissions: Provider[SubmissionService]
 )(using ExecutionContext)
-    extends BaseController(cc)
-    with Logging {
-
-  def postCertificate(): Action[String] = (identify andThen ensureCorrelationId).async(parse.tolerantText) {
-    implicit request =>
-      ValidateRequest.as[CertificateRequest] { certificateRequest =>
-        certificateService
-          .postCertificate(request.saoSubscriptionId, certificateRequest)
-          .map {
-            case Success(certificateRef) =>
-              Created(Json.toJson(CertificateResponse(certificateRef)))
-            case Misalignment(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][BadRequest][CorrelationId=$getCorrelationId]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-            case MalformedResponse(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][MalformedResponse][CorrelationId=$getCorrelationId]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-            case DownstreamUnauthorised(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][Unauthorised][CorrelationId=$getCorrelationId]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-            case DownstreamForbidden(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][Forbidden][CorrelationId=$getCorrelationId]")
-              InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-            case DownstreamServiceError(downstreamService) =>
-              logger.warn(
-                s"[Certificate][$downstreamService][DownstreamInternalServerError][CorrelationId=$getCorrelationId]"
-              )
-              BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
-            case DownstreamServiceUnavailable(downstreamService) =>
-              logger.warn(s"[Certificate][$downstreamService][ServiceUnavailable][CorrelationId=$getCorrelationId]")
-              BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
-            case UnknownFailure(downstreamService, status) =>
-              logger.warn(s"[Certificate][$downstreamService][CorrelationId=$getCorrelationId][Status=$status]")
-              BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-          }
-      }
-  }
-
+    extends BaseController(cc) {
   def postCertificateWithFaultTolerance: Action[String] =
     (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
-      ValidateRequest.as[CertificateRequest] { req =>
-        Future.successful(
-          Accepted(Json.toJson(CertificateIdempotencyResponse(req.idempotencyKey)))
-        )
+      ValidateRequest.as[CertificateRequest] { payload =>
+        submissions.get().submit(SubmissionData.certificate(request.saoSubscriptionId, getCorrelationId, payload))
       }
     }
 
-  def getStateOfWorkItem(idempotencyKey: String): Action[String] =
-    (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
-      Future.successful(NoContent)
+  def getStateOfWorkItem(idempotencyKey: String): Action[AnyContent] =
+    (identify andThen ensureCorrelationId).async { implicit request =>
+      submissions.get().status(request.saoSubscriptionId, SubmissionKind.Certificate, idempotencyKey)
     }
-
 }

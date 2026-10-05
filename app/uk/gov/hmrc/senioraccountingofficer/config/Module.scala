@@ -17,7 +17,7 @@
 package uk.gov.hmrc.senioraccountingofficer.config
 
 import com.google.inject.AbstractModule
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationRetryPoller
+import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionPoller
 
 import java.time.{Clock, ZoneOffset}
 
@@ -29,6 +29,6 @@ class Module extends AbstractModule {
 
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
 
-    bind(classOf[NotificationRetryPoller]).asEagerSingleton()
+    bind(classOf[SubmissionPoller]).asEagerSingleton()
   }
 }

@@ -25,7 +25,8 @@ final case class ApiError(reason: Reason, path: Option[String] = None)
 object ApiError {
 
   enum Reason {
-    case DOWNSTREAM_SERVICE_ERROR,
+    case IDEMPOTENCY_KEY_CONFLICT,
+      DOWNSTREAM_SERVICE_ERROR,
       DOWNSTREAM_SERVICE_UNAVAILABLE,
       DOWNSTREAM_SERVICE_MISALIGNMENT,
       AUTH_MISALIGNMENT,

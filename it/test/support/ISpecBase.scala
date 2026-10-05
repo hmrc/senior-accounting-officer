@@ -23,6 +23,8 @@ import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.mongo.MongoComponent
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
@@ -51,7 +53,10 @@ abstract class ISpecBase
     wireMockServer.start()
   }
 
+  protected def usesSubmissionQueues: Boolean = false
+
   override def afterAll(): Unit = {
+    if usesSubmissionQueues then app.injector.instanceOf[MongoComponent].database.drop().toFuture().futureValue
     wireMockServer.stop()
     super.afterAll()
   }
@@ -65,7 +70,9 @@ abstract class ISpecBase
   private def configs: Map[String, Any]   =
     Map(
       "microservice.services.auth.port" -> wireMockPort.toString,
-      "play.ws.followRedirects"         -> "false"
+      "play.ws.followRedirects"         -> "false",
+      "work-items.enabled" -> false,
+      "mongodb.uri" -> s"mongodb://localhost:27017/sao-it-${java.util.UUID.randomUUID()}"
     ) ++ additionalConfigs
 
   protected def applicationBuilder: GuiceApplicationBuilder = GuiceApplicationBuilder()

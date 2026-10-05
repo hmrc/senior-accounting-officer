@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services
+package uk.gov.hmrc.senioraccountingofficer.services.legacy
 
 import cats.data.EitherT
 import play.api.http.Status.*
@@ -29,10 +29,10 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   GetSubscriptionDpsResponse
 }
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.*
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService.PostCertificateResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.{EmailService, PdfService}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
