@@ -28,7 +28,6 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.twirl.api.Html
-import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.senioraccountingofficer.PdfTestData
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{GetSubscriptionDpsResponse, NominatedCompany}
 import uk.gov.hmrc.senioraccountingofficer.utils.OpenHtmlToPdfService
@@ -41,22 +40,19 @@ import java.time.LocalDateTime
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
+  override def fakeApplication(): play.api.Application =
+    play.api.inject.guice.GuiceApplicationBuilder().configure("work-items.enabled" -> false).build()
+
   given ExecutionContext = ExecutionContext.global
   given ActorSystem      = ActorSystem()
 
   val mockOpenHtmlToPdfService: OpenHtmlToPdfService   = mock[OpenHtmlToPdfService]
   val mockNotificationPdfTemplate: NotificationPdfView = mock[NotificationPdfView]
   val mockCertificatePdfTemplate: CertificatePdfView   = mock[CertificatePdfView]
-  val mockPlayObjectStoreClient: PlayObjectStoreClient = mock[PlayObjectStoreClient]
   val mockPdfRendererBuilder: PdfRendererBuilder       = mock[PdfRendererBuilder]
 
   val service: PdfService =
-    PdfService(
-      mockOpenHtmlToPdfService,
-      mockNotificationPdfTemplate,
-      mockCertificatePdfTemplate,
-      mockPlayObjectStoreClient
-    )
+    PdfService(mockOpenHtmlToPdfService, mockNotificationPdfTemplate, mockCertificatePdfTemplate)
 
   "PdfService" must {
     "return Source object after Notification Pdf generation" in {

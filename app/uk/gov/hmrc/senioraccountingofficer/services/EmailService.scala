@@ -151,10 +151,3 @@ class EmailService @Inject() (
       .format(formatter)
   }
 }
-
-object EmailService {
-  final case class EmailRejected(status: Int, emailType: String, correlationId: String)
-      extends RuntimeException(s"Email service returned $status for $emailType [CorrelationId=$correlationId]") {
-    val retriable: Boolean = status >= 500
-  }
-}

@@ -14,21 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.services.submission
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionPoller
+import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionFailure
 
-import java.time.{Clock, ZoneOffset}
-
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
-
-    bind(classOf[SubmissionPoller]).asEagerSingleton()
-  }
-}
+case class OperationRejected(failure: SubmissionFailure, retriable: Boolean)
+    extends RuntimeException(failure.error.reason.toString)

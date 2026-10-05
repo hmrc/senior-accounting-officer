@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.models.submission
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionPoller
+import play.api.libs.json.{Json, OFormat}
 
-import java.time.{Clock, ZoneOffset}
+// Persist the exact recipient/template choice so retries do not send again to successful recipients.
+case class SubmissionEmail(recipientName: String, address: String, template: String)
+object SubmissionEmail {
 
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
-
-    bind(classOf[SubmissionPoller]).asEagerSingleton()
-  }
+  given OFormat[SubmissionEmail] = Json.format
 }

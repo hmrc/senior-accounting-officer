@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.models.submission
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionPoller
+import play.api.libs.json.*
 
-import java.time.{Clock, ZoneOffset}
+import scala.util.Try
 
-class Module extends AbstractModule {
+private[submission] object JsonFormats {
 
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
-
-    bind(classOf[SubmissionPoller]).asEagerSingleton()
-  }
+  def enumFormat[A](parse: String => A): Format[A] = Format(
+    Reads(json =>
+      json.validate[String].flatMap(value => Try(parse(value)).fold(_ => JsError("Invalid enum"), JsSuccess(_)))
+    ),
+    Writes(value => JsString(value.toString))
+  )
 }

@@ -31,6 +31,8 @@ import java.nio.charset.StandardCharsets
 import java.util.zip.ZipInputStream
 
 class DocumentumZipBuilderSpec extends AnyWordSpec with Matchers with ScalaFutures with GuiceOneAppPerSuite {
+  override def fakeApplication(): play.api.Application =
+    play.api.inject.guice.GuiceApplicationBuilder().configure("work-items.enabled" -> false).build()
 
   private given Materializer = app.injector.instanceOf[Materializer]
 

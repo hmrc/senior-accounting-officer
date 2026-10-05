@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.config
+package uk.gov.hmrc.senioraccountingofficer.models.submission
 
-import com.google.inject.AbstractModule
-import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionPoller
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
-import java.time.{Clock, ZoneOffset}
+case class SubmissionFailure(httpStatus: Int, error: ApiError, ambiguous: Boolean = false)
+object SubmissionFailure {
 
-class Module extends AbstractModule {
-
-  override def configure(): Unit = {
-
-    bind(classOf[AppConfig]).asEagerSingleton()
-
-    bind(classOf[Clock]).toInstance(Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
-
-    bind(classOf[SubmissionPoller]).asEagerSingleton()
-  }
+  given OFormat[SubmissionFailure] = Json.format
 }
