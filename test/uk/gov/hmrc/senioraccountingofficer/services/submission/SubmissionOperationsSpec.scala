@@ -30,6 +30,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.objectstore.client.Path.File
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as StoredObject, *}
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
@@ -45,7 +46,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import java.time.{Clock, Instant, ZoneOffset}
 
 import SubmissionTestData.*
-import uk.gov.hmrc.objectstore.client.Path.File
 
 class SubmissionOperationsSpec
     extends AnyFreeSpec

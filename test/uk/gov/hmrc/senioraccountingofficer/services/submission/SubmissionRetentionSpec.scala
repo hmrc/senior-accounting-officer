@@ -67,13 +67,15 @@ class SubmissionRetentionSpec
   val mockSubmissionQueues: SubmissionQueues                   = mock[SubmissionQueues]
   val mockSubmissionStateRepository: SubmissionStateRepository = mock[SubmissionStateRepository]
   val mockSubmissionOperations: SubmissionOperations           = mock[SubmissionOperations]
-  val now: Any                                                 = Instant.parse("2026-10-05T10:00:00Z")
-  val command: Any            = SubmissionCommand.start(SubmissionTestData.data()).copy(operationFinished = true)
-  val root: WorkItem[Nothing] = WorkItem(new ObjectId(), now, now, now, ProcessingStatus.Succeeded, 0, command)
-  val id                      = command.data.orchestrationId
-  val expiresAt: Any          = now.plusSeconds(604800)
+  val now: Instant                                             = Instant.parse("2026-10-05T10:00:00Z")
+  val command: SubmissionCommand = SubmissionCommand.start(SubmissionTestData.data()).copy(operationFinished = true)
+  val root: WorkItem[SubmissionCommand] =
+    WorkItem(new ObjectId(), now, now, now, ProcessingStatus.Succeeded, 0, command)
+  val id                 = command.data.orchestrationId
+  val expiresAt: Instant = now.plusSeconds(604800)
 
-  val repositories: Any = SubmissionStep.values.map(step => step -> mock[SubmissionWorkRepository]).toMap
+  val repositories: Map[SubmissionStep, SubmissionWorkRepository] =
+    SubmissionStep.values.map(step => step -> mock[SubmissionWorkRepository]).toMap
 
   override def beforeEach(): Unit = {
     super.beforeEach()
