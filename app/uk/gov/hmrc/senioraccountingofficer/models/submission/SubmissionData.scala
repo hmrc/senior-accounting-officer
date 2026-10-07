@@ -46,8 +46,18 @@ case class SubmissionData(
   def scopeKey: String = SubmissionData.scopeKey(subscriptionId, kind, idempotencyKey)
 
   def payload: JsValue = kind match {
-    case SubmissionKind.Notification => Json.toJson(notification.get.copy(idempotencyKey = None))
-    case SubmissionKind.Certificate  => Json.toJson(certificate.get.copy(idempotencyKey = None))
+    case SubmissionKind.Notification =>
+      Json.toJson(
+        notification
+          .getOrElse(throw new IllegalStateException("Missing required submission field: notification"))
+          .copy(idempotencyKey = None)
+      )
+    case SubmissionKind.Certificate =>
+      Json.toJson(
+        certificate
+          .getOrElse(throw new IllegalStateException("Missing required submission field: certificate"))
+          .copy(idempotencyKey = None)
+      )
   }
 }
 object SubmissionData {

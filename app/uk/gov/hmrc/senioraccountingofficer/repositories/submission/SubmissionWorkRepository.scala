@@ -85,16 +85,20 @@ class SubmissionWorkRepository(
       )
       .toFutureOption()
 
-  private def ownedBy(work: WorkItem[SubmissionCommand]): Bson = Filters.and(
+  private def ownedBy(work: WorkItem[SubmissionCommand], leaseToken: String): Bson = Filters.and(
     Filters.equal("_id", work.id),
     Filters.equal("status", ProcessingStatus.InProgress),
-    Filters.equal("item.leaseToken", work.item.leaseToken.get)
+    Filters.equal("item.leaseToken", leaseToken)
   )
 
   private def updateOwned(work: WorkItem[SubmissionCommand], updates: Bson): Future[Unit] =
-    collection.updateOne(ownedBy(work), updates).toFuture().flatMap { result =>
-      if result.getMatchedCount == 1 then Future.unit
-      else Future.failed(new IllegalStateException("Work item lease lost"))
+    work.item.leaseToken match {
+      case None             => Future.failed(new IllegalStateException("Missing work item lease token"))
+      case Some(leaseToken) =>
+        collection.updateOne(ownedBy(work, leaseToken), updates).toFuture().flatMap { result =>
+          if result.getMatchedCount == 1 then Future.unit
+          else Future.failed(new IllegalStateException("Work item lease lost"))
+        }
     }
 
   def heartbeat(work: WorkItem[SubmissionCommand]): Future[Unit] = updateOwned(work, Updates.set("updatedAt", now()))

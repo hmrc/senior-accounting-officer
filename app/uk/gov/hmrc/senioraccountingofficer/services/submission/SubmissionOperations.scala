@@ -61,49 +61,56 @@ class SubmissionOperations @Inject() (
 
   def execute(command: SubmissionCommand)(using HeaderCarrier): Future[SubmissionCommand] = {
     val data      = command.data
-    val operation = command.step match {
-      case RetrieveSubscription =>
-        subscriptions.getSubscription(data.subscriptionId).map { response =>
-          command.copy(data = data.copy(subscription = Some(decode[GetSubscriptionDpsResponse](response, 200))))
-        }
-      case RetrieveCustomer =>
-        val company = data.subscription.get.nominatedCompany
-        customers.retrieveCustomer(RetrieveCustomerRequest(company.crn, Some(company.utr))).map { response =>
-          val customer = decode[RetrieveCustomerResponse](response, 200)
-          command.copy(data = data.copy(customerNumber = customer.customerId))
-        }
-      case SubmitDps  => submitDps(command)
-      case InitialPdf => uploadPdf(data).map(_ => command.copy(data = data.copy(pdfAttempted = true, pdfStored = true)))
-      case SendEmail  =>
-        emails.postEmail(emailModel(command)).map { response =>
-          if response.status != 202 then throw SubmissionFailures.response(response.status)
-          command
-        }
-      case EnsurePdf =>
-        storedPdf(data).map { source =>
-          source.runWith(Sink.cancelled)
-          command
-        }
-      case PackageDocumentum => packageDocument(command)
-      case NotifySdes        =>
-        val prepared = data.prepared.get
-        sdes
-          .notifyFileReady(
-            prepared.fileName,
-            prepared.owner,
-            prepared.objectStorePath,
-            prepared.checksum,
-            prepared.contentLength
-          )
-          .map { response =>
-            if response.status < 200 || response.status >= 300 then throw SubmissionFailures.response(response.status)
+    val operation = Try {
+      command.step match {
+        case RetrieveSubscription =>
+          subscriptions.getSubscription(data.subscriptionId).map { response =>
+            command.copy(data = data.copy(subscription = Some(decode[GetSubscriptionDpsResponse](response, 200))))
+          }
+        case RetrieveCustomer =>
+          val company = required(data.subscription, "subscription").nominatedCompany
+          customers.retrieveCustomer(RetrieveCustomerRequest(company.crn, Some(company.utr))).map { response =>
+            val customer = decode[RetrieveCustomerResponse](response, 200)
+            command.copy(data = data.copy(customerNumber = customer.customerId))
+          }
+        case SubmitDps  => submitDps(command)
+        case InitialPdf =>
+          uploadPdf(data).map(_ => command.copy(data = data.copy(pdfAttempted = true, pdfStored = true)))
+        case SendEmail =>
+          emails.postEmail(emailModel(command)).map { response =>
+            if response.status != 202 then throw SubmissionFailures.response(response.status)
             command
           }
+        case EnsurePdf =>
+          storedPdf(data).map { source =>
+            source.runWith(Sink.cancelled)
+            command
+          }
+        case PackageDocumentum => packageDocument(command)
+        case NotifySdes        =>
+          val prepared = required(data.prepared, "prepared")
+          sdes
+            .notifyFileReady(
+              prepared.fileName,
+              prepared.owner,
+              prepared.objectStorePath,
+              prepared.checksum,
+              prepared.contentLength
+            )
+            .map { response =>
+              if response.status < 200 || response.status >= 300 then throw SubmissionFailures.response(response.status)
+              command
+            }
+      }
     }
-    operation.map(_.copy(operationFinished = true)).recoverWith { case e: UpstreamErrorResponse =>
-      Future.failed(SubmissionFailures.response(e.statusCode, command.step == SubmitDps))
+    Future.fromTry(operation).flatten.map(_.copy(operationFinished = true)).recoverWith {
+      case e: UpstreamErrorResponse =>
+        Future.failed(SubmissionFailures.response(e.statusCode, command.step == SubmitDps))
     }
   }
+
+  private def required[A](value: Option[A], field: String): A =
+    value.getOrElse(throw new IllegalStateException(s"Missing required submission field: $field"))
 
   private def submitDps(command: SubmissionCommand)(using HeaderCarrier): Future[SubmissionCommand] = {
     val data = command.data
@@ -112,44 +119,50 @@ class SubmissionOperations @Inject() (
         notifications
           .postNotification(
             data.subscriptionId,
-            data.notification.get.toNotificationDpsRequest(data.customerNumber)
+            required(data.notification, "notification").toNotificationDpsRequest(data.customerNumber)
           )
           .map(r => withReference(command, decode[NotificationDpsResponse](r, 201, true).notificationRef))
       case Certificate =>
         certificates
-          .postCertificate(data.subscriptionId, data.certificate.get.toCertificateDpsRequest(data.customerNumber))
+          .postCertificate(
+            data.subscriptionId,
+            required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
+          )
           .map(r => withReference(command, decode[CertificateDpsResponse](r, 201, true).certificateRef))
     }
   }
 
   private def packageDocument(command: SubmissionCommand)(using HeaderCarrier): Future[SubmissionCommand] = {
-    val data = command.data
+    val data        = command.data
+    val reference   = required(data.reference, "reference")
+    val company     = required(data.subscription, "subscription").nominatedCompany
+    val submittedAt = required(data.submittedAt, "submittedAt")
+      .atZone(ZoneId.of("Europe/London"))
+      .withZoneSameInstant(ZoneId.of("UTC"))
+      .toLocalDateTime
+    val context = data.kind match {
+      case Notification =>
+        DocumentumPackageContext.notification(
+          reference,
+          data.customerNumber,
+          data.subscriptionId,
+          company,
+          required(data.notification, "notification")
+        )
+      case Certificate =>
+        DocumentumPackageContext.certificate(
+          reference,
+          data.subscriptionId,
+          company,
+          data.customerNumber
+        )
+    }
     storedPdf(data).flatMap { source =>
-      val context = data.kind match {
-        case Notification =>
-          DocumentumPackageContext.notification(
-            data.reference.get,
-            data.customerNumber,
-            data.subscriptionId,
-            data.subscription.get.nominatedCompany,
-            data.notification.get
-          )
-        case Certificate =>
-          DocumentumPackageContext.certificate(
-            data.reference.get,
-            data.subscriptionId,
-            data.subscription.get.nominatedCompany,
-            data.customerNumber
-          )
-      }
       packages
         .preparePackage(
           context,
           source,
-          data.submittedAt.get
-            .atZone(ZoneId.of("Europe/London"))
-            .withZoneSameInstant(ZoneId.of("UTC"))
-            .toLocalDateTime
+          submittedAt
         )
         .map(prepared => command.copy(data = data.copy(prepared = Some(prepared))))
     }
@@ -183,7 +196,7 @@ class SubmissionOperations @Inject() (
 
   private def pdfPath(data: SubmissionData): Path.File = DocumentumPackageService.stagedPdfObjectStorePath(
     data.subscriptionId,
-    data.reference.get,
+    required(data.reference, "reference"),
     if data.kind == Notification then SubmissionType.Notification else SubmissionType.Certificate
   )
 
@@ -193,19 +206,19 @@ class SubmissionOperations @Inject() (
         pdf.generateNotificationPdf(
           NotificationDpsRequest.toPdfNotification(
             data.subscriptionId,
-            data.subscription.get,
-            data.reference.get,
-            data.submittedAt.get,
-            data.notification.get
+            required(data.subscription, "subscription"),
+            required(data.reference, "reference"),
+            required(data.submittedAt, "submittedAt"),
+            required(data.notification, "notification")
           )
         )
       case Certificate =>
         pdf.generateCertificatePdf(
-          data.certificate.get.toPdfCertificate(
+          required(data.certificate, "certificate").toPdfCertificate(
             data.subscriptionId,
-            data.subscription.get,
-            data.reference.get,
-            data.submittedAt.get
+            required(data.subscription, "subscription"),
+            required(data.reference, "reference"),
+            required(data.submittedAt, "submittedAt")
           )
         )
     }
@@ -232,11 +245,13 @@ class SubmissionOperations @Inject() (
 
   private def recipients(data: SubmissionData): Seq[SubmissionEmail] = data.kind match {
     case Notification =>
-      data.subscription.get.contacts.map(c => SubmissionEmail(c.name, c.email, "notification")).distinctBy(_.address)
+      required(data.subscription, "subscription").contacts
+        .map(c => SubmissionEmail(c.name, c.email, "notification"))
+        .distinctBy(_.address)
     case Certificate =>
-      val request = data.certificate.get.toCertificateDpsRequest(data.customerNumber)
-      val people  = ((request.saoName, request.saoEmail) :: data.subscription.get.contacts.map(contact =>
-        (contact.name, contact.email)
+      val request = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
+      val people  = ((request.saoName, request.saoEmail) :: required(data.subscription, "subscription").contacts.map(
+        contact => (contact.name, contact.email)
       ))
         .distinctBy(_._2)
       people.map { (name, email) =>
@@ -250,10 +265,12 @@ class SubmissionOperations @Inject() (
 
   private def emailModel(command: SubmissionCommand): Email = {
     val data      = command.data
-    val recipient = command.email.get
-    val company   = data.subscription.get.nominatedCompany.name
-    val reference = data.reference.get
-    val timestamp = data.submittedAt.get.format(DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH))
+    val recipient = required(command.email, "email")
+    val company   = required(data.subscription, "subscription").nominatedCompany.name
+    val reference = required(data.reference, "reference")
+    val timestamp = required(data.submittedAt, "submittedAt").format(
+      DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
+    )
     recipient.template match {
       case "notification" =>
         NotificationEmail(
@@ -262,7 +279,7 @@ class SubmissionOperations @Inject() (
           NotificationEmailParameters(recipient.recipientName, company, timestamp, reference)
         )
       case "submitter" =>
-        val request = data.certificate.get.toCertificateDpsRequest(data.customerNumber)
+        val request = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
         SubmitterCertificateEmail(
           List(recipient.address),
           parameters = SubmitterCertificateEmailParameters(
@@ -275,7 +292,7 @@ class SubmissionOperations @Inject() (
           )
         )
       case template =>
-        val request = data.certificate.get.toCertificateDpsRequest(data.customerNumber)
+        val request = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
         SaoCertificateEmail(
           List(recipient.address),
           if template == "sao" then EmailTemplate.CertificateConfirmationSAO

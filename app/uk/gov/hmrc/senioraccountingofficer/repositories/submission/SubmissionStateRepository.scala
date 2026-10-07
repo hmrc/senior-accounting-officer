@@ -23,6 +23,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.senioraccountingofficer.models.submission.*
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
@@ -58,21 +59,21 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
     )
     .headOption()
 
-  def publish(command: SubmissionCommand): Future[Unit] = {
-    val updates = publicationUpdates(command)
-    if updates.isEmpty then Future.unit
-    else
-      collection
-        .updateOne(
-          Filters.and(Filters.equal("_id", command.data.orchestrationId), Filters.exists("terminalAt", false)),
-          Updates.combine(updates*)
-        )
-        .toFuture()
-        .flatMap { result =>
-          if result.getMatchedCount > 0 then Future.unit
-          else ensureStateExists(command.data.orchestrationId)
-        }
-  }
+  def publish(command: SubmissionCommand): Future[Unit] =
+    Future.fromTry(Try(publicationUpdates(command))).flatMap { updates =>
+      if updates.isEmpty then Future.unit
+      else
+        collection
+          .updateOne(
+            Filters.and(Filters.equal("_id", command.data.orchestrationId), Filters.exists("terminalAt", false)),
+            Updates.combine(updates*)
+          )
+          .toFuture()
+          .flatMap { result =>
+            if result.getMatchedCount > 0 then Future.unit
+            else ensureStateExists(command.data.orchestrationId)
+          }
+    }
 
   private def publicationUpdates(command: SubmissionCommand): Seq[Bson] = {
     val data = command.data
@@ -81,7 +82,10 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
         Seq(Updates.set("failure", Codecs.toBson(failure)), Updates.set("terminalAt", clock.instant()))
       case None if data.pdfAttempted =>
         Seq(
-          Updates.set("reference", data.reference.get),
+          Updates.set(
+            "reference",
+            data.reference.getOrElse(throw new IllegalStateException("Missing required submission field: reference"))
+          ),
           Updates.set("pdfAttempted", true),
           Updates.set("pdfStored", data.pdfStored),
           Updates.set("terminalAt", clock.instant())

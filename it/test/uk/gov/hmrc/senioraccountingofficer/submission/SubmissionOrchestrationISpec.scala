@@ -143,6 +143,38 @@ class SubmissionOrchestrationISpec
   }
 
   "Submission orchestration" should {
+    "reject all writes without a lease token and preserve the stored work item" in {
+      val submission = command(RetrieveSubscription)
+      seed(submission)
+      val repository = queues(RetrieveSubscription)
+      val claimed = repository.claim().futureValue.value
+      val unleased = claimed.copy(item = claimed.item.copy(leaseToken = None))
+      val writes = Seq(
+        repository.heartbeat(unleased),
+        repository.save(unleased, unleased.item),
+        repository.finish(unleased),
+        repository.retry(unleased, 60, "error")
+      )
+
+      writes.foreach { write =>
+        val error = write.failed.futureValue
+        error mustBe a[IllegalStateException]
+        error.getMessage mustBe "Missing work item lease token"
+      }
+      entries(RetrieveSubscription) mustBe Seq(claimed)
+    }
+
+    "reject PDF completion without a reference without publishing a terminal state" in {
+      val submission = command(InitialPdf).copy(data = data().copy(reference = None, pdfAttempted = true))
+      states.initialize(submission.data).futureValue
+      val before = states.get(submission.data.scopeKey).futureValue
+
+      val error = states.publish(submission).failed.futureValue
+      error mustBe a[IllegalStateException]
+      error.getMessage mustBe "Missing required submission field: reference"
+      states.get(submission.data.scopeKey).futureValue mustBe before
+    }
+
     for kind <- SubmissionKind.values do {
       s"$kind accepts concurrent identical requests exactly once and isolates keys" in {
         val submissionData = data(kind).copy(reference = None, submittedAt = None)

@@ -120,6 +120,72 @@ class SubmissionOperationsSpec
   }
 
   "SubmissionOperations" - {
+    "missing required fields" - {
+      val missingFields: Seq[(String, SubmissionData => SubmissionData, Seq[SubmissionStep])] = Seq(
+        ("subscription", _.copy(subscription = None), Seq(RetrieveCustomer, InitialPdf, SendEmail, PackageDocumentum)),
+        ("reference", _.copy(reference = None), Seq(InitialPdf, SendEmail, EnsurePdf, PackageDocumentum)),
+        ("submittedAt", _.copy(submittedAt = None), Seq(InitialPdf, SendEmail, PackageDocumentum)),
+        ("prepared", _.copy(prepared = None), Seq(NotifySdes))
+      )
+
+      for {
+        kind                        <- SubmissionKind.values
+        (field, removeField, steps) <- missingFields ++ Seq(
+          if kind == SubmissionKind.Notification then
+            (
+              "notification",
+              (d: SubmissionData) => d.copy(notification = None),
+              Seq(SubmitDps, InitialPdf, PackageDocumentum)
+            )
+          else ("certificate", (d: SubmissionData) => d.copy(certificate = None), Seq(SubmitDps, InitialPdf, SendEmail))
+        )
+        step <- steps
+      } do {
+        s"$kind $step fails asynchronously when $field is absent, before calling downstream services" in {
+          val submission = command(step, kind).copy(
+            data = removeField(data(kind)),
+            email = Some(
+              SubmissionEmail(
+                "Recipient",
+                "recipient@example.com",
+                if kind == SubmissionKind.Notification then "notification" else "sao"
+              )
+            )
+          )
+
+          val error = operations.execute(submission).failed.futureValue
+          error mustBe a[IllegalStateException]
+          error.getMessage mustBe s"Missing required submission field: $field"
+          verifyNoInteractions(
+            mockGetSubscriptionConnector,
+            mockCrmmConnector,
+            mockNotificationConnector,
+            mockCertificateConnector,
+            mockEmailConnector,
+            mockSdesConnector,
+            mockPdfService,
+            mockObjectStoreClient,
+            mockDocumentumPackageService
+          )
+        }
+      }
+
+      "email delivery fails asynchronously when its recipient is absent" in {
+        val error = operations.execute(command(SendEmail)).failed.futureValue
+        error mustBe a[IllegalStateException]
+        error.getMessage mustBe "Missing required submission field: email"
+        verifyNoInteractions(mockEmailConnector)
+      }
+
+      for kind <- SubmissionKind.values do {
+        s"$kind recipient generation identifies a missing subscription" in {
+          val submission = command(InitialPdf, kind).copy(data = data(kind).copy(subscription = None))
+          intercept[IllegalStateException](operations.successors(submission)).getMessage mustBe
+            "Missing required submission field: subscription"
+        }
+      }
+    }
+
     "subscription retrieval preserves the snapshot for customer lookup" in {
       when(mockGetSubscriptionConnector.getSubscription(any())(using any()))
         .thenReturn(Future.successful(HttpResponse(200, Json.toJson(subscription).toString)))
