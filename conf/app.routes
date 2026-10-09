@@ -98,7 +98,8 @@
 #    "502":
 #      description: Downstream server error
 ###
-POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotification()
+POST        /notification                         uk.gov.hmrc.senioraccountingofficer.controllers.v1.NotificationController.postNotification()
+
 
 POST        /v2/notification                      uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.postNotificationWithFaultTolerance()
 GET         /v2/notification/:idempotencyKey      uk.gov.hmrc.senioraccountingofficer.controllers.NotificationController.getStateOfWorkItem(idempotencyKey: String)
@@ -212,7 +213,7 @@ GET         /v2/notification/:idempotencyKey      uk.gov.hmrc.senioraccountingof
 #    "500":
 #      description: Internal server error
 ###
-POST        /certificate                         uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificate()
+POST        /certificate                         uk.gov.hmrc.senioraccountingofficer.controllers.v1.CertificateController.postCertificate()
 
 POST        /v2/certificate                      uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.postCertificateWithFaultTolerance()
 GET         /v2/certificate/:idempotencyKey      uk.gov.hmrc.senioraccountingofficer.controllers.CertificateController.getStateOfWorkItem(idempotencyKey: String)

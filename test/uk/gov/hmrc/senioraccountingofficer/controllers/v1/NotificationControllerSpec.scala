@@ -14,31 +14,28 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.controllers
+package uk.gov.hmrc.senioraccountingofficer.controllers.v1
 
 import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
-import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.{HeaderNames, MimeTypes, Status}
+import play.api.http.{MimeTypes, Status}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsString, Json}
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
-import uk.gov.hmrc.senioraccountingofficer.controllers.NotificationControllerSpec.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.models.notification.NotificationIdempotencyResponse
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.DownstreamService.DPS
-import uk.gov.hmrc.senioraccountingofficer.services.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.PostNotificationResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
@@ -46,12 +43,15 @@ import scala.concurrent.Future
 import java.time.LocalDate
 import java.util.UUID
 
+import NotificationControllerSpec.*
+
 class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite {
 
   val mockNotificationService: NotificationService = mock[NotificationService]
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
+      .configure("work-items.enabled" -> false)
       .overrides(
         bind[NotificationService].toInstance(mockNotificationService),
         bind[IdentifierAction].to[FakeIdentifierAction]
@@ -273,58 +273,6 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
     }
   }
 
-  private def requestWithCorrelationId(method: String, url: String) =
-    FakeRequest(method, url)
-      .withHeaders(
-        HeaderNames.CONTENT_TYPE -> MimeTypes.JSON,
-        "CorrelationId"          -> UUID.randomUUID().toString
-      )
-
-  "POST /postNoficationWithFaultTolerance" should {
-    "return 202 Accepted and the idempotency key" when {
-      "a key is supplied" in {
-        val request =
-          requestWithCorrelationId(
-            "POST",
-            routes.NotificationController.postNotificationWithFaultTolerance().url
-          ).withTextBody(
-            (validPayload + ("idempotencyKey" -> JsString("TestKey"))).toString
-          )
-
-        val result = routeResult(request)
-
-        status(result) mustBe Status.ACCEPTED
-        contentAsJson(result).as[NotificationIdempotencyResponse] mustBe NotificationIdempotencyResponse(
-          Some("TestKey")
-        )
-      }
-
-      "no key is supplied" in {
-        val request =
-          requestWithCorrelationId(
-            "POST",
-            routes.NotificationController.postNotificationWithFaultTolerance().url
-          ).withTextBody(validPayload.toString)
-
-        val result = routeResult(request)
-
-        status(result) mustBe Status.ACCEPTED
-        contentAsJson(result).as[NotificationIdempotencyResponse] mustBe NotificationIdempotencyResponse(None)
-      }
-    }
-  }
-
-  "GET /getStateOfWorkItem" should {
-    "return 204 No Content" in {
-      val request =
-        requestWithCorrelationId(
-          "GET",
-          routes.NotificationController.getStateOfWorkItem("TestKey").url
-        )
-
-      status(route(app, request).value) mustBe Status.NO_CONTENT
-    }
-  }
 }
 
 object NotificationControllerSpec {

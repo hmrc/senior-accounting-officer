@@ -32,7 +32,7 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
@@ -50,6 +50,7 @@ class SdesCallbackControllerSpec
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
+      .configure("work-items.enabled" -> false)
       .overrides(
         bind[CertificateService].toInstance(mockCertificateService),
         bind[IdentifierAction].to[FakeIdentifierAction]

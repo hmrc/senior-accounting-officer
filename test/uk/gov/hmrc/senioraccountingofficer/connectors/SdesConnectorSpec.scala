@@ -27,6 +27,7 @@ class SdesConnectorSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSui
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
+      .configure("work-items.enabled" -> false)
       .configure(
         "object-store.sdes-host"                       -> "https://configured-object-store.example/object",
         "secure-data-exchange-proxy.clientId"          -> "configured-client-id",

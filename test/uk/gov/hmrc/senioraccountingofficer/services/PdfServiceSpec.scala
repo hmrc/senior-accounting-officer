@@ -40,6 +40,9 @@ import java.time.LocalDateTime
 
 class PdfServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 
+  override def fakeApplication(): play.api.Application =
+    play.api.inject.guice.GuiceApplicationBuilder().configure("work-items.enabled" -> false).build()
+
   given ExecutionContext = ExecutionContext.global
   given ActorSystem      = ActorSystem()
 
