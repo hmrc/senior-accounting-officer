@@ -85,8 +85,7 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
 
     "post the certificate email to the HMRC domain" in {
       val parameters = SubmitterCertificateEmailParameters(
-        recipientName = "recipient name",
-        companyName = "companyName",
+        contactName = "contact name",
         submitterName = Some("submitter name"),
         saoName = "sao name",
         submittedDateTime = "17 January 2025 at 11:45am",
@@ -123,8 +122,6 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
 
     "post the SAO certificate email to the HMRC domain without a submitter name" in {
       val parameters = SaoCertificateEmailParameters(
-        recipientName = "recipient name",
-        companyName = "companyName",
         saoName = "sao name",
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"
@@ -159,8 +156,6 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
 
     "post the SAO contact certificate email to the HMRC domain" in {
       val parameters = SaoCertificateEmailParameters(
-        recipientName = "recipient name",
-        companyName = "companyName",
         saoName = "sao name",
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"

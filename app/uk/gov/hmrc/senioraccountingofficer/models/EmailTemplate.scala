@@ -21,6 +21,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.*
 
 enum EmailTemplate(val templateId: JsString) {
   case CertificateConfirmationSubmitter extends EmailTemplate(JsString("dsao_certificate_confirmation_for_submitter"))
+  case CertificateConfirmationSubmitterSao extends EmailTemplate(JsString("dsao_certificate_confirmation_for_submitter_sao"))
   case CertificateConfirmationSAO       extends EmailTemplate(JsString("dsao_certificate_confirmation_for_sao"))
   case CertificateConfirmationSAOToContacts
       extends EmailTemplate(JsString("dsao_certificate_confirmation_for_sao_to_contacts"))
@@ -30,6 +31,7 @@ enum EmailTemplate(val templateId: JsString) {
 
 given Writes[EmailTemplate] = Writes {
   case CertificateConfirmationSubmitter     => CertificateConfirmationSubmitter.templateId
+  case CertificateConfirmationSubmitterSao     => CertificateConfirmationSubmitterSao.templateId
   case CertificateConfirmationSAO           => CertificateConfirmationSAO.templateId
   case CertificateConfirmationSAOToContacts => CertificateConfirmationSAOToContacts.templateId
   case NotificationConfirmation             => NotificationConfirmation.templateId
@@ -37,6 +39,7 @@ given Writes[EmailTemplate] = Writes {
 
 given Reads[EmailTemplate] = Reads {
   case CertificateConfirmationSubmitter.templateId     => JsSuccess(CertificateConfirmationSubmitter)
+  case CertificateConfirmationSubmitterSao.templateId     => JsSuccess(CertificateConfirmationSubmitterSao)
   case CertificateConfirmationSAO.templateId           => JsSuccess(CertificateConfirmationSAO)
   case CertificateConfirmationSAOToContacts.templateId => JsSuccess(CertificateConfirmationSAOToContacts)
   case NotificationConfirmation.templateId             => JsSuccess(NotificationConfirmation)
