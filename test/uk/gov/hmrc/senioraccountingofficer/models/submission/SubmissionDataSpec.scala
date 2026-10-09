@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.submission
 
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionTestData.*
 
