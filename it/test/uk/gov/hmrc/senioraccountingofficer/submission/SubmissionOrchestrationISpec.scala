@@ -147,7 +147,61 @@ class SubmissionOrchestrationISpec
     }
   }
 
-  "Submission orchestration" should {
+  "SubmissionService.submit" must {
+    for kind <- SubmissionKind.values do {
+      s"queue one root command for concurrent identical $kind submissions" in {
+        val submissionData = data(kind).copy(reference = None, submittedAt = None)
+        val responses      = Future
+          .traverse(1 to 8)(_ => service.submit(submissionData.copy(orchestrationId = UUID.randomUUID().toString)))
+          .futureValue
+        responses.map(_.header.status).distinct mustBe Seq(202)
+        entries(RetrieveSubscription).size mustBe 1
+        statusOf(submissionData) mustBe 204
+      }
+    }
+
+    for kind <- SubmissionKind.values do {
+      s"isolate $kind submissions for different subscriptions" in {
+        val submissionData = data(kind).copy(reference = None, submittedAt = None)
+        service.submit(submissionData).futureValue.header.status mustBe 202
+        statusOf(submissionData.copy(subscriptionId = "another-subscription")) mustBe 404
+        service
+          .submit(
+            submissionData.copy(subscriptionId = "another-subscription", orchestrationId = UUID.randomUUID().toString)
+          )
+          .futureValue
+          .header
+          .status mustBe 202
+        entries(RetrieveSubscription).size mustBe 2
+      }
+    }
+
+    "reject a changed payload submitted with an existing idempotency key" in {
+      val submissionData = data()
+      service.submit(submissionData).futureValue.header.status mustBe 202
+      val changed = submissionData.copy(notification =
+        submissionData.notification.map(
+          _.copy(remarks = Some(uk.gov.hmrc.senioraccountingofficer.models.requests.FreeText("changed")))
+        )
+      )
+      service.submit(changed).futureValue.header.status mustBe 409
+    }
+
+    "allow notification and certificate submissions to use the same idempotency key" in {
+      service.submit(data()).futureValue.header.status mustBe 202
+      service.submit(data(SubmissionKind.Certificate)).futureValue.header.status mustBe 202
+      entries(RetrieveSubscription).size mustBe 2
+    }
+
+    "accept a submission with a generated idempotency key" in {
+      val generated =
+        SubmissionData.notification("subscription", "correlation", notification.copy(idempotencyKey = None))
+      UUID.fromString(generated.idempotencyKey) mustBe a[UUID]
+      service.submit(generated).futureValue.header.status mustBe 202
+    }
+  }
+
+  "SubmissionStateRepository.publish" must {
     for failure <- Seq(None, Some(SubmissionFailures.unknownDpsOutcome)) do {
       s"record and preserve the public outcome timestamp for ${if failure.isDefined then "failure" else "success"}" in {
         val submission = command(InitialPdf).copy(
@@ -167,6 +221,63 @@ class SubmissionOrchestrationISpec
       }
     }
 
+    "reject PDF completion without a reference without publishing a terminal state" in {
+      val submission = command(InitialPdf).copy(data = data().copy(reference = None, pdfAttempted = true))
+      states.initialize(submission.data).futureValue
+      val before = states.get(submission.data.scopeKey).futureValue
+
+      val error = states.publish(submission).failed.futureValue
+      error mustBe a[IllegalStateException]
+      error.getMessage mustBe "Missing required submission field: reference"
+      states.get(submission.data.scopeKey).futureValue mustBe before
+    }
+  }
+
+  "SubmissionWorkRepository lease ownership" must {
+    for operation <- Seq("heartbeat", "save", "finish", "retry") do {
+      s"reject $operation without a lease token and leave the work item unchanged" in {
+        val submission = command(RetrieveSubscription)
+        seed(submission)
+        val repository = queues(RetrieveSubscription)
+        val claimed    = repository.claim().futureValue.value
+        val unleased   = claimed.copy(item = claimed.item.copy(leaseToken = None))
+        val result     = operation match {
+          case "heartbeat" => repository.heartbeat(unleased)
+          case "save"      => repository.save(unleased, unleased.item).map(_ => ())
+          case "finish"    => repository.finish(unleased)
+          case "retry"     => repository.retry(unleased, 60, "error")
+        }
+
+        val error = result.failed.futureValue
+        error mustBe a[IllegalStateException]
+        error.getMessage mustBe "Missing work item lease token"
+        entries(RetrieveSubscription) mustBe Seq(claimed)
+      }
+    }
+
+    "reject writes from a worker after its lease has been reclaimed" in {
+      val repository = queues(RetrieveCustomer)
+      seed(command(RetrieveCustomer))
+      val first = repository.claim().futureValue.value
+      clock.advance(121)
+      val second = repository.claim().futureValue.value
+      first.item.leaseToken must not be second.item.leaseToken
+      repository
+        .save(first, first.item.copy(operationFinished = true))
+        .failed
+        .futureValue mustBe a[IllegalStateException]
+      repository.save(second, second.item.copy(operationFinished = true)).futureValue.item.operationFinished mustBe true
+    }
+
+    "return a single owner for concurrent claims" in {
+      val submission = SubmissionCommand.start(data())
+      seed(submission)
+      val claims = Future.traverse(1 to 8)(_ => queues(RetrieveSubscription).claim()).futureValue.flatten
+      claims.size mustBe 1
+    }
+  }
+
+  "SubmissionWorker.processNext" must {
     for failure <- Seq(None, Some(SubmissionFailures.unknownDpsOutcome)) do {
       s"log ${if failure.isDefined then "permanent failure at WARN" else "successful completion at INFO"}" in {
         val logger   = LoggerFactory.getLogger(classOf[SubmissionWorker]).asInstanceOf[Logger]
@@ -190,58 +301,8 @@ class SubmissionOrchestrationISpec
       }
     }
 
-    "reject all writes without a lease token and preserve the stored work item" in {
-      val submission = command(RetrieveSubscription)
-      seed(submission)
-      val repository = queues(RetrieveSubscription)
-      val claimed    = repository.claim().futureValue.value
-      val unleased   = claimed.copy(item = claimed.item.copy(leaseToken = None))
-      val writes     = Seq(
-        repository.heartbeat(unleased),
-        repository.save(unleased, unleased.item),
-        repository.finish(unleased),
-        repository.retry(unleased, 60, "error")
-      )
-
-      writes.foreach { write =>
-        val error = write.failed.futureValue
-        error mustBe a[IllegalStateException]
-        error.getMessage mustBe "Missing work item lease token"
-      }
-      entries(RetrieveSubscription) mustBe Seq(claimed)
-    }
-
-    "reject PDF completion without a reference without publishing a terminal state" in {
-      val submission = command(InitialPdf).copy(data = data().copy(reference = None, pdfAttempted = true))
-      states.initialize(submission.data).futureValue
-      val before = states.get(submission.data.scopeKey).futureValue
-
-      val error = states.publish(submission).failed.futureValue
-      error mustBe a[IllegalStateException]
-      error.getMessage mustBe "Missing required submission field: reference"
-      states.get(submission.data.scopeKey).futureValue mustBe before
-    }
-
     for kind <- SubmissionKind.values do {
-      s"$kind accepts concurrent identical requests exactly once and isolates keys" in {
-        val submissionData = data(kind).copy(reference = None, submittedAt = None)
-        val responses      = Future
-          .traverse(1 to 8)(_ => service.submit(submissionData.copy(orchestrationId = UUID.randomUUID().toString)))
-          .futureValue
-        responses.map(_.header.status).distinct mustBe Seq(202)
-        entries(RetrieveSubscription).size mustBe 1
-        statusOf(submissionData) mustBe 204
-        statusOf(submissionData.copy(subscriptionId = "another-subscription")) mustBe 404
-        service
-          .submit(
-            submissionData.copy(subscriptionId = "another-subscription", orchestrationId = UUID.randomUUID().toString)
-          )
-          .futureValue
-          .header
-          .status mustBe 202
-        entries(RetrieveSubscription).size mustBe 2
-      }
-      s"$kind completes after a failed initial PDF attempt while delivery and emails remain queued" in {
+      s"complete a $kind submission after a failed initial PDF attempt while delivery remains queued" in {
         val submissionData = data(kind).copy(reference = None, submittedAt = None)
         service.submit(submissionData).futureValue
         Seq(RetrieveSubscription, RetrieveCustomer, SubmitDps).foreach(run)
@@ -260,23 +321,7 @@ class SubmissionOrchestrationISpec
       }
     }
 
-    "changed payload conflicts, missing keys are generated, and submission types do not share keys" in {
-      val submissionData = data()
-      service.submit(submissionData).futureValue.header.status mustBe 202
-      val changed = submissionData.copy(notification =
-        submissionData.notification.map(
-          _.copy(remarks = Some(uk.gov.hmrc.senioraccountingofficer.models.requests.FreeText("changed")))
-        )
-      )
-      service.submit(changed).futureValue.header.status mustBe 409
-      service.submit(data(SubmissionKind.Certificate)).futureValue.header.status mustBe 202
-      val generated =
-        SubmissionData.notification("subscription", "correlation", notification.copy(idempotencyKey = None))
-      UUID.fromString(generated.idempotencyKey) mustBe a[UUID]
-      service.submit(generated).futureValue.header.status mustBe 202
-    }
-
-    "acceptance interrupted before status creation is repaired by the root worker" in {
+    "create missing public state when processing an accepted root command" in {
       val submission = SubmissionCommand.start(data().copy(reference = None))
       queues(RetrieveSubscription).enqueue(submission).futureValue
       statusOf(submission.data) mustBe 404
@@ -285,7 +330,7 @@ class SubmissionOrchestrationISpec
       entries(RetrieveCustomer).size mustBe 1
     }
 
-    "a transient lookup failure waits for backoff and permanent failure reaches GET" in {
+    "wait for backoff before retrying a transient customer lookup failure" in {
       val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
       seed(submission)
       doReturn(Future.failed(SubmissionFailures.response(503)))
@@ -297,6 +342,13 @@ class SubmissionOrchestrationISpec
       verify(mockSubmissionOperations, times(1)).execute(any())(using any())
       statusOf(submission.data) mustBe 204
       clock.advance(61)
+      run(RetrieveCustomer)
+      verify(mockSubmissionOperations, times(2)).execute(any())(using any())
+    }
+
+    "publish a permanent customer lookup failure without submitting to DPS" in {
+      val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
+      seed(submission)
       doReturn(Future.failed(SubmissionFailures.response(401)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
@@ -305,7 +357,7 @@ class SubmissionOrchestrationISpec
       entries(SubmitDps) mustBe empty
     }
 
-    "an interrupted DPS dispatch is never sent again" in {
+    "record an unknown outcome without repeating an interrupted DPS dispatch" in {
       val submission = command(SubmitDps).copy(dispatched = true)
       seed(submission)
       run(SubmitDps)
@@ -315,7 +367,7 @@ class SubmissionOrchestrationISpec
       entries(InitialPdf) mustBe empty
     }
 
-    "DPS transport failure and timeout are terminal without resubmission" in {
+    "record an unknown outcome without resubmitting after a DPS timeout" in {
       val submission = command(SubmitDps)
       seed(submission)
       doReturn(Promise[SubmissionCommand]().future).when(mockSubmissionOperations).execute(any())(using any())
@@ -326,7 +378,7 @@ class SubmissionOrchestrationISpec
       statusOf(submission.data) mustBe 502
     }
 
-    "an explicit DPS rate-limit rejection can be retried" in {
+    "allow a retry after an explicit DPS rate-limit rejection" in {
       seed(command(SubmitDps))
       doReturn(Future.failed(SubmissionFailures.response(429, true)))
         .when(mockSubmissionOperations)
@@ -336,7 +388,7 @@ class SubmissionOrchestrationISpec
       entries(SubmitDps).head.status mustBe ProcessingStatus.Failed
     }
 
-    "saved DPS success resumes handoff without repeating DPS and duplicate handoffs create one child" in {
+    "resume a saved DPS result without repeating the call or duplicating its successor" in {
       val submission = command(SubmitDps).copy(operationFinished = true, dispatched = true)
       seed(submission)
       val next = mockSubmissionOperations.successors(submission).head
@@ -348,7 +400,7 @@ class SubmissionOrchestrationISpec
       states.get(submission.data.scopeKey).futureValue.value.reference mustBe Some("REF123")
     }
 
-    "interrupted initial PDF attempt completes without attempting generation again" in {
+    "complete an interrupted initial PDF attempt without regenerating it" in {
       val submission = command(InitialPdf).copy(dispatched = true)
       seed(submission)
       run(InitialPdf)
@@ -356,40 +408,7 @@ class SubmissionOrchestrationISpec
       statusOf(submission.data) mustBe 200
     }
 
-    "stale worker writes are rejected after another worker claims the lease" in {
-      val repository = queues(RetrieveCustomer)
-      seed(command(RetrieveCustomer))
-      val first = repository.claim().futureValue.value
-      clock.advance(121)
-      val second = repository.claim().futureValue.value
-      first.item.leaseToken must not be second.item.leaseToken
-      repository
-        .save(first, first.item.copy(operationFinished = true))
-        .failed
-        .futureValue mustBe a[IllegalStateException]
-      repository.save(second, second.item.copy(operationFinished = true)).futureValue.item.operationFinished mustBe true
-    }
-
-    "status and deduplication expire only after all work is terminal and seven days pass" in {
-      val root =
-        SubmissionCommand
-          .start(data())
-          .copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
-      seed(root)
-      run(RetrieveSubscription)
-      worker.maintain().futureValue
-      statusOf(root.data) mustBe 502
-      val before = states.get(root.data.scopeKey).futureValue.value.expiresAt
-      service.status(root.data.subscriptionId, root.data.kind, root.data.idempotencyKey).futureValue
-      states.get(root.data.scopeKey).futureValue.value.expiresAt mustBe before
-      clock.advance(604801)
-      statusOf(root.data) mustBe 404
-      val replacement = data()
-      service.submit(replacement).futureValue.header.status mustBe 202
-      entries(RetrieveSubscription).head.item.data.orchestrationId mustBe replacement.orchestrationId
-    }
-
-    "a failed status write retries publication without repeating the successful DPS POST" in {
+    "retry public state publication without repeating a successful DPS call" in {
       val submission = command(SubmitDps)
       seed(submission)
       val unavailableStates = spy(states)
@@ -411,8 +430,9 @@ class SubmissionOrchestrationISpec
       verify(mockSubmissionOperations, times(1)).execute(any())(using any())
       entries(InitialPdf).size mustBe 1
     }
+
     for step <- Seq(SendEmail, EnsurePdf, PackageDocumentum, NotifySdes) do {
-      s"$step retries independently without changing completed public status" in {
+      s"handle $step failures without changing the recorded public outcome" in {
         val submission = command(step).copy(data = data().copy(pdfAttempted = true, pdfStored = true))
         seed(submission)
         states.publish(submission).futureValue
@@ -435,19 +455,38 @@ class SubmissionOrchestrationISpec
         states.get(submission.data.scopeKey).futureValue.value mustBe publicOutcome
       }
     }
+  }
 
-    "concurrent claims yield a single owner and active graphs never acquire an expiry" in {
+  "SubmissionWorker.maintain" must {
+    "expire public status and allow key reuse seven days after all work finishes" in {
+      val root =
+        SubmissionCommand
+          .start(data())
+          .copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
+      seed(root)
+      run(RetrieveSubscription)
+      worker.maintain().futureValue
+      statusOf(root.data) mustBe 502
+      val before = states.get(root.data.scopeKey).futureValue.value.expiresAt
+      service.status(root.data.subscriptionId, root.data.kind, root.data.idempotencyKey).futureValue
+      states.get(root.data.scopeKey).futureValue.value.expiresAt mustBe before
+      clock.advance(604801)
+      statusOf(root.data) mustBe 404
+      val replacement = data()
+      service.submit(replacement).futureValue.header.status mustBe 202
+      entries(RetrieveSubscription).head.item.data.orchestrationId mustBe replacement.orchestrationId
+    }
+
+    "keep active submissions without an expiry while handing work to the next step" in {
       val submission = SubmissionCommand.start(data())
       seed(submission)
-      val claims = Future.traverse(1 to 8)(_ => queues(RetrieveSubscription).claim()).futureValue.flatten
-      claims.size mustBe 1
-      queues(RetrieveSubscription).save(claims.head, claims.head.item.copy(operationFinished = true)).futureValue
+      val claimed = queues(RetrieveSubscription).claim().futureValue.value
+      queues(RetrieveSubscription).save(claimed, claimed.item.copy(operationFinished = true)).futureValue
       clock.advance(121)
       run(RetrieveSubscription)
       worker.maintain().futureValue
       entries(RetrieveSubscription).head.item.expiresAt mustBe None
       states.get(submission.data.scopeKey).futureValue.value.expiresAt mustBe None
     }
-
   }
 }

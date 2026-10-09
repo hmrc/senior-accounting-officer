@@ -50,7 +50,7 @@ class SubmissionV2ISpec extends ISpecBase {
       "correlationId"           -> correlationId
     )
 
-  "POST /v2/notification and GET /v2/notification/:idempotencyKey" should {
+  "POST /v2/notification and GET /v2/notification/:idempotencyKey" must {
     "return pending until the initial PDF attempt, then deliver emails and documents independently" in {
       import Notification.*
 
@@ -97,7 +97,7 @@ class SubmissionV2ISpec extends ISpecBase {
     }
   }
 
-  "POST /v2/certificate and GET /v2/certificate/:idempotencyKey" should {
+  "POST /v2/certificate and GET /v2/certificate/:idempotencyKey" must {
     "return pending until the initial PDF attempt, then deliver emails and documents independently" in {
       import Certificate.*
 

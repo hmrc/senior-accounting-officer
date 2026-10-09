@@ -68,7 +68,7 @@ class SubmissionV2ControllerSpec
       case SubmissionKind.Certificate  => Json.toJson(SubmissionTestData.certificate)
     }
 
-    s"Submission v2 $kind endpoints" should {
+    s"POST $endpoint" must {
       "accept validated requests with the authenticated subscription" in {
         when(mockSubmissionService.submit(any()))
           .thenReturn(Future.successful(Results.Accepted(Json.obj("idempotencyKey" -> "test-key"))))
@@ -109,7 +109,10 @@ class SubmissionV2ControllerSpec
         verifyNoInteractions(mockSubmissionService)
       }
 
-      "look up GET using the URL key rather than the tracing header" in {
+    }
+
+    s"GET $endpoint/:idempotencyKey" must {
+      "look up the submission using the authenticated subscription, submission kind and URL key" in {
         when(mockSubmissionService.status(any(), any(), any())).thenReturn(Future.successful(Results.NoContent))
         val result =
           route(app, FakeRequest(GET, s"$endpoint/url-key").withHeaders("correlationId" -> "different-trace")).value

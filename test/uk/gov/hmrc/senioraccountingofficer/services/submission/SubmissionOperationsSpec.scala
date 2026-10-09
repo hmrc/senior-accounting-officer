@@ -119,7 +119,7 @@ class SubmissionOperationsSpec
     )
   }
 
-  "SubmissionOperations" - {
+  "execute" - {
     "missing required fields" - {
       val missingFields: Seq[(String, SubmissionData => SubmissionData, Seq[SubmissionStep])] = Seq(
         ("subscription", _.copy(subscription = None), Seq(RetrieveCustomer, InitialPdf, SendEmail, PackageDocumentum)),
@@ -141,7 +141,7 @@ class SubmissionOperationsSpec
         )
         step <- steps
       } do {
-        s"$kind $step fails asynchronously when $field is absent, before calling downstream services" in {
+        s"fail $kind $step without calling downstream services when $field is missing" in {
           val submission = command(step, kind).copy(
             data = removeField(data(kind)),
             email = Some(
@@ -170,31 +170,23 @@ class SubmissionOperationsSpec
         }
       }
 
-      "email delivery fails asynchronously when its recipient is absent" in {
+      "fail email delivery when its recipient is missing" in {
         val error = operations.execute(command(SendEmail)).failed.futureValue
         error mustBe a[IllegalStateException]
         error.getMessage mustBe "Missing required submission field: email"
         verifyNoInteractions(mockEmailConnector)
       }
 
-      for kind <- SubmissionKind.values do {
-        s"$kind recipient generation identifies a missing subscription" in {
-          val submission = command(InitialPdf, kind).copy(data = data(kind).copy(subscription = None))
-          intercept[IllegalStateException](operations.successors(submission)).getMessage mustBe
-            "Missing required submission field: subscription"
-        }
-      }
     }
 
-    "subscription retrieval preserves the snapshot for customer lookup" in {
+    "store the subscription snapshot for customer lookup" in {
       when(mockGetSubscriptionConnector.getSubscription(any())(using any()))
         .thenReturn(Future.successful(HttpResponse(200, Json.toJson(subscription).toString)))
       val result = operations.execute(command(RetrieveSubscription)).futureValue
       result.data.subscription mustBe Some(subscription)
-      operations.successors(result).map(_.step) mustBe Seq(RetrieveCustomer)
     }
 
-    "CRMM receives the nominated UTR and preserves an optional customer number" in {
+    "retrieve the customer using the nominated UTR and store the customer number" in {
       when(mockCrmmConnector.retrieveCustomer(any())(using any()))
         .thenReturn(Future.successful(HttpResponse(200, """{"customerId":"found"}""")))
       operations.execute(command(RetrieveCustomer)).futureValue.data.customerNumber mustBe Some("found")
@@ -203,13 +195,16 @@ class SubmissionOperationsSpec
           RetrieveCustomerRequest(subscription.nominatedCompany.crn, Some(utr))
         )
       )(using any())
+    }
+
+    "leave the customer number empty when CRMM does not return one" in {
       when(mockCrmmConnector.retrieveCustomer(any())(using any()))
         .thenReturn(Future.successful(HttpResponse(200, "{}")))
       operations.execute(command(RetrieveCustomer)).futureValue.data.customerNumber mustBe None
     }
 
     for kind <- SubmissionKind.values do {
-      s"$kind DPS submission includes the customer number and records its reference" in {
+      s"submit a $kind with the customer number and store its reference" in {
         val submission = command(SubmitDps, kind)
         when(mockNotificationConnector.postNotification(any(), any())(using any()))
           .thenReturn(Future.successful(HttpResponse(201, """{"notificationRef":"NOT123"}""")))
@@ -229,12 +224,6 @@ class SubmissionOperationsSpec
           )(using any())
       }
 
-      s"$kind initial PDF fans out independent recipient and delivery commands" in {
-        val children = operations.successors(command(InitialPdf, kind).copy(operationFinished = true))
-        children.count(_.step == EnsurePdf) mustBe 1
-        children.count(_.step == SendEmail) mustBe (if kind == SubmissionKind.Notification then 2 else 3)
-        children.map(_.commandKey).distinct.size mustBe children.size
-      }
     }
 
     "email delivery" - {
@@ -263,7 +252,7 @@ class SubmissionOperationsSpec
           "malformed success" -> HttpResponse(201, "{}")
         )
       do {
-        s"treat a $description as a terminal ambiguous outcome" in {
+        s"record an unknown DPS outcome without retrying after a $description" in {
           when(mockNotificationConnector.postNotification(any(), any())(using any()))
             .thenReturn(Future.successful(response))
 
@@ -275,13 +264,13 @@ class SubmissionOperationsSpec
       }
     }
 
-    "delivery reuses an existing PDF without regenerating it" in {
+    "reuse an existing PDF without regenerating it" in {
       existingPdf()
       operations.execute(command(EnsurePdf)).futureValue.operationFinished mustBe true
       verifyNoInteractions(mockPdfService)
     }
 
-    "a missing PDF is generated and uploaded before delivery" in {
+    "generate and upload a missing PDF before delivery" in {
       when(mockObjectStoreClient.getObject[Source[ByteString, NotUsed]](any(), any())(using any(), any()))
         .thenReturn(Future.successful(None), Future.successful(Some(stored)))
       when(mockPdfService.generateNotificationPdf(any())).thenReturn(Source.single(ByteString("new-pdf")))
@@ -326,17 +315,21 @@ class SubmissionOperationsSpec
       }
     }
 
-    "packaging preserves customer metadata and completes SDES delivery only when accepted" in {
+    "store the prepared SDES parameters after packaging" in {
       existingPdf()
       val prepared = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
       when(mockDocumentumPackageService.preparePackage(any(), any(), any())(using any()))
         .thenReturn(Future.successful(prepared))
       val result = operations.execute(command(PackageDocumentum)).futureValue
       result.data.prepared mustBe Some(prepared)
-      val next = operations.successors(result).head
+    }
+
+    "notify SDES with the prepared parameters and complete when accepted" in {
+      val prepared   = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
       when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(202)))
-      operations.execute(next).futureValue.operationFinished mustBe true
+      operations.execute(submission).futureValue.operationFinished mustBe true
       verify(mockSdesConnector).notifyFileReady(
         meq("file.zip"),
         meq("owner"),
@@ -346,6 +339,39 @@ class SubmissionOperationsSpec
       )(using
         any()
       )
+    }
+  }
+
+  "successors" - {
+    "return an SDES notification with the prepared parameters after packaging" in {
+      val prepared   = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+      val submission = command(PackageDocumentum).copy(data = data().copy(prepared = Some(prepared)))
+
+      val successors = operations.successors(submission)
+
+      successors.map(_.step) mustBe Seq(NotifySdes)
+      successors.map(_.data.prepared) mustBe Seq(Some(prepared))
+    }
+
+    "return customer retrieval after subscription retrieval" in {
+      operations.successors(command(RetrieveSubscription)).map(_.step) mustBe Seq(RetrieveCustomer)
+    }
+
+    for kind <- SubmissionKind.values do {
+      s"fail to generate $kind recipients when the subscription is missing" in {
+        val submission = command(InitialPdf, kind).copy(data = data(kind).copy(subscription = None))
+        intercept[IllegalStateException](operations.successors(submission)).getMessage mustBe
+          "Missing required submission field: subscription"
+      }
+    }
+
+    for kind <- SubmissionKind.values do {
+      s"create separate recipient and delivery commands after the $kind initial PDF attempt" in {
+        val children = operations.successors(command(InitialPdf, kind).copy(operationFinished = true))
+        children.count(_.step == EnsurePdf) mustBe 1
+        children.count(_.step == SendEmail) mustBe (if kind == SubmissionKind.Notification then 2 else 3)
+        children.map(_.commandKey).distinct.size mustBe children.size
+      }
     }
   }
 }

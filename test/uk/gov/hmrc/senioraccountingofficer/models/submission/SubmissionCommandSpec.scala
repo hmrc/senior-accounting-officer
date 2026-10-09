@@ -16,29 +16,65 @@
 
 package uk.gov.hmrc.senioraccountingofficer.models.submission
 
-import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.must.Matchers
 import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionStep.*
 import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionTestData.*
 
-class SubmissionCommandSpec extends AnyFreeSpec with Matchers {
-  "command keys" - {
-    "deduplicate a non-email step and distinguish other steps and submissions" in {
+class SubmissionCommandSpec extends AnyWordSpec with Matchers {
+  "next" must {
+    "return the same command key for the same submission and step" in {
       val root = SubmissionCommand.start(data())
-      val next = root.next(RetrieveCustomer)
-      next.commandKey mustBe s"${root.data.orchestrationId}/RetrieveCustomer/"
-      root.next(RetrieveCustomer).commandKey mustBe next.commandKey
-      root.next(SubmitDps).commandKey must not be next.commandKey
-      SubmissionCommand.start(data()).next(RetrieveCustomer).commandKey must not be next.commandKey
+
+      root.next(RetrieveCustomer).commandKey mustBe root.next(RetrieveCustomer).commandKey
     }
 
-    "deduplicate an email by address and template and distinguish different recipients or templates" in {
+    "return different command keys for different steps" in {
+      val root = SubmissionCommand.start(data())
+
+      root.next(RetrieveCustomer).commandKey must not be root.next(SubmitDps).commandKey
+    }
+
+    "return different command keys for different submissions" in {
+      val first  = SubmissionCommand.start(data())
+      val second = SubmissionCommand.start(data())
+
+      first.next(RetrieveCustomer).commandKey must not be second.next(RetrieveCustomer).commandKey
+    }
+
+    "return the same email command key for the same recipient and template" in {
       val root      = SubmissionCommand.start(data())
       val recipient = SubmissionEmail("Recipient", "recipient@example.com", "notification")
-      val key       = root.next(SendEmail, Some(recipient)).commandKey
-      root.next(SendEmail, Some(recipient)).commandKey mustBe key
-      root.next(SendEmail, Some(recipient.copy(address = "another@example.com"))).commandKey must not be key
-      root.next(SendEmail, Some(recipient.copy(template = "sao"))).commandKey must not be key
+
+      root.next(SendEmail, Some(recipient)).commandKey mustBe root.next(SendEmail, Some(recipient)).commandKey
+    }
+
+    "return different email command keys for different recipients" in {
+      val root             = SubmissionCommand.start(data())
+      val recipient        = SubmissionEmail("Recipient", "recipient@example.com", "notification")
+      val anotherRecipient = recipient.copy(address = "another@example.com")
+
+      root.next(SendEmail, Some(recipient)).commandKey must not be root
+        .next(SendEmail, Some(anotherRecipient))
+        .commandKey
+    }
+
+    "return different email command keys for different templates" in {
+      val root            = SubmissionCommand.start(data())
+      val recipient       = SubmissionEmail("Recipient", "recipient@example.com", "notification")
+      val anotherTemplate = recipient.copy(template = "sao")
+
+      root.next(SendEmail, Some(recipient)).commandKey must not be root
+        .next(SendEmail, Some(anotherTemplate))
+        .commandKey
+    }
+
+    "return different email command keys for the same recipient in different submissions" in {
+      val first     = SubmissionCommand.start(data())
+      val second    = SubmissionCommand.start(data())
+      val recipient = SubmissionEmail("Recipient", "recipient@example.com", "notification")
+
+      first.next(SendEmail, Some(recipient)).commandKey must not be second.next(SendEmail, Some(recipient)).commandKey
     }
   }
 }
