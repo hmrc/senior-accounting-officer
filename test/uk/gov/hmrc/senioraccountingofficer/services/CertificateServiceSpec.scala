@@ -94,9 +94,9 @@ class CertificateServiceSpec
       .thenReturn(Future.successful(()))
     when(mockEmailService.sendSubmitterCertificateEmail(any(), any(), any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
-    when(mockEmailService.sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any()))
+    when(mockEmailService.sendSaoCertificateEmail(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
-    when(mockEmailService.sendSaoContactCertificateEmail(any(), any(), any(), any(), any())(using any()))
+    when(mockEmailService.sendSaoContactCertificateEmail(any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
   }
 
@@ -478,7 +478,6 @@ class CertificateServiceSpec
           verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
             expectedSaoEmail,
             "Firstname Lastname",
-            nominatedCompanyName,
             exampleCertificateReference,
             "Firstname Lastname",
             expectedSaoName
@@ -488,7 +487,6 @@ class CertificateServiceSpec
             verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
               contact.email,
               contact.name,
-              nominatedCompanyName,
               exampleCertificateReference,
               "Firstname Lastname",
               expectedSaoName
@@ -524,16 +522,13 @@ class CertificateServiceSpec
           verify(mockEmailService, Times(1)).sendSaoCertificateEmail(
             expectedSaoEmail,
             expectedSaoName,
-            nominatedCompanyName,
             exampleCertificateReference,
-            expectedSaoName
           )
 
           exampleContacts.foreach { contact =>
             verify(mockEmailService, Times(1)).sendSaoContactCertificateEmail(
               contact.email,
               contact.name,
-              nominatedCompanyName,
               exampleCertificateReference,
               expectedSaoName
             )
@@ -548,11 +543,11 @@ class CertificateServiceSpec
 
           val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(0)).sendSubmitterCertificateEmail(any(), any(), any(), any(), any(), any())(
+          verify(mockEmailService, Times(0)).sendSubmitterCertificateEmail(any(), any(), any(), any(), any())(
             using any()
           )
-          verify(mockEmailService, Times(0)).sendSaoCertificateEmail(any(), any(), any(), any(), any())(using any())
-          verify(mockEmailService, Times(0)).sendSaoContactCertificateEmail(any(), any(), any(), any(), any())(using
+          verify(mockEmailService, Times(0)).sendSaoCertificateEmail(any(), any(), any())(using any())
+          verify(mockEmailService, Times(0)).sendSaoContactCertificateEmail(any(), any(), any(), any())(using
             any()
           )
           result mustBe MalformedResponse(DPS)
