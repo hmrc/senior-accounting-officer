@@ -87,6 +87,7 @@ class SubmissionWorker @Inject() (
       .andThen { case _ => heartbeat.cancel() }
   }
 
+  // Only submission steps publish public status, email and document delivery failures stay on their work items.
   private def publish(command: SubmissionCommand): Future[Unit] = command.step match {
     case RetrieveSubscription | RetrieveCustomer | SubmitDps | InitialPdf => states.publish(command)
     case _                                                                => Future.unit
@@ -95,10 +96,14 @@ class SubmissionWorker @Inject() (
   private def recordCompletion(command: SubmissionCommand): Unit = {
     val metric = if command.failure.isDefined then "permanent-failure" else "completed"
     metrics.counter(s"submission.${command.step}.$metric").inc()
-    if command.failure.exists(_.ambiguous) then metrics.counter("submission.dps.ambiguous").inc()
-    logger.info(
+    if command.failure.exists(_.dpsOutcomeUnknown) then metrics.counter("submission.dps.outcome-unknown").inc()
+    val message =
       s"[Submission][${command.step}][$metric][OrchestrationId=${command.data.orchestrationId}][CorrelationId=${command.data.correlationId}]"
-    )
+    command.failure match {
+      case Some(failure) =>
+        logger.warn(s"$message[HttpStatus=${failure.httpStatus}][DpsOutcomeUnknown=${failure.dpsOutcomeUnknown}]")
+      case None => logger.info(message)
+    }
   }
 
   private def retry(
@@ -135,7 +140,10 @@ class SubmissionWorker @Inject() (
     val command = work.item
     (command.step, command.dispatched) match {
       case (SubmitDps, true) =>
-        repository.save(work, command.copy(operationFinished = true, failure = Some(SubmissionFailures.ambiguous)))
+        repository.save(
+          work,
+          command.copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
+        )
       case (InitialPdf, true) => repository.save(work, failedPdf(command))
       case _                  =>
         val marked = command.step match {
@@ -146,13 +154,13 @@ class SubmissionWorker @Inject() (
           claimed <- marked
           result  <- withTimeout(operations.execute(claimed.item)).recoverWith {
             case NonFatal(_) if command.step == InitialPdf => Future.successful(failedPdf(claimed.item))
-            case rejection: OperationRejected if rejection.retriable && command.step == SubmitDps =>
+            case rejection: OperationRejected if rejection.retryable && command.step == SubmitDps =>
               repository.save(claimed, claimed.item.copy(dispatched = false)).flatMap(_ => Future.failed(rejection))
-            case rejection: OperationRejected if !rejection.retriable =>
+            case rejection: OperationRejected if !rejection.retryable =>
               Future.successful(claimed.item.copy(operationFinished = true, failure = Some(rejection.failure)))
             case NonFatal(_) if command.step == SubmitDps =>
               Future.successful(
-                claimed.item.copy(operationFinished = true, failure = Some(SubmissionFailures.ambiguous))
+                claimed.item.copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
               )
           }
           saved <- repository.save(claimed, result)

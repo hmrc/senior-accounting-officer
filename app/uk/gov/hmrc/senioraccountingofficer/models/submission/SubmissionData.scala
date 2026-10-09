@@ -26,7 +26,7 @@ import java.security.MessageDigest
 import java.time.LocalDateTime
 import java.util.UUID
 
-case class SubmissionData(
+final case class SubmissionData(
     orchestrationId: String,
     subscriptionId: String,
     kind: SubmissionKind,
@@ -72,23 +72,23 @@ object SubmissionData {
 
   def notification(subscriptionId: String, correlationId: String, request: NotificationRequest): SubmissionData =
     SubmissionData(
-      UUID.randomUUID().toString,
-      subscriptionId,
-      SubmissionKind.Notification,
-      request.idempotencyKey.getOrElse(UUID.randomUUID().toString),
-      correlationId,
-      Some(request.copy(idempotencyKey = None)),
-      None
+      orchestrationId = UUID.randomUUID().toString,
+      subscriptionId = subscriptionId,
+      kind = SubmissionKind.Notification,
+      idempotencyKey = request.idempotencyKey.getOrElse(UUID.randomUUID().toString),
+      correlationId = correlationId,
+      notification = Some(request.copy(idempotencyKey = None)),
+      certificate = None
     )
 
   def certificate(subscriptionId: String, correlationId: String, request: CertificateRequest): SubmissionData =
     SubmissionData(
-      UUID.randomUUID().toString,
-      subscriptionId,
-      SubmissionKind.Certificate,
-      request.idempotencyKey.getOrElse(UUID.randomUUID().toString),
-      correlationId,
-      None,
-      Some(request.copy(idempotencyKey = None))
+      orchestrationId = UUID.randomUUID().toString,
+      subscriptionId = subscriptionId,
+      kind = SubmissionKind.Certificate,
+      idempotencyKey = request.idempotencyKey.getOrElse(UUID.randomUUID().toString),
+      correlationId = correlationId,
+      notification = None,
+      certificate = Some(request.copy(idempotencyKey = None))
     )
 }

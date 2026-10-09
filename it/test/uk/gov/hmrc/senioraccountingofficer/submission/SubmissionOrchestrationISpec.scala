@@ -16,6 +16,11 @@
 
 package uk.gov.hmrc.senioraccountingofficer.submission
 
+import ch.qos.logback.classic.{Level, Logger}
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
+import org.slf4j.LoggerFactory
+import scala.jdk.CollectionConverters.*
 import com.codahale.metrics.MetricRegistry
 import org.apache.pekko.actor.ActorSystem
 import org.mockito.ArgumentMatchers.any
@@ -143,13 +148,55 @@ class SubmissionOrchestrationISpec
   }
 
   "Submission orchestration" should {
+    for failure <- Seq(None, Some(SubmissionFailures.unknownDpsOutcome)) do {
+      s"record and preserve the public outcome timestamp for ${if failure.isDefined then "failure" else "success"}" in {
+        val submission = command(InitialPdf).copy(
+          data = data().copy(pdfAttempted = true, pdfStored = true),
+          failure = failure
+        )
+        states.initialize(submission.data).futureValue
+        states.get(submission.data.scopeKey).futureValue.value.outcomeRecordedAt mustBe None
+        states.publish(submission).futureValue
+        val recorded = states.get(submission.data.scopeKey).futureValue.value
+        recorded.outcomeRecordedAt mustBe defined
+        recorded.failure mustBe failure
+
+        clock.advance(60)
+        states.publish(submission.copy(data = submission.data.copy(reference = Some("DIFFERENT")))).futureValue
+        states.get(submission.data.scopeKey).futureValue.value mustBe recorded
+      }
+    }
+
+    for failure <- Seq(None, Some(SubmissionFailures.unknownDpsOutcome)) do {
+      s"log ${if failure.isDefined then "permanent failure at WARN" else "successful completion at INFO"}" in {
+        val logger   = LoggerFactory.getLogger(classOf[SubmissionWorker]).asInstanceOf[Logger]
+        val appender = new ListAppender[ILoggingEvent]()
+        appender.start()
+        logger.addAppender(appender)
+        try {
+          val submission = command(RetrieveCustomer).copy(operationFinished = true, failure = failure)
+          seed(submission)
+          run(RetrieveCustomer)
+          val metric = if failure.isDefined then "permanent-failure" else "completed"
+          val event  = appender.list.asScala.find(_.getFormattedMessage.contains(s"[RetrieveCustomer][$metric]")).value
+          event.getLevel mustBe (if failure.isDefined then Level.WARN else Level.INFO)
+          event.getFormattedMessage must include(s"[OrchestrationId=${submission.data.orchestrationId}]")
+          event.getFormattedMessage must include(s"[CorrelationId=${submission.data.correlationId}]")
+          if failure.isDefined then event.getFormattedMessage must include("[DpsOutcomeUnknown=true]")
+        } finally {
+          logger.detachAppender(appender)
+          appender.stop()
+        }
+      }
+    }
+
     "reject all writes without a lease token and preserve the stored work item" in {
       val submission = command(RetrieveSubscription)
       seed(submission)
       val repository = queues(RetrieveSubscription)
-      val claimed = repository.claim().futureValue.value
-      val unleased = claimed.copy(item = claimed.item.copy(leaseToken = None))
-      val writes = Seq(
+      val claimed    = repository.claim().futureValue.value
+      val unleased   = claimed.copy(item = claimed.item.copy(leaseToken = None))
+      val writes     = Seq(
         repository.heartbeat(unleased),
         repository.save(unleased, unleased.item),
         repository.finish(unleased),
@@ -264,7 +311,7 @@ class SubmissionOrchestrationISpec
       run(SubmitDps)
       verify(mockSubmissionOperations, never()).execute(any())(using any())
       statusOf(submission.data) mustBe 502
-      entries(SubmitDps).head.item.failure.value.ambiguous mustBe true
+      entries(SubmitDps).head.item.failure.value.dpsOutcomeUnknown mustBe true
       entries(InitialPdf) mustBe empty
     }
 
@@ -325,7 +372,9 @@ class SubmissionOrchestrationISpec
 
     "status and deduplication expire only after all work is terminal and seven days pass" in {
       val root =
-        SubmissionCommand.start(data()).copy(operationFinished = true, failure = Some(SubmissionFailures.ambiguous))
+        SubmissionCommand
+          .start(data())
+          .copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
       seed(root)
       run(RetrieveSubscription)
       worker.maintain().futureValue
@@ -367,19 +416,23 @@ class SubmissionOrchestrationISpec
         val submission = command(step).copy(data = data().copy(pdfAttempted = true, pdfStored = true))
         seed(submission)
         states.publish(submission).futureValue
+        val publicOutcome = states.get(submission.data.scopeKey).futureValue.value
         doReturn(Future.failed(SubmissionFailures.response(503)))
           .when(mockSubmissionOperations)
           .execute(any())(using any())
         run(step)
         entries(step).head.status mustBe ProcessingStatus.Failed
         statusOf(submission.data) mustBe 200
+        states.get(submission.data.scopeKey).futureValue.value mustBe publicOutcome
         clock.advance(61)
         doReturn(Future.failed(SubmissionFailures.response(400)))
           .when(mockSubmissionOperations)
           .execute(any())(using any())
         run(step)
         entries(step).head.status mustBe ProcessingStatus.PermanentlyFailed
+        entries(step).head.item.failure mustBe Some(SubmissionFailures.response(400).failure)
         statusOf(submission.data) mustBe 200
+        states.get(submission.data.scopeKey).futureValue.value mustBe publicOutcome
       }
     }
 

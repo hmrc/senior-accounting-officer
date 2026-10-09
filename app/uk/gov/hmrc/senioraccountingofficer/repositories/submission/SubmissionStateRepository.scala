@@ -65,7 +65,7 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
       else
         collection
           .updateOne(
-            Filters.and(Filters.equal("_id", command.data.orchestrationId), Filters.exists("terminalAt", false)),
+            Filters.and(Filters.equal("_id", command.data.orchestrationId), Filters.exists("outcomeRecordedAt", false)),
             Updates.combine(updates*)
           )
           .toFuture()
@@ -79,7 +79,7 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
     val data = command.data
     command.failure match {
       case Some(failure) =>
-        Seq(Updates.set("failure", Codecs.toBson(failure)), Updates.set("terminalAt", clock.instant()))
+        Seq(Updates.set("failure", Codecs.toBson(failure)), Updates.set("outcomeRecordedAt", clock.instant()))
       case None if data.pdfAttempted =>
         Seq(
           Updates.set(
@@ -88,7 +88,7 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
           ),
           Updates.set("pdfAttempted", true),
           Updates.set("pdfStored", data.pdfStored),
-          Updates.set("terminalAt", clock.instant())
+          Updates.set("outcomeRecordedAt", clock.instant())
         )
       case None => data.reference.toSeq.map(reference => Updates.set("reference", reference))
     }

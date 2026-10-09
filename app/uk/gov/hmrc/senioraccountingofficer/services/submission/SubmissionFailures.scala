@@ -22,7 +22,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionFailure
 
 object SubmissionFailures {
 
-  def ambiguous: SubmissionFailure = SubmissionFailure(502, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), ambiguous = true)
+  def unknownDpsOutcome: SubmissionFailure =
+    SubmissionFailure(502, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), dpsOutcomeUnknown = true)
 
   def response(status: Int, dpsPost: Boolean = false): OperationRejected = {
     val (http, reason) = status match {
@@ -39,5 +40,8 @@ object SubmissionFailures {
   }
 
   def malformed(dpsPost: Boolean): OperationRejected =
-    OperationRejected(SubmissionFailure(500, ApiError(DOWNSTREAM_SERVICE_MISALIGNMENT), ambiguous = dpsPost), false)
+    OperationRejected(
+      SubmissionFailure(500, ApiError(DOWNSTREAM_SERVICE_MISALIGNMENT), dpsOutcomeUnknown = dpsPost),
+      false
+    )
 }

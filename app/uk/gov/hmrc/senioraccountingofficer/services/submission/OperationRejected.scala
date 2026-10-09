@@ -18,5 +18,5 @@ package uk.gov.hmrc.senioraccountingofficer.services.submission
 
 import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionFailure
 
-case class OperationRejected(failure: SubmissionFailure, retriable: Boolean)
+case class OperationRejected(failure: SubmissionFailure, retryable: Boolean)
     extends RuntimeException(failure.error.reason.toString)

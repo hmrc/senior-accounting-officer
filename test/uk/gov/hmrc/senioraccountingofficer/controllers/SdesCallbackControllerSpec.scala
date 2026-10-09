@@ -32,7 +32,7 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future

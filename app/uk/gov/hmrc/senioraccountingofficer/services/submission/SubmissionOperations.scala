@@ -20,6 +20,7 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
+import play.api.http.Status.ACCEPTED
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
@@ -98,7 +99,7 @@ class SubmissionOperations @Inject() (
               prepared.contentLength
             )
             .map { response =>
-              if response.status < 200 || response.status >= 300 then throw SubmissionFailures.response(response.status)
+              if response.status != ACCEPTED then throw SubmissionFailures.response(response.status)
               command
             }
       }

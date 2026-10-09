@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models.certificate
+package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
 import play.api.libs.json.{Json, OFormat}
 
-case class CertificateIdempotencyResponse(idempotencyKey: Option[String])
+final case class PreparedSdesSubmission(
+    fileName: String,
+    owner: String,
+    objectStorePath: String,
+    checksum: String,
+    contentLength: Long
+)
 
-object CertificateIdempotencyResponse {
-  given OFormat[CertificateIdempotencyResponse] = Json.format[CertificateIdempotencyResponse]
+object PreparedSdesSubmission {
+  given OFormat[PreparedSdesSubmission] = Json.format
 }

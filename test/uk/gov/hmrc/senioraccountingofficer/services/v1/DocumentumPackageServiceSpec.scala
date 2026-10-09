@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services.legacy
+package uk.gov.hmrc.senioraccountingofficer.services.v1
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem

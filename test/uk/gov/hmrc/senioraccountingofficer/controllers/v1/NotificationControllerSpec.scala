@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.controllers.legacy
+package uk.gov.hmrc.senioraccountingofficer.controllers.v1
 
 import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
@@ -33,9 +33,9 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.PostNotificationResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future

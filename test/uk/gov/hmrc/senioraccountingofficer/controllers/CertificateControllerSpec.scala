@@ -35,9 +35,9 @@ import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService.DownstreamService.DPS
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService.PostCertificateResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.PostCertificateResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
@@ -48,7 +48,7 @@ import java.util.UUID
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with BeforeAndAfterEach {
 
   private val mockCertificateService = mock[CertificateService]
-  private def certificateUrl         = legacy.routes.CertificateController.postCertificate().url
+  private def certificateUrl         = v1.routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()

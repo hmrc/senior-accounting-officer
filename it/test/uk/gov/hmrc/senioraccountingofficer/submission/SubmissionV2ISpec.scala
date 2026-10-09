@@ -51,7 +51,7 @@ class SubmissionV2ISpec extends ISpecBase {
     )
 
   "POST /v2/notification and GET /v2/notification/:idempotencyKey" should {
-    "return pending until submission completes and deliver emails and documents" in {
+    "return pending until the initial PDF attempt, then deliver emails and documents independently" in {
       import Notification.*
 
       MockAuthHelper.mockAuthOk()
@@ -62,7 +62,7 @@ class SubmissionV2ISpec extends ISpecBase {
       ObjectStoreHelper.mockPdfUpload(pdfFilename, 200, Some(objectStoreUploadResponse))
       ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
       ObjectStoreHelper.mockNotificationZipUpload(notificationReference, 200, Some(objectStoreUploadResponse))
-      SdesHelper.mock(200, None)
+      SdesHelper.mock(202, None)
 
       val accepted = makeRequest("notification", correlationId).post(Json.parse(requestBody)).futureValue
       accepted.status mustBe 202
@@ -98,7 +98,7 @@ class SubmissionV2ISpec extends ISpecBase {
   }
 
   "POST /v2/certificate and GET /v2/certificate/:idempotencyKey" should {
-    "return pending until submission completes and deliver emails and documents" in {
+    "return pending until the initial PDF attempt, then deliver emails and documents independently" in {
       import Certificate.*
 
       MockAuthHelper.mockAuthOk()
@@ -109,7 +109,7 @@ class SubmissionV2ISpec extends ISpecBase {
       ObjectStoreHelper.mockPdfUpload(pdfFilename, 200, Some(objectStoreUploadResponse))
       ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
       ObjectStoreHelper.mockCertificateZipUpload(certificateReference, 200, Some(objectStoreUploadResponse))
-      SdesHelper.mock(200, None)
+      SdesHelper.mock(202, None)
 
       val accepted = makeRequest("certificate", correlationId).post(Json.parse(requestBody)).futureValue
       accepted.status mustBe 202

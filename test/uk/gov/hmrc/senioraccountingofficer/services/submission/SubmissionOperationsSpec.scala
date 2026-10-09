@@ -238,13 +238,13 @@ class SubmissionOperationsSpec
     }
 
     "email delivery" - {
-      for (status, retriable) <- Seq(503 -> true, 400 -> false) do {
+      for (status, retryable) <- Seq(503 -> true, 400 -> false) do {
         s"classify an HTTP $status rejection" in {
           val email = operations.successors(command(InitialPdf)).find(_.step == SendEmail).value
           when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(status)))
 
           inside(operations.execute(email).failed.futureValue) { case rejection: OperationRejected =>
-            rejection.retriable mustBe retriable
+            rejection.retryable mustBe retryable
           }
         }
       }
@@ -268,8 +268,8 @@ class SubmissionOperationsSpec
             .thenReturn(Future.successful(response))
 
           inside(operations.execute(command(SubmitDps)).failed.futureValue) { case rejection: OperationRejected =>
-            rejection.retriable mustBe false
-            rejection.failure.ambiguous mustBe true
+            rejection.retryable mustBe false
+            rejection.failure.dpsOutcomeUnknown mustBe true
           }
         }
       }
@@ -298,9 +298,37 @@ class SubmissionOperationsSpec
       verify(mockPdfService).generateNotificationPdf(any())
     }
 
-    "packaging preserves customer metadata and the prepared SDES parameters" in {
+    "SDES notification" - {
+      for (status, retryable) <- Seq(
+          200 -> false,
+          201 -> false,
+          204 -> false,
+          299 -> false,
+          400 -> false,
+          401 -> false,
+          403 -> false,
+          429 -> true,
+          500 -> true,
+          503 -> true
+        )
+      do {
+        s"reject HTTP $status with retryable=$retryable" in {
+          val prepared   = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+          val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
+          when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
+            .thenReturn(Future.successful(HttpResponse(status)))
+
+          inside(operations.execute(submission).failed.futureValue) { case rejection: OperationRejected =>
+            rejection.retryable mustBe retryable
+            rejection.failure.dpsOutcomeUnknown mustBe false
+          }
+        }
+      }
+    }
+
+    "packaging preserves customer metadata and completes SDES delivery only when accepted" in {
       existingPdf()
-      val prepared = PreparedSdesSubmission("REF123", "file.zip", "owner", "/sdes/file.zip", "md5", 100)
+      val prepared = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
       when(mockDocumentumPackageService.preparePackage(any(), any(), any())(using any()))
         .thenReturn(Future.successful(prepared))
       val result = operations.execute(command(PackageDocumentum)).futureValue

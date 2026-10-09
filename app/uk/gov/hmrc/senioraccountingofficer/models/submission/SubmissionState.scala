@@ -28,7 +28,7 @@ case class SubmissionState(
     pdfAttempted: Boolean = false,
     pdfStored: Boolean = false,
     failure: Option[SubmissionFailure] = None,
-    terminalAt: Option[Instant] = None,
+    outcomeRecordedAt: Option[Instant] = None,
     expiresAt: Option[Instant] = None
 )
 object SubmissionState {

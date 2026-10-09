@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.services.legacy
+package uk.gov.hmrc.senioraccountingofficer.services.v1
 
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.scaladsl.Source
@@ -35,10 +35,10 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.DownstreamService.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationService.PostNotificationResponse.*
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.NotificationServiceSpec.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.PostNotificationResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationServiceSpec.*
 import uk.gov.hmrc.senioraccountingofficer.services.{EmailService, PdfService}
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.{generateCrn, generateUtr}
 

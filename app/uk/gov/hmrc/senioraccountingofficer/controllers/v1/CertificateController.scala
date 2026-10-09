@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.controllers.legacy
+package uk.gov.hmrc.senioraccountingofficer.controllers.v1
 
 import play.api.Logging
 import play.api.libs.json.Json
@@ -25,8 +25,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 import uk.gov.hmrc.senioraccountingofficer.models.certificate.CertificateResponse
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService
-import uk.gov.hmrc.senioraccountingofficer.services.legacy.CertificateService.PostCertificateResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.PostCertificateResponse.*
 
 import scala.concurrent.ExecutionContext
 
