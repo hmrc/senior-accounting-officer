@@ -199,8 +199,6 @@ class EmailServiceSpec
         emailService
           .sendSaoCertificateEmail(
             email = "email@example.com",
-            recipientName = "name",
-            companyName = "companyName",
             referenceId = "abc",
             saoName = "name"
           )
