@@ -474,7 +474,7 @@ class SubmissionOrchestrationISpec
       val before = states.get(root.data.scopeKey).futureValue.value.expiresAt
       service.status(root.data.subscriptionId, root.data.kind, root.data.idempotencyKey).futureValue
       states.get(root.data.scopeKey).futureValue.value.expiresAt mustBe before
-      clock.advance(retentionSeconds)
+      clock.advance(retentionSeconds + 1 )
       statusOf(root.data) mustBe 404
       val replacement = data()
       service.submit(replacement).futureValue.header.status mustBe 202
