@@ -30,6 +30,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class NotificationControllerISpec extends ISpecBase with Eventually {
+  override protected def usesSubmissionQueues: Boolean = true
+
 
   override implicit val patienceConfig: PatienceConfig = PatienceConfig(
     timeout = scaled(Span(30, Seconds)),

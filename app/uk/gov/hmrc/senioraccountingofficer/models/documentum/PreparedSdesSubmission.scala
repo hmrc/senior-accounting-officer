@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models.notification
+package uk.gov.hmrc.senioraccountingofficer.models.documentum
 
 import play.api.libs.json.{Json, OFormat}
 
-case class NotificationIdempotencyResponse(idempotencyKey: Option[String])
+final case class PreparedSdesSubmission(
+    fileName: String,
+    owner: String,
+    objectStorePath: String,
+    checksum: String,
+    contentLength: Long
+)
 
-object NotificationIdempotencyResponse {
-  given OFormat[NotificationIdempotencyResponse] = Json.format[NotificationIdempotencyResponse]
+object PreparedSdesSubmission {
+  given OFormat[PreparedSdesSubmission] = Json.format
 }

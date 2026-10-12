@@ -46,6 +46,7 @@ class GetSubscriptionControllerSpec extends AnyWordSpec with Matchers with Guice
   val mockIdentifierAction: IdentifierAction  = mock[IdentifierAction]
 
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
+    .configure("work-items.enabled" -> false)
     .overrides(
       bind[GetSubscriptionConnector].to(mockConnector),
       bind[IdentifierAction].to[FakeIdentifierAction]

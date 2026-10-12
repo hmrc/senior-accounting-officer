@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.senioraccountingofficer.models.certificate
+package uk.gov.hmrc.senioraccountingofficer.models.submission
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
-case class CertificateIdempotencyResponse(idempotencyKey: Option[String])
+case class SubmissionFailure(httpStatus: Int, error: ApiError, dpsOutcomeUnknown: Boolean = false)
 
-object CertificateIdempotencyResponse {
-  given OFormat[CertificateIdempotencyResponse] = Json.format[CertificateIdempotencyResponse]
+object SubmissionFailure {
+  given OFormat[SubmissionFailure] = Json.format
 }

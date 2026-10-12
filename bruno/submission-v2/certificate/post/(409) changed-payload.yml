@@ -1,0 +1,50 @@
+info:
+  name: (409) changed-payload
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/v2/certificate"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "submitterName": "Submittername",
+        "saoName": "SubmitterTestName",
+        "saoEmail": "test@email.com",
+        "companies": [
+          {
+            "crn": "12435678",
+            "utr": "1243567843",
+            "name": "companyname",
+            "accPeriodEnd": "2010-10-10",
+            "status": "Dormant",
+            "type": "LTD",
+            "isCorporationTaxQualified": false,
+            "isVatQualified": true,
+            "isPayeQualified": true,
+            "isInsurancePremiumTaxQualified": true,
+            "isStampDutyLandTaxQualified": true,
+            "isStampDutyReserveTaxQualified": true,
+            "isPetroleumRevenueTaxQualified": true,
+            "isCustomsDutiesQualified": true,
+            "isExciseDutiesQualified": true,
+            "isBankLevyQualified": true,
+            "qualificationStatement": "test statement"
+          }
+        ],
+        "remarks": "Different payload for the same QA idempotency key",
+        "idempotencyKey": "{{certificateIdempotencyKey}}"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

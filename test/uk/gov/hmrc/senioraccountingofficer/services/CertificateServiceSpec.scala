@@ -35,10 +35,10 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
-import uk.gov.hmrc.senioraccountingofficer.services.documentum.DocumentumPackageService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.DownstreamService.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.DocumentumPackageService
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.{ExecutionContext, Future}

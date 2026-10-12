@@ -39,6 +39,7 @@ class AppConfig @Inject() (servicesConfig: ServicesConfig, config: Configuration
 
   def crmmEnabled: Boolean =
     sys.props.get("feature-toggles.crmm").fold(config.get[Boolean]("feature-toggles.crmm"))(_ == "true")
+
 }
 
 object AppConfig {

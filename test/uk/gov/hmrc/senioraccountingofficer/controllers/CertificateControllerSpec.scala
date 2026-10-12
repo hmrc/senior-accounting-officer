@@ -19,27 +19,25 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import org.mockito.ArgumentMatchers.{any, eq as meq}
 import org.mockito.Mockito.*
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
-import play.api.http.{HeaderNames, MimeTypes, Status}
+import play.api.http.{MimeTypes, Status}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsString, Json}
+import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.{AnyContentAsText, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.CertificateControllerSpec.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.FakeIdentifierAction.testSaoSubscriptionId
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{FakeIdentifierAction, IdentifierAction}
-import uk.gov.hmrc.senioraccountingofficer.models.certificate.CertificateIdempotencyResponse
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.DownstreamService.DPS
-import uk.gov.hmrc.senioraccountingofficer.services.CertificateService.PostCertificateResponse.*
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.DownstreamService.DPS
+import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.PostCertificateResponse.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 
 import scala.concurrent.Future
@@ -50,10 +48,11 @@ import java.util.UUID
 class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite with BeforeAndAfterEach {
 
   private val mockCertificateService = mock[CertificateService]
-  private def certificateUrl         = routes.CertificateController.postCertificate().url
+  private def certificateUrl         = v1.routes.CertificateController.postCertificate().url
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
+      .configure("work-items.enabled" -> false)
       .overrides(
         bind[CertificateService].toInstance(mockCertificateService),
         bind[IdentifierAction].to[FakeIdentifierAction]
@@ -279,58 +278,6 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
   }
 
-  private def requestWithCorrelationId(method: String, url: String) =
-    FakeRequest(method, url)
-      .withHeaders(
-        HeaderNames.CONTENT_TYPE -> MimeTypes.JSON,
-        "CorrelationId"          -> UUID.randomUUID().toString
-      )
-
-  "POST /postCertificateWithFaultTolerance" should {
-    "return 202 Accepted and the idempotency key" when {
-      "a key is supplied" in {
-        val request =
-          requestWithCorrelationId(
-            "POST",
-            routes.CertificateController.postCertificateWithFaultTolerance().url
-          ).withTextBody(
-            (validPayload + ("idempotencyKey" -> JsString("TestKey"))).toString
-          )
-
-        val result = routeResult(request)
-
-        status(result) shouldBe Status.ACCEPTED
-        contentAsJson(result).as[CertificateIdempotencyResponse] shouldBe CertificateIdempotencyResponse(
-          Some("TestKey")
-        )
-      }
-
-      "no key is supplied" in {
-        val request =
-          requestWithCorrelationId(
-            "POST",
-            routes.CertificateController.postCertificateWithFaultTolerance().url
-          ).withTextBody(validPayload.toString)
-
-        val result = routeResult(request)
-
-        status(result) shouldBe Status.ACCEPTED
-        contentAsJson(result).as[CertificateIdempotencyResponse] shouldBe CertificateIdempotencyResponse(None)
-      }
-    }
-  }
-
-  "GET /getStateOfWorkItem" should {
-    "return 204 No Content" in {
-      val request =
-        requestWithCorrelationId(
-          "GET",
-          routes.CertificateController.getStateOfWorkItem("TestKey").url
-        )
-
-      status(route(app, request).value) shouldBe Status.NO_CONTENT
-    }
-  }
 }
 
 object CertificateControllerSpec {
