@@ -189,10 +189,7 @@ class CertificateService @Inject() (
           submitterName = submitterName,
           referenceId = certificateReference
         )
-        val emails = emailRequestsContacts.::(emailRequestSao)
-
-        Future.sequence(emails).map(_ => ())
-//        Future.sequence(emailRequestsContacts ++ emailRequestSao).map(_ => ())
+        Future.sequence(emailRequestsContacts.::(emailRequestSao)).map(_ => ())
       case None =>
         val sendSaoEmail = emailService.sendSaoCertificateEmail(
           email = request.saoEmail,

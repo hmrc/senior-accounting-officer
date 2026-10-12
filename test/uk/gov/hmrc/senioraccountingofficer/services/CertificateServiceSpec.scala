@@ -96,6 +96,10 @@ class CertificateServiceSpec
       .thenReturn(Future.successful(()))
     when(mockEmailService.sendSaoCertificateEmail(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
+    when(mockEmailService.sendSaoCertificateEmail(any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
+    when(mockEmailService.sendSubmitterSaoCertificateEmail(any(), any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
     when(mockEmailService.sendSaoContactCertificateEmail(any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
   }
@@ -475,12 +479,11 @@ class CertificateServiceSpec
 
           service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(1)).sendSubmitterCertificateEmail(
-            expectedSaoEmail,
-            "Firstname Lastname",
-            exampleCertificateReference,
-            "Firstname Lastname",
-            expectedSaoName
+          verify(mockEmailService, Times(1)).sendSubmitterSaoCertificateEmail(
+            email = expectedSaoEmail,
+            saoName = expectedSaoName,
+            submitterName = "Firstname Lastname",
+            referenceId = exampleCertificateReference,
           )
 
           exampleContacts.foreach { contact =>

@@ -83,6 +83,7 @@ class EmailServiceSpec
     notificationEmails
   }
 
+
   private def assertEmail(actualEmail: NotificationEmail, expectedEmail: NotificationEmail): Unit = {
 
     val actualParams   = actualEmail.parameters
@@ -298,6 +299,32 @@ class EmailServiceSpec
       actualParams.referenceId shouldBe expectedParams.referenceId
 
       result shouldBe ()
+    }
+
+    "send submitter certificate email confirmation to one contact and the SAO" in {
+      when(mockEmailConnector.postEmail(any())(using any))
+        .thenReturn(Future.successful(HttpResponse(202)))
+
+      val expectedContactEmails = contacts.map{
+        contact =>
+          val emailParams = SubmitterCertificateEmailParameters(contactName = contact.name, submitterName = Some("submitterName"), saoName = "saoName", submittedDateTime = "any", referenceId = "certRef")
+          SubmitterCertificateEmail(to = List(contact.email), parameters = emailParams)
+      }
+      val results = expectedContactEmails.map(email => emailService.sendSubmitterCertificateEmail(email))
+//      val expectedContactEmails = SubmitterCertificateEmail(
+//      )
+    }
+
+    "send submitter email certificate confirmation to two contacts and the SAO" in {
+
+    }
+
+    "send sao email certificate confirmation to one contact and the SAO" in {
+
+    }
+
+    "send sao email certificate confirmation to two contacts and the SAO" in {
+
     }
   }
 }
