@@ -99,13 +99,13 @@ class EmailService @Inject() (
     val emailModel = SubmitterCertificateEmail(List(email), parameters = emailParameters)
     sendEmail(emailModel, "certificate")
   }
-  
+
   def sendSubmitterSaoCertificateEmail(
-                                      email: String,
-                                        saoName: String,
-                                        submitterName: String,
-                                        referenceId: String
-                                      )(using HeaderCarrier): Future[Unit] = {
+      email: String,
+      saoName: String,
+      submitterName: String,
+      referenceId: String
+  )(using HeaderCarrier): Future[Unit] = {
     val emailParameters = SubmitterSaoCertificateEmailParameters(
       saoName = saoName,
       submitterName = submitterName,
@@ -124,7 +124,7 @@ class EmailService @Inject() (
     val emailParameters = SaoCertificateEmailParameters(
       saoName = saoName,
       submittedDateTime = timestamp,
-      referenceId = referenceId,
+      referenceId = referenceId
     )
     val emailModel = SaoCertificateEmail(List(email), parameters = emailParameters)
     sendEmail(emailModel, "certificate")

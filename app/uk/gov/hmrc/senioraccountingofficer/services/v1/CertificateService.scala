@@ -154,19 +154,21 @@ class CertificateService @Inject() (
       certificateReference: String,
       request: CertificateDpsRequest
   )(using HeaderCarrier): Future[Unit] = {
-    val contacts = dpsSubscription.contacts.map { contact => (contact.name, contact.email)}.distinctBy { case (_, email) => email }
-    val saoName = request.saoName
+    val contacts =
+      dpsSubscription.contacts.map { contact => (contact.name, contact.email) }.distinctBy { case (_, email) => email }
+    val saoName  = request.saoName
     val saoEmail = request.saoEmail
     request.submitterName match {
       case Some(submitterName) =>
         val emailRequestsContacts = contacts.map { case (contactName, contactEmail) =>
-        emailService.sendSubmitterCertificateEmail(
-          email = contactEmail,
-          contactName = contactName,
-          referenceId = certificateReference,
-          submitterName = submitterName,
-          saoName = saoName
-        )}
+          emailService.sendSubmitterCertificateEmail(
+            email = contactEmail,
+            contactName = contactName,
+            referenceId = certificateReference,
+            submitterName = submitterName,
+            saoName = saoName
+          )
+        }
         val emailRequestSao = emailService.sendSubmitterSaoCertificateEmail(
           email = saoEmail,
           saoName = saoName,
