@@ -2,13 +2,28 @@
 
 Backend service for the Senior Accounting Officer APIs.
 
+The service exposes protected endpoints for submission of user data and for query thereof. For query, it makes requests of DPS Get Subscription. For submission, it orchestrates the following work:
+
+1. DPS Get Subscription
+1. CRMM
+1. DPS Write
+1. PDF generation
+1. object-store
+1. secure-data-exchange-proxy
+1. email (for confirmation email)
+1. explicit audit
+
 ## Local running
 
-The app runs on port `10060`.
+Start the service locally with:
 
-It currently proxies requests to `senior-accounting-officer-stubs`, which is expected on port `10061` via:
+```bash
+sbt run
+```
 
-## Endpoint
+The app runs on port `10060`. In development, it proxies requests to `senior-accounting-officer-stubs`, which is expected on port `10061`.
+
+## Endpoints
 
 Current route:
 
@@ -16,50 +31,16 @@ Current route:
 PUT /senior-accounting-officer/subscriptions/:saoSubscriptionId
 ```
 
-The endpoint accepts a raw JSON request body and forwards it to the downstream stubs service at:
-
-```text
-PUT /subscriptions/:saoSubscriptionId
-```
-
-The downstream response is passed through unchanged, including:
-- `204` with no body on success
-- `400` with the downstream JSON error payload on validation failures
-
-Example request:
-
-```bash
-curl -i \
-  -X PUT 'http://localhost:10060/senior-accounting-officer/subscriptions/123' \
-  -H 'Content-Type: application/json' \
-  --data-raw '{
-    "safeId": "XE000123456789",
-    "company": {
-      "companyName": "Acme Manufacturing Ltd",
-      "uniqueTaxReference": "1234567890",
-      "companyRegistrationNumber": "OC123456"
-    },
-    "contacts": [
-      {
-        "name": "Jane Doe",
-        "email": "jane.doe@example.com"
-      }
-    ]
-  }'
-```
+The endpoint accepts a raw JSON request body and orchestrates the required work. See Bruno collection for examples.
 
 ## Tests
 
-Focused unit test:
+Run the tests with sbt.
 
 ```bash
-sbt test
-```
-
-Focused integration test:
-
-```bash
-sbt it/test
+sbt test    # unit tests
+sbt it/test # integration tests
+sbt lint    # formatting/linting
 ```
 
 ## OpenApi Schema
@@ -73,6 +54,7 @@ The schema is generated upon running `sbt run`. It can be found in `/target/swag
 The schema is served from `http://localhost:10060/swagger`.
 
 You can view the docs by:
+
 * running `sm2 -start DEVHUB_PREVIEW_OPENAPI`
 * accessing http://localhost:9680/api-documentation/docs/openapi/preview in a web browser
 * Providing the URL `http://localhost:10060/swagger` and submitting the form
@@ -85,13 +67,8 @@ Users can import the collection into Bruno and, once the required environment se
 
 Bruno is an open-source API client used for manual exploratory testing and cross-team collaboration. It allows you to create, manage and run HTTP requests against a service directly from a collection stored in a repository.
 
-### (HMRC) MDTP Recommendation
+### Pre-requisites
 
-Bruno is the recommended API client tool for use on the MDTP platform, as detailed in the [MDTP Handbook](https://docs.tax.service.gov.uk/mdtp-handbook/documentation/mdtp-test-approach/acceptance-testing/api-testing/index.html)
-
-"MDTP recommends the Bruno API client tool for manual exploratory testing and cross-team collaboration. Only tools that have been reviewed and approved by Platform Security are permitted for use."
-
-### Pre-requisites:
 * Download and install Bruno.
 * Start the needed services in a terminal session with the following command:
 
@@ -113,4 +90,3 @@ sm2 --start SAO_ALL
 ### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
-
