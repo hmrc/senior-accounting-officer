@@ -339,7 +339,7 @@ class EmailServiceSpec
     }
 
     "send submitter email certificate confirmation to SAO" in {
-      when(mockEmailConnector.postEmail(any)).thenReturn(Future.successful(HttpResponse(202)))
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
       val expectedSaoEmail = Some(
@@ -367,7 +367,7 @@ class EmailServiceSpec
 
         verify(mockEmailConnector, Times(1)).postEmail(captor.capture())(using any)
 
-        captor.getValue.asInstanceOf[SaoCertificateEmail]
+        captor.getValue.asInstanceOf[SubmitterSaoCertificateEmail]
         result shouldBe ()
       }
 
