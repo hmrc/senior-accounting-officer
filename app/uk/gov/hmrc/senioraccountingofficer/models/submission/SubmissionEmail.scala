@@ -18,7 +18,6 @@ package uk.gov.hmrc.senioraccountingofficer.models.submission
 
 import play.api.libs.json.{Json, OFormat}
 
-// Persist the exact recipient/template choice so retries do not send again to successful recipients.
 case class SubmissionEmail(recipientName: String, address: String, template: String)
 object SubmissionEmail {
 

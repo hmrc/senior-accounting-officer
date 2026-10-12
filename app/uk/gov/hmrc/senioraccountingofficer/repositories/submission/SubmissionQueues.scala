@@ -25,7 +25,6 @@ import scala.concurrent.ExecutionContext
 import java.time.Clock
 import javax.inject.{Inject, Singleton}
 
-// Distinct repository instances/collections per command; both submission types use the same stages.
 @Singleton
 class SubmissionQueues @Inject() (mongo: MongoComponent, configuration: Configuration, clock: Clock)(using
     ExecutionContext

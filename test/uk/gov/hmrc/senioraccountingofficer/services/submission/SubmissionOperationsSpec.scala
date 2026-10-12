@@ -302,7 +302,13 @@ class SubmissionOperationsSpec
         )
       do {
         s"reject HTTP $status with retryable=$retryable" in {
-          val prepared   = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+          val prepared = PreparedSdesSubmission(
+            fileName = "file.zip",
+            owner = "owner",
+            objectStorePath = "/sdes/file.zip",
+            checksum = "md5",
+            contentLength = 100
+          )
           val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
           when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
             .thenReturn(Future.successful(HttpResponse(status)))
@@ -317,7 +323,13 @@ class SubmissionOperationsSpec
 
     "store the prepared SDES parameters after packaging" in {
       existingPdf()
-      val prepared = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+      val prepared = PreparedSdesSubmission(
+        fileName = "file.zip",
+        owner = "owner",
+        objectStorePath = "/sdes/file.zip",
+        checksum = "md5",
+        contentLength = 100
+      )
       when(mockDocumentumPackageService.preparePackage(any(), any(), any())(using any()))
         .thenReturn(Future.successful(prepared))
       val result = operations.execute(command(PackageDocumentum)).futureValue
@@ -325,7 +337,13 @@ class SubmissionOperationsSpec
     }
 
     "notify SDES with the prepared parameters and complete when accepted" in {
-      val prepared   = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+      val prepared = PreparedSdesSubmission(
+        fileName = "file.zip",
+        owner = "owner",
+        objectStorePath = "/sdes/file.zip",
+        checksum = "md5",
+        contentLength = 100
+      )
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
       when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
         .thenReturn(Future.successful(HttpResponse(202)))
@@ -344,7 +362,13 @@ class SubmissionOperationsSpec
 
   "successors" - {
     "return an SDES notification with the prepared parameters after packaging" in {
-      val prepared   = PreparedSdesSubmission("file.zip", "owner", "/sdes/file.zip", "md5", 100)
+      val prepared = PreparedSdesSubmission(
+        fileName = "file.zip",
+        owner = "owner",
+        objectStorePath = "/sdes/file.zip",
+        checksum = "md5",
+        contentLength = 100
+      )
       val submission = command(PackageDocumentum).copy(data = data().copy(prepared = Some(prepared)))
 
       val successors = operations.successors(submission)

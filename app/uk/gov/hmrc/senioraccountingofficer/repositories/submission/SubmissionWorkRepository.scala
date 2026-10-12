@@ -50,17 +50,18 @@ class SubmissionWorkRepository(
       )
     ) {
 
+  private val duplicateKeyErrorCode = 11000
+
   override def now(): Instant                 = clock.instant().truncatedTo(MILLIS)
   override val inProgressRetryAfter: Duration = Duration.ofSeconds(configuration.get[Long]("work-items.lease-seconds"))
 
   def enqueue(command: SubmissionCommand): Future[SubmissionCommand] = {
     require(command.step == step)
     val key = Filters.equal("item.commandKey", command.commandKey)
-    // An expired request key can be reused even before Mongo's TTL monitor runs.
     for {
       _         <- collection.deleteOne(Filters.and(key, Filters.lte("item.expiresAt", now()))).toFuture()
       persisted <- pushNew(command).map(_.item).recoverWith {
-        case error: MongoWriteException if error.getError.getCode == 11000 =>
+        case error: MongoWriteException if error.getError.getCode == duplicateKeyErrorCode =>
           collection.find(key).head().map(_.item)
       }
     } yield persisted

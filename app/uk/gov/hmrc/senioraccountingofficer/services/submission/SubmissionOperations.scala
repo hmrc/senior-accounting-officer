@@ -92,21 +92,26 @@ class SubmissionOperations @Inject() (
           val prepared = required(data.prepared, "prepared")
           sdes
             .notifyFileReady(
-              prepared.fileName,
-              prepared.owner,
-              prepared.objectStorePath,
-              prepared.checksum,
-              prepared.contentLength
+              fileName = prepared.fileName,
+              owner = prepared.owner,
+              objectStorePath = prepared.objectStorePath,
+              base64Checksum = prepared.checksum,
+              contentLength = prepared.contentLength
             )
             .map { response =>
-              if response.status != ACCEPTED then throw SubmissionFailures.response(response.status)
+              if response.status != ACCEPTED then throw SubmissionFailures.response(status = response.status)
               command
             }
       }
     }
     Future.fromTry(operation).flatten.map(_.copy(operationFinished = true)).recoverWith {
       case e: UpstreamErrorResponse =>
-        Future.failed(SubmissionFailures.response(e.statusCode, command.step == SubmitDps))
+        Future.failed(
+          SubmissionFailures.response(
+            status = e.statusCode,
+            isDpsSubmission = command.step == SubmitDps
+          )
+        )
     }
   }
 
@@ -183,9 +188,12 @@ class SubmissionOperations @Inject() (
         case SendEmail | NotifySdes => Seq.empty
       }
 
-  private def decode[A: Reads](response: HttpResponse, expected: Int, dpsPost: Boolean = false): A = {
-    if response.status != expected then throw SubmissionFailures.response(response.status, dpsPost)
-    Try(Json.parse(response.body).as[A]).getOrElse(throw SubmissionFailures.malformed(dpsPost))
+  private def decode[A: Reads](response: HttpResponse, expected: Int, isDpsSubmission: Boolean = false): A = {
+    if response.status != expected then
+      throw SubmissionFailures.response(status = response.status, isDpsSubmission = isDpsSubmission)
+    Try(Json.parse(response.body).as[A]).getOrElse(
+      throw SubmissionFailures.malformed(isDpsSubmission = isDpsSubmission)
+    )
   }
 
   private def withReference(command: SubmissionCommand, reference: String): SubmissionCommand = command.copy(data =

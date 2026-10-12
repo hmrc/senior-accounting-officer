@@ -29,22 +29,31 @@ object SubmissionTestData {
   val date: LocalDate                   = LocalDate.parse("2025-12-31")
   val time: LocalDateTime               = LocalDateTime.parse("2026-10-05T10:00:00")
   val notification: NotificationRequest = NotificationRequest(
-    NotificationCompanies(
-      List(NotificationCompany(None, Utr(utr), CompanyName("Example Ltd"), date, CompanyStatus.Active, CompanyType.LTD))
+    companies = NotificationCompanies(
+      value = List(
+        NotificationCompany(
+          crn = None,
+          utr = Utr(utr),
+          name = CompanyName("Example Ltd"),
+          accPeriodEnd = date,
+          status = CompanyStatus.Active,
+          `type` = CompanyType.LTD
+        )
+      )
     ),
-    Saos(List(Sao(PersonName("Jane Smith"), None, None))),
-    None,
-    Some("test-key")
+    saos = Saos(List(Sao(PersonName("Jane Smith"), None, None))),
+    remarks = None,
+    idempotencyKey = Some("test-key")
   )
 
   val certificate: CertificateRequest = CertificateRequest(
-    None,
-    PersonName("Jane Smith"),
-    PersonName("Jane Smith"),
-    Email("jane@example.com"),
-    None,
-    CertificateCompanies(
-      List(
+    submitterName = None,
+    saoName = PersonName("Jane Smith"),
+    saoDeclarationName = PersonName("Jane Smith"),
+    saoEmail = Email("jane@example.com"),
+    staffPid = None,
+    companies = CertificateCompanies(
+      value = List(
         CertificateCompany(
           crn = None,
           utr = Utr(utr),
@@ -66,19 +75,23 @@ object SubmissionTestData {
         )
       )
     ),
-    None,
-    Some("test-key")
+    remarks = None,
+    idempotencyKey = Some("test-key")
   )
 
   val subscription: GetSubscriptionDpsResponse = GetSubscriptionDpsResponse(
-    "safe-id",
-    NominatedCompany(Some("12345678"), "Example Ltd", utr),
-    List(
+    etmpSafeId = "safe-id",
+    nominatedCompany = NominatedCompany(
+      crn = Some("12345678"),
+      name = "Example Ltd",
+      utr = utr
+    ),
+    contacts = List(
       Contact("Contact One", "one@example.com", "en", "active"),
       Contact("Contact Two", "two@example.com", "en", "active")
     ),
-    time,
-    time
+    created = time,
+    updated = time
   )
 
   def data(kind: SubmissionKind = SubmissionKind.Notification): SubmissionData = {
@@ -95,5 +108,5 @@ object SubmissionTestData {
   }
 
   def command(step: SubmissionStep, kind: SubmissionKind = SubmissionKind.Notification): SubmissionCommand =
-    SubmissionCommand.start(data(kind)).next(step)
+    SubmissionCommand.start(data(kind)).next(step = step)
 }

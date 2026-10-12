@@ -45,6 +45,7 @@ import java.time.{Clock, Instant, ZoneId, ZoneOffset}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration.*
 
 class SubmissionOrchestrationISpec
     extends AnyWordSpec
@@ -55,6 +56,9 @@ class SubmissionOrchestrationISpec
     with MockitoSugar
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
+
+  private val millisecondsPerSecond = 1000L
+  private val retentionSeconds      = 7.days.toSeconds
 
   given ActorSystem = ActorSystem("submission-repository-test")
 
@@ -81,7 +85,7 @@ class SubmissionOrchestrationISpec
 
     def reset(): Unit                = millis.set(System.currentTimeMillis())
     def advance(seconds: Long): Unit = {
-      millis.addAndGet(seconds * 1000)
+      millis.addAndGet(seconds * millisecondsPerSecond)
       ()
     }
     override def instant(): Instant            = Instant.ofEpochMilli(millis.incrementAndGet())
@@ -96,7 +100,7 @@ class SubmissionOrchestrationISpec
     "work-items.operation-timeout-seconds" -> 1,
     "work-items.retry-base-seconds"        -> 60,
     "work-items.retry-max-seconds"         -> 900,
-    "work-items.retention-seconds"         -> 604800
+    "work-items.retention-seconds"         -> retentionSeconds
   )
   val queues                                         = new SubmissionQueues(mongo, config, clock)
   val states                                         = new SubmissionStateRepository(mongo, clock)
@@ -380,7 +384,7 @@ class SubmissionOrchestrationISpec
 
     "allow a retry after an explicit DPS rate-limit rejection" in {
       seed(command(SubmitDps))
-      doReturn(Future.failed(SubmissionFailures.response(429, true)))
+      doReturn(Future.failed(SubmissionFailures.response(status = 429, isDpsSubmission = true)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
       run(SubmitDps)
@@ -470,7 +474,7 @@ class SubmissionOrchestrationISpec
       val before = states.get(root.data.scopeKey).futureValue.value.expiresAt
       service.status(root.data.subscriptionId, root.data.kind, root.data.idempotencyKey).futureValue
       states.get(root.data.scopeKey).futureValue.value.expiresAt mustBe before
-      clock.advance(604801)
+      clock.advance(retentionSeconds)
       statusOf(root.data) mustBe 404
       val replacement = data()
       service.submit(replacement).futureValue.header.status mustBe 202

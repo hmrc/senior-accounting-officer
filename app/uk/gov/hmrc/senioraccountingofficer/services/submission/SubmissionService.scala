@@ -31,10 +31,12 @@ class SubmissionService @Inject() (queues: SubmissionQueues, states: SubmissionS
     ExecutionContext
 ) {
 
+  private val maxIdempotencyKeyLength = 256
+
   def submit(data: SubmissionData): Future[Result] = {
     if data.idempotencyKey.trim.isEmpty then
       Future.successful(Results.BadRequest(Json.toJson(ApiError(CANNOT_BE_EMPTY, Some("/idempotencyKey")))))
-    else if data.idempotencyKey.length > 256 then
+    else if data.idempotencyKey.length > maxIdempotencyKeyLength then
       Future.successful(Results.BadRequest(Json.toJson(ApiError(LENGTH_OUT_OF_BOUNDS, Some("/idempotencyKey")))))
     else
       queues(SubmissionStep.RetrieveSubscription).enqueue(SubmissionCommand.start(data)).flatMap { existing =>

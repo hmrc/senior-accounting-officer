@@ -115,10 +115,10 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
           .headOption()
           .map {
             case Some(state) => expiryOf(state)
-            case None        => throw new IllegalStateException("Missing terminal submission state")
+            case None        => throw new IllegalStateException(SubmissionState.missingTerminalStateMessage)
           }
     }
 
   private def expiryOf(state: SubmissionState): Instant =
-    state.expiresAt.getOrElse(throw new IllegalStateException("Missing terminal submission state"))
+    state.expiresAt.getOrElse(throw new IllegalStateException(SubmissionState.missingTerminalStateMessage))
 }

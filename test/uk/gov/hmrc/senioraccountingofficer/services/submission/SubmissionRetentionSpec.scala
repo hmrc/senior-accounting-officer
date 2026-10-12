@@ -33,6 +33,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionStep.*
 import uk.gov.hmrc.senioraccountingofficer.repositories.submission.*
 
 import scala.collection.immutable.ListMap
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 import java.time.{Clock, Instant, ZoneOffset}
@@ -45,6 +46,8 @@ class SubmissionRetentionSpec
     with MockitoSugar
     with BeforeAndAfterAll
     with BeforeAndAfterEach {
+
+  private val retentionPeriod = 7.days
 
   given ActorSystem = ActorSystem("submission-retention-test")
 
@@ -72,7 +75,7 @@ class SubmissionRetentionSpec
   val root: WorkItem[SubmissionCommand] =
     WorkItem(new ObjectId(), now, now, now, ProcessingStatus.Succeeded, 0, command)
   val id                 = command.data.orchestrationId
-  val expiresAt: Instant = now.plusSeconds(604800)
+  val expiresAt: Instant = now.plusSeconds(retentionPeriod.toSeconds)
 
   val repositories: Map[SubmissionStep, SubmissionWorkRepository] =
     SubmissionStep.values.map(step => step -> mock[SubmissionWorkRepository]).toMap
@@ -105,7 +108,9 @@ class SubmissionRetentionSpec
     Configuration(
       "work-items.operation-timeout-seconds" -> 60,
       "work-items.lease-seconds"             -> 120,
-      "work-items.retention-seconds"         -> 604800
+      "work-items.retry-base-seconds"        -> 60,
+      "work-items.retry-max-seconds"         -> 900,
+      "work-items.retention-seconds"         -> retentionPeriod.toSeconds
     ),
     summon[ActorSystem],
     new MetricRegistry,
@@ -125,7 +130,6 @@ class SubmissionRetentionSpec
   "maintain" - {
     for (parent, successor) <- handoffs do {
       s"preserve work handed from $parent to $successor during a retention scan" in {
-        // List the successor first to catch scans that miss a concurrent handoff.
         val order = successor +: SubmissionStep.values.toSeq.filterNot(_ == successor)
         when(mockSubmissionQueues.all).thenReturn(ListMap.from(order.map(step => step -> repositories(step))))
 
@@ -138,7 +142,6 @@ class SubmissionRetentionSpec
 
         val sweep = worker.maintain()
         parentReadStarted.future.futureValue
-        // The successor is persisted before the parent becomes terminal, as in processNext.
         when(repositories(successor).hasActive(id)).thenReturn(Future.successful(true))
         parentReadResult.success(false)
         sweep.futureValue
@@ -148,7 +151,6 @@ class SubmissionRetentionSpec
         reads.verify(repositories(parent)).hasActive(id)
         reads.verify(repositories(successor)).hasActive(id)
 
-        // A later sweep can expire the graph once the successor has completed.
         when(repositories(successor).hasActive(id)).thenReturn(Future.successful(false))
         worker.maintain().futureValue
         assertExpired()

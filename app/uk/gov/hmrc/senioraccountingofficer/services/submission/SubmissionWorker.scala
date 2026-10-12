@@ -48,10 +48,15 @@ class SubmissionWorker @Inject() (
 )(using ExecutionContext)
     extends Logging {
 
+  private val heartbeatDivisor     = 3
+  private val maxBackoffExponent   = 20
+  private val operationTimeout     = config.get[Long]("work-items.operation-timeout-seconds").seconds
+  private val leaseDuration        = config.get[Long]("work-items.lease-seconds")
+  private val initialDelay: Double = config.get[Long]("work-items.retry-base-seconds").toDouble
+  private val maximumDelay: Double = config.get[Long]("work-items.retry-max-seconds").toDouble
+
   private val queueCounts = TrieMap.empty[String, AtomicInteger]
-  private val timeout     = config.get[Long]("work-items.operation-timeout-seconds").seconds
-  private val lease       = config.get[Long]("work-items.lease-seconds")
-  require(timeout.toSeconds < lease, "Operation timeout must be shorter than the work item lease")
+  require(operationTimeout.toSeconds < leaseDuration, "Operation timeout must be shorter than the work item lease")
 
   def processNext(step: SubmissionStep): Future[Unit] = {
     val repository = queues(step)
@@ -63,14 +68,14 @@ class SubmissionWorker @Inject() (
 
   private def process(repository: SubmissionWorkRepository, work: WorkItem[SubmissionCommand]): Future[Unit] = {
     given HeaderCarrier   = HeaderCarrier(extraHeaders = Seq("correlationId" -> work.item.data.correlationId))
-    val heartbeatInterval = (lease / 3).seconds
+    val heartbeatInterval = (leaseDuration / heartbeatDivisor).seconds
     val heartbeat         = actorSystem.scheduler.scheduleWithFixedDelay(heartbeatInterval, heartbeatInterval) { () =>
       repository.heartbeat(work).recover { case NonFatal(_) => () }
       ()
     }
     val processing = for {
       _        <- if work.item.step == RetrieveSubscription then states.initialize(work.item.data) else Future.unit
-      finished <- if work.item.operationFinished then Future.successful(work) else perform(repository, work)
+      finished <- if work.item.operationFinished then Future.successful(work) else executeWorkItem(repository, work)
       _        <- repository.heartbeat(finished)
       _        <- publish(finished.item)
       _        <- Future.traverse(operations.successors(finished.item)) { next =>
@@ -87,7 +92,6 @@ class SubmissionWorker @Inject() (
       .andThen { case _ => heartbeat.cancel() }
   }
 
-  // Only submission steps publish public status, email and document delivery failures stay on their work items.
   private def publish(command: SubmissionCommand): Future[Unit] = command.step match {
     case RetrieveSubscription | RetrieveCustomer | SubmitDps | InitialPdf => states.publish(command)
     case _                                                                => Future.unit
@@ -117,9 +121,9 @@ class SubmissionWorker @Inject() (
       s"[Submission][${command.step}][Retry][OrchestrationId=${command.data.orchestrationId}][CorrelationId=${command.data.correlationId}]",
       error
     )
-    val base  = config.get[Long]("work-items.retry-base-seconds")
-    val cap   = config.get[Long]("work-items.retry-max-seconds")
-    val delay = math.min(cap.toDouble, base.toDouble * math.pow(2, math.min(work.failureCount, 20))).toLong
+    val delay = math
+      .min(maximumDelay, initialDelay * math.pow(2, math.min(work.failureCount, maxBackoffExponent)))
+      .toLong
     repository.retry(work, delay, error.getClass.getSimpleName)
   }
 
@@ -130,14 +134,18 @@ class SubmissionWorker @Inject() (
     Future.firstCompletedOf(
       Seq(
         Future.unit.flatMap(_ => operation),
-        after(timeout, actorSystem.scheduler)(Future.failed(new TimeoutException("Submission operation timed out")))
+        after(operationTimeout, actorSystem.scheduler)(
+          Future.failed(new TimeoutException("Submission operation timed out"))
+        )
       )
     )
 
-  private def perform(repository: SubmissionWorkRepository, work: WorkItem[SubmissionCommand])(using
+  private def executeWorkItem(repository: SubmissionWorkRepository, work: WorkItem[SubmissionCommand])(using
       HeaderCarrier
   ): Future[WorkItem[SubmissionCommand]] = {
-    val command = work.item
+    val command      = work.item
+    val isSubmitDps  = command.step == SubmitDps
+    val isInitialPdf = command.step == InitialPdf
     (command.step, command.dispatched) match {
       case (SubmitDps, true) =>
         repository.save(
@@ -153,15 +161,18 @@ class SubmissionWorker @Inject() (
         for {
           claimed <- marked
           result  <- withTimeout(operations.execute(claimed.item)).recoverWith {
-            case NonFatal(_) if command.step == InitialPdf => Future.successful(failedPdf(claimed.item))
-            case rejection: OperationRejected if rejection.retryable && command.step == SubmitDps =>
-              repository.save(claimed, claimed.item.copy(dispatched = false)).flatMap(_ => Future.failed(rejection))
-            case rejection: OperationRejected if !rejection.retryable =>
-              Future.successful(claimed.item.copy(operationFinished = true, failure = Some(rejection.failure)))
-            case NonFatal(_) if command.step == SubmitDps =>
-              Future.successful(
-                claimed.item.copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
-              )
+            case NonFatal(_) if isInitialPdf  => Future.successful(failedPdf(claimed.item))
+            case rejection: OperationRejected =>
+              val isRetryable = rejection.retryable
+              if isRetryable && isSubmitDps then
+                repository.save(claimed, claimed.item.copy(dispatched = false)).flatMap(_ => Future.failed(rejection))
+              else if !isRetryable then
+                Future.successful(claimed.item.copy(operationFinished = true, failure = Some(rejection.failure)))
+              else if isSubmitDps then
+                Future.successful(
+                  claimed.item.copy(operationFinished = true, failure = Some(SubmissionFailures.unknownDpsOutcome))
+                )
+              else Future.failed(rejection)
           }
           saved <- repository.save(claimed, result)
         } yield saved
@@ -179,7 +190,7 @@ class SubmissionWorker @Inject() (
     NotifySdes
   )
 
-  private def hasActiveGraph(orchestrationId: String): Future[Boolean] = {
+  private def isActiveOrchestration(orchestrationId: String): Future[Boolean] = {
     def loop(remaining: List[SubmissionStep]): Future[Boolean] = remaining match {
       case Nil          => Future.successful(false)
       case step :: rest =>
@@ -196,9 +207,9 @@ class SubmissionWorker @Inject() (
     candidates <- queues(RetrieveSubscription).retentionCandidates()
     _          <- Future.traverse(candidates) { work =>
       val orchestrationId = work.item.data.orchestrationId
-      hasActiveGraph(orchestrationId).flatMap {
+      isActiveOrchestration(orchestrationId).flatMap {
         case true  => Future.unit
-        case false => expireGraph(orchestrationId)
+        case false => expireOrchestration(orchestrationId)
       }
     }
   } yield ()
@@ -219,7 +230,7 @@ class SubmissionWorker @Inject() (
       }
       .map(_ => ())
 
-  private def expireGraph(orchestrationId: String): Future[Unit] = {
+  private def expireOrchestration(orchestrationId: String): Future[Unit] = {
     val root    = queues(RetrieveSubscription)
     val expires = clock.instant().plusSeconds(config.get[Long]("work-items.retention-seconds"))
     for {

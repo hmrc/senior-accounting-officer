@@ -32,6 +32,7 @@ case class SubmissionState(
     expiresAt: Option[Instant] = None
 )
 object SubmissionState {
-  given Format[Instant]          = MongoJavatimeFormats.instantFormat
-  given OFormat[SubmissionState] = Json.using[Json.WithDefaultValues].format
+  val missingTerminalStateMessage = "Missing terminal submission state"
+  given Format[Instant]           = MongoJavatimeFormats.instantFormat
+  given OFormat[SubmissionState]  = Json.using[Json.WithDefaultValues].format
 }
