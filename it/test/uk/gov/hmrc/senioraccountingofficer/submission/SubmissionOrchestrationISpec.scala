@@ -81,14 +81,14 @@ class SubmissionOrchestrationISpec
 
   private class TestClock extends Clock {
 
-    private val millis = new AtomicLong(System.currentTimeMillis())
+    private val milliseconds = new AtomicLong(System.currentTimeMillis())
 
-    def reset(): Unit                = millis.set(System.currentTimeMillis())
+    def reset(): Unit                = milliseconds.set(System.currentTimeMillis())
     def advance(seconds: Long): Unit = {
-      millis.addAndGet(seconds * millisecondsPerSecond)
+      milliseconds.addAndGet(seconds * millisecondsPerSecond)
       ()
     }
-    override def instant(): Instant            = Instant.ofEpochMilli(millis.incrementAndGet())
+    override def instant(): Instant            = Instant.ofEpochMilli(milliseconds.incrementAndGet())
     override def getZone: ZoneId               = ZoneOffset.UTC
     override def withZone(zone: ZoneId): Clock = Clock.fixed(instant(), zone)
   }
