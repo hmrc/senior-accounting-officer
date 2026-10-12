@@ -26,6 +26,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.Contact
 import uk.gov.hmrc.senioraccountingofficer.services.EmailService
 
 import scala.concurrent.{ExecutionContext, Future}
+
 import javax.inject.{Inject, Singleton}
 
 @Singleton()
@@ -35,20 +36,26 @@ class TestOnlyEmailController @Inject() (
 )(using ExecutionContext)
     extends BackendController(cc) {
 
-  private val testCompanyName           = "Test Company Ltd"
-  private val testSaoName               = "Test SAO"
+  private val testCompanyName   = "Test Company Ltd"
+  private val testSaoName       = "Test SAO"
   private val testSubmitterName = "Test Submitter"
-  private val testSaoEmail = "TestSAO@example.com"
+
   private val testNotificationReference = "NOT0123456789"
   private val testCertificateReference  = "CRT0123456789"
 
-  private val validTemplates = Seq("notification", "certificate-sao", "certificate-sao-to-contacts", "certificate-submitter", "certificate-submitter-sao")
+  private val validTemplates = Seq(
+    "notification",
+    "certificate-sao",
+    "certificate-sao-to-contacts",
+    "certificate-submitter",
+    "certificate-submitter-sao"
+  )
 
   def sendEmail(email: String, name: Option[String], template: Option[String]): Action[AnyContent] =
     Action.async { request =>
       given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-      val recipientName = name.map(_.trim).filter(_.nonEmpty).getOrElse(TestOnlyEmailController.nameFrom(email))
+      val recipientName   = name.map(_.trim).filter(_.nonEmpty).getOrElse(TestOnlyEmailController.nameFrom(email))
       val testContactName = recipientName
 
       template.map(_.trim.toLowerCase).getOrElse("notification") match {
@@ -71,9 +78,14 @@ class TestOnlyEmailController @Inject() (
             .map(_ => accepted(email, recipientName, EmailTemplate.CertificateConfirmationSAO))
 
         case "certificate-sao-to-contacts" => {
-          emailService.sendSaoContactCertificateEmail(
-            email = email, contactName = testContactName, referenceId = testCertificateReference, saoName = testSaoName
-          ).map(_ => accepted(email, testContactName, EmailTemplate.CertificateConfirmationSAOToContacts))
+          emailService
+            .sendSaoContactCertificateEmail(
+              email = email,
+              contactName = testContactName,
+              referenceId = testCertificateReference,
+              saoName = testSaoName
+            )
+            .map(_ => accepted(email, testContactName, EmailTemplate.CertificateConfirmationSAOToContacts))
         }
 
         case "certificate-submitter" => {
@@ -89,11 +101,15 @@ class TestOnlyEmailController @Inject() (
         }
 
         case "certificate-submitter-sao" => {
-         emailService.sendSubmitterSaoCertificateEmail(
-           email = email, saoName = testSaoName, submitterName = testSubmitterName, referenceId = testCertificateReference
-         ) .map(_ => accepted(email, testSaoName, EmailTemplate.CertificateConfirmationSubmitterSao))
+          emailService
+            .sendSubmitterSaoCertificateEmail(
+              email = email,
+              saoName = testSaoName,
+              submitterName = testSubmitterName,
+              referenceId = testCertificateReference
+            )
+            .map(_ => accepted(email, testSaoName, EmailTemplate.CertificateConfirmationSubmitterSao))
         }
-
 
         case unknown =>
           Future.successful(

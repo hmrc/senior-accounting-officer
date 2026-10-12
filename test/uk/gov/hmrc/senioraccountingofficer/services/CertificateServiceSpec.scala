@@ -483,7 +483,7 @@ class CertificateServiceSpec
             email = expectedSaoEmail,
             saoName = expectedSaoName,
             submitterName = "Firstname Lastname",
-            referenceId = exampleCertificateReference,
+            referenceId = exampleCertificateReference
           )
 
           exampleContacts.foreach { contact =>
@@ -525,7 +525,7 @@ class CertificateServiceSpec
           verify(mockEmailService, Times(1)).sendSaoCertificateEmail(
             expectedSaoEmail,
             expectedSaoName,
-            exampleCertificateReference,
+            exampleCertificateReference
           )
 
           exampleContacts.foreach { contact =>
@@ -546,8 +546,8 @@ class CertificateServiceSpec
 
           val result = service.postCertificate(exampleSubscriptionId, incomingRequest).futureValue
 
-          verify(mockEmailService, Times(0)).sendSubmitterCertificateEmail(any(), any(), any(), any(), any())(
-            using any()
+          verify(mockEmailService, Times(0)).sendSubmitterCertificateEmail(any(), any(), any(), any(), any())(using
+            any()
           )
           verify(mockEmailService, Times(0)).sendSaoCertificateEmail(any(), any(), any())(using any())
           verify(mockEmailService, Times(0)).sendSaoContactCertificateEmail(any(), any(), any(), any())(using
