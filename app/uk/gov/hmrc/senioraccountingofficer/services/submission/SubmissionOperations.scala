@@ -299,7 +299,6 @@ class SubmissionOperations @Inject() (
           List(recipient.address),
           parameters = SubmitterCertificateEmailParameters(
             recipient.recipientName,
-            company,
             request.submitterName,
             request.saoName,
             timestamp,
@@ -312,7 +311,7 @@ class SubmissionOperations @Inject() (
           List(recipient.address),
           if template == "sao" then EmailTemplate.CertificateConfirmationSAO
           else EmailTemplate.CertificateConfirmationSAOToContacts,
-          SaoCertificateEmailParameters(recipient.recipientName, company, request.saoName, timestamp, reference)
+          SaoCertificateEmailParameters(request.saoName, timestamp, reference)
         )
     }
   }

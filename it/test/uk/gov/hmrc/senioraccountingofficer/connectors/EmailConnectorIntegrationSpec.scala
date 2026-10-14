@@ -100,8 +100,7 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
           |  "to": ["email@example.com"],
           |  "templateId": "dsao_certificate_confirmation_for_submitter",
           |  "parameters": {
-          |    "recipientName": "recipient name",
-          |    "companyName": "companyName",
+          |    "contactName": "recipient name",
           |    "submitterName": "submitter name",
           |    "saoName": "sao name",
           |    "submittedDateTime": "17 January 2025 at 11:45am",
@@ -135,8 +134,6 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
           |  "to": ["email@example.com"],
           |  "templateId": "dsao_certificate_confirmation_for_sao",
           |  "parameters": {
-          |    "recipientName": "recipient name",
-          |    "companyName": "companyName",
           |    "saoName": "sao name",
           |    "submittedDateTime": "17 January 2025 at 11:45am",
           |    "referenceId": "abc"
