@@ -108,9 +108,9 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
           eventually {
             EmailHelper.verifyCalled(None, 3)
+            EmailHelper.verifyCalled(Some(EmailRequests.confirmationForSao), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.firstContactConfirmationForSaoToContacts), 1)
             EmailHelper.verifyCalled(Some(EmailRequests.secondContactConfirmationForSaoToContacts), 1)
-            EmailHelper.verifyCalled(Some(EmailRequests.confirmationForSao), 1)
             ObjectStoreHelper.verifyPdfUpload(pdfFilename, 1)
             ObjectStoreHelper.verifyPdfRetrieval(pdfFilename, 1)
             ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
@@ -162,7 +162,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           }
         }
 
-        "submitterName is provided in the request therefore the 'dsao_certificate_confirmation_for_submitter' and 'dsao_certificate_confirmation_for_submitter_sao' templates is used" in {
+        "submitterName is provided in the request therefore the 'dsao_certificate_confirmation_for_submitter' and 'dsao_certificate_confirmation_for_submitter_sao' templates are used" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
@@ -206,7 +206,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           }
         }
 
-        "submitterName is not provided in the request therefore the dsao_certificate_confirmation_for_sao template is used" in {
+        "submitterName is not provided in the request therefore the 'dsao_certificate_confirmation_for_sao' and 'dsao_certificate_confirmation_for_sao_to_contacts' templates are used" in {
           MockAuthHelper.mockAuthOk()
           GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
           RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
@@ -671,6 +671,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           .post(requestBodyWithIdempotencyKey)
           .futureValue
 
+      println(response.body[String])
       response.status mustBe 202
       response.body[String] mustBe s"""{"idempotencyKey":"testKey"}"""
     }
@@ -793,7 +794,7 @@ object CertificateControllerISpec {
                                         |""".stripMargin
 
   val requestBodyWithIdempotencyKey = s"""{
-                       |  "saoDeclarationName": $saoName",
+                       |  "saoDeclarationName": "$saoName",
                        |  "saoName": "$saoName",
                        |  "saoEmail": "$saoEmail",
                        |  "companies": [
@@ -987,9 +988,9 @@ object CertificateControllerISpec {
                                                     |}""".stripMargin
     val confirmationForSao = s"""{
                                                        |  "to": [
-                                                       |    "$secondContactEmail"
+                                                       |    "$saoEmail"
                                                        |  ],
-                                                       |  "templateId": "dsao_certificate_confirmation_for_sao_to_contacts",
+                                                       |  "templateId": "dsao_certificate_confirmation_for_sao",
                                                        |  "parameters": {
                                                        |    "saoName": "$saoName",
                                                        |    "referenceId": "$certificateReference"

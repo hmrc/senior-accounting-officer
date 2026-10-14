@@ -207,7 +207,7 @@ class CertificateService @Inject() (
               saoName = request.saoName
             )
         }
-        Future.sequence(sendSaoEmail :: contactEmailRequests).map(_ => ())
+        Future.sequence(contactEmailRequests.::(sendSaoEmail)).map(_ => ())
     }
   }
 
