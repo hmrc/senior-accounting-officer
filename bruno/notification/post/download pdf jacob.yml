@@ -1,0 +1,43 @@
+info:
+  name: download pdf jacob
+  type: http
+  seq: 8
+
+http:
+  method: POST
+  url: "{{baseUrl}}/notification"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  body:
+    type: json
+    data: |-
+      {
+        "companies": [
+          {
+            "crn": "65476489",
+            "utr": "1233456679",
+            "name": "TestCompanyName",
+            "accPeriodEnd": "2009-09-09",
+            "status": "Dormant",
+            "type": "LTD"
+          }
+        ],
+        "saos": [
+          {
+            "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "fromDate": "2020-03-10",
+            "toDate": "2021-03-10"
+          }
+        ],
+        "remarks":"testremarks"
+      }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true
