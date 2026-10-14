@@ -33,6 +33,7 @@ class EmailConnector @Inject() (appConfig: AppConfig, httpClientV2: HttpClientV2
 
   def postEmail(body: Email)(using HeaderCarrier): Future[HttpResponse] = {
     val url: URL = url"${appConfig.emailHost}/hmrc/email"
+    Json.toJson(body)
     httpClientV2
       .post(url)
       .withBody(Json.toJson(body))
