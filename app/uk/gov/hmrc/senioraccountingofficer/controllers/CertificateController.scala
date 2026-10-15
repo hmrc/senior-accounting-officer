@@ -19,7 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
-import uk.gov.hmrc.senioraccountingofficer.models.submission.{SubmissionData, SubmissionKind}
+import uk.gov.hmrc.senioraccountingofficer.models.submission.{AuditTags, SubmissionData, SubmissionKind}
 import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionService
 
 import scala.concurrent.ExecutionContext
@@ -36,7 +36,16 @@ class CertificateController @Inject() (
   def postCertificateWithFaultTolerance: Action[String] =
     (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
       ValidateRequest.as[CertificateRequest] { payload =>
-        submissions.get().submit(SubmissionData.certificate(request.saoSubscriptionId, getCorrelationId, payload))
+        submissions
+          .get()
+          .submit(
+            SubmissionData.certificate(
+              subscriptionId = request.saoSubscriptionId,
+              correlationId = getCorrelationId,
+              request = payload,
+              auditTags = Some(AuditTags.from(path = request.path, hc = hc))
+            )
+          )
       }
     }
 

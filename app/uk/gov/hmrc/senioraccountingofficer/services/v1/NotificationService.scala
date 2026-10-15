@@ -30,6 +30,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   NotificationDpsResponse
 }
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.submission.AuditTags
+import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionAuditSender
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.*
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.PostNotificationResponse.*
@@ -47,18 +49,32 @@ class NotificationService @Inject() (
     crmmConnector: CrmmConnector,
     documentumPackageService: DocumentumPackageService,
     pdfService: PdfService,
-    emailService: EmailService
+    emailService: EmailService,
+    audit: SubmissionAuditSender
 )(using ExecutionContext)
     extends Logging {
 
-  def postNotification(subscriptionId: String, request: NotificationRequest)(using
-      HeaderCarrier
+  def postNotification(
+      subscriptionId: String,
+      request: NotificationRequest,
+      auditTags: AuditTags = AuditTags.missing(path = "/senior-accounting-officer/notification")
+  )(using
+      hc: HeaderCarrier
   ): Future[PostNotificationResponse] = {
     for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toNotificationDpsRequest(customerId)
       dpsResult <- postNotificationDps(subscriptionId, requestWithCustomerId)
+      _         <- EitherT.right[PostNotificationResponse with Failure](
+        audit.notification(
+          subscriptionId = subscriptionId,
+          request = request,
+          reference = dpsResult.notificationRef,
+          customerId = customerId,
+          tags = auditTags
+        )
+      )
       submissionDateTime = LocalDateTime.now(ukTimeZone)
       _ <- EitherT.right[PostNotificationResponse with Failure](
         emailService.sendNotificationEmail(

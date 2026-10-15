@@ -55,6 +55,7 @@ class SubmissionOperations @Inject() (
     pdf: PdfService,
     objectStore: PlayObjectStoreClient,
     packages: DocumentumPackageService,
+    audit: SubmissionAuditSender,
     clock: Clock
 )(using ExecutionContext, Materializer) {
 
@@ -102,6 +103,7 @@ class SubmissionOperations @Inject() (
               if response.status != ACCEPTED then throw SubmissionFailures.response(status = response.status)
               command
             }
+        case Audit => audit.send(data).map(_ => command)
       }
     }
     Future.fromTry(operation).flatten.map(_.copy(operationFinished = true)).recoverWith {
@@ -180,12 +182,12 @@ class SubmissionOperations @Inject() (
       command.step match {
         case RetrieveSubscription => Seq(command.next(RetrieveCustomer))
         case RetrieveCustomer     => Seq(command.next(SubmitDps))
-        case SubmitDps            => Seq(command.next(InitialPdf))
+        case SubmitDps            => Seq(command.next(InitialPdf), command.next(Audit))
         case InitialPdf           =>
           command.next(EnsurePdf) +: recipients(command.data).map(email => command.next(SendEmail, Some(email)))
-        case EnsurePdf              => Seq(command.next(PackageDocumentum))
-        case PackageDocumentum      => Seq(command.next(NotifySdes))
-        case SendEmail | NotifySdes => Seq.empty
+        case EnsurePdf                      => Seq(command.next(PackageDocumentum))
+        case PackageDocumentum              => Seq(command.next(NotifySdes))
+        case SendEmail | NotifySdes | Audit => Seq.empty
       }
 
   private def decode[A: Reads](response: HttpResponse, expected: Int, isDpsSubmission: Boolean = false): A = {
@@ -196,12 +198,16 @@ class SubmissionOperations @Inject() (
     )
   }
 
-  private def withReference(command: SubmissionCommand, reference: String): SubmissionCommand = command.copy(data =
-    command.data.copy(
-      reference = Some(reference),
-      submittedAt = Some(LocalDateTime.now(clock.withZone(ZoneId.of("Europe/London"))))
+  private def withReference(command: SubmissionCommand, reference: String): SubmissionCommand = {
+    val submittedAt = clock.instant()
+    command.copy(data =
+      command.data.copy(
+        reference = Some(reference),
+        submittedAt = Some(LocalDateTime.ofInstant(submittedAt, ZoneId.of("Europe/London"))),
+        auditGeneratedAt = Some(submittedAt)
+      )
     )
-  )
+  }
 
   private def pdfPath(data: SubmissionData): Path.File = DocumentumPackageService.stagedPdfObjectStorePath(
     data.subscriptionId,

@@ -79,6 +79,7 @@ class SubmissionOperationsSpec
   val mockPdfService: PdfService                             = mock[PdfService]
   val mockObjectStoreClient: PlayObjectStoreClient           = mock[PlayObjectStoreClient]
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
+  val mockAuditSender: SubmissionAuditSender                 = mock[SubmissionAuditSender]
 
   val operations = new SubmissionOperations(
     mockGetSubscriptionConnector,
@@ -90,6 +91,7 @@ class SubmissionOperationsSpec
     mockPdfService,
     mockObjectStoreClient,
     mockDocumentumPackageService,
+    mockAuditSender,
     Clock.fixed(Instant.parse("2026-10-05T09:00:00Z"), ZoneOffset.UTC)
   )
 
@@ -115,11 +117,21 @@ class SubmissionOperationsSpec
       mockSdesConnector,
       mockPdfService,
       mockObjectStoreClient,
-      mockDocumentumPackageService
+      mockDocumentumPackageService,
+      mockAuditSender
     )
   }
 
   "execute" - {
+    "fail the audit step when delivery fails" in {
+      val auditCommand = command(Audit)
+      when(mockAuditSender.send(any())(using any()))
+        .thenReturn(Future.failed(new IllegalStateException("Submission audit delivery failed")))
+      operations.execute(auditCommand).failed.futureValue mustBe a[IllegalStateException]
+      verify(mockAuditSender).send(any())(using any())
+      verifyNoInteractions(mockNotificationConnector, mockCertificateConnector)
+    }
+
     "missing required fields" - {
       val missingFields: Seq[(String, SubmissionData => SubmissionData, Seq[SubmissionStep])] = Seq(
         ("subscription", _.copy(subscription = None), Seq(RetrieveCustomer, InitialPdf, SendEmail, PackageDocumentum)),

@@ -25,6 +25,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 import uk.gov.hmrc.senioraccountingofficer.models.certificate.CertificateResponse
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
+import uk.gov.hmrc.senioraccountingofficer.models.submission.AuditTags
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.PostCertificateResponse.*
 
@@ -45,7 +46,11 @@ class CertificateController @Inject() (
     implicit request =>
       ValidateRequest.as[CertificateRequest] { certificateRequest =>
         certificateService
-          .postCertificate(request.saoSubscriptionId, certificateRequest)
+          .postCertificate(
+            subscriptionId = request.saoSubscriptionId,
+            request = certificateRequest,
+            auditTags = AuditTags.from(path = request.path, hc = hc)
+          )
           .map {
             case Success(certificateRef) =>
               Created(Json.toJson(CertificateResponse(certificateRef)))
