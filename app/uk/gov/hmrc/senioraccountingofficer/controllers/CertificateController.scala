@@ -43,7 +43,7 @@ class CertificateController @Inject() (
               subscriptionId = request.saoSubscriptionId,
               correlationId = getCorrelationId,
               request = payload,
-              auditTags = Some(AuditTags.from(path = request.path, hc = hc))
+              auditTags = AuditTags.from(path = request.path, hc = hc)
             )
           )
       }

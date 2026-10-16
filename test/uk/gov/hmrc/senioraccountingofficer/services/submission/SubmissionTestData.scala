@@ -96,8 +96,20 @@ object SubmissionTestData {
 
   def data(kind: SubmissionKind = SubmissionKind.Notification): SubmissionData = {
     val initial = kind match {
-      case SubmissionKind.Notification => SubmissionData.notification("subscription", "correlation", notification)
-      case SubmissionKind.Certificate  => SubmissionData.certificate("subscription", "correlation", certificate)
+      case SubmissionKind.Notification =>
+        SubmissionData.notification(
+          "subscription",
+          "correlation",
+          notification,
+          AuditTags.missing("/senior-accounting-officer/notification")
+        )
+      case SubmissionKind.Certificate =>
+        SubmissionData.certificate(
+          "subscription",
+          "correlation",
+          certificate,
+          AuditTags.missing("/senior-accounting-officer/certificate")
+        )
     }
     initial.copy(
       subscription = Some(subscription),

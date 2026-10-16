@@ -41,7 +41,7 @@ final case class SubmissionData(
     pdfAttempted: Boolean = false,
     pdfStored: Boolean = false,
     prepared: Option[PreparedSdesSubmission] = None,
-    auditTags: Option[AuditTags] = None,
+    auditTags: AuditTags,
     auditGeneratedAt: Option[Instant] = None
 ) {
 
@@ -65,7 +65,31 @@ final case class SubmissionData(
 object SubmissionData {
 
   given Format[Instant]         = uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.instantFormat
-  given OFormat[SubmissionData] = Json.format
+  given OFormat[SubmissionData] = new OFormat[SubmissionData] {
+    private val underlying = Json.format[SubmissionData]
+
+    override def reads(json: JsValue): JsResult[SubmissionData] = {
+      val normalized = json match {
+        case obj: JsObject if !obj.keys.contains("auditTags") =>
+          obj.value.get("kind") match {
+            case Some(kind) =>
+              kind.validate[SubmissionKind].map { submissionKind =>
+                val path = submissionKind match {
+                  case SubmissionKind.Notification => "/senior-accounting-officer/notification"
+                  case SubmissionKind.Certificate  => "/senior-accounting-officer/certificate"
+                }
+                obj + ("auditTags" -> Json.toJson(AuditTags.missing(path)))
+              }
+            case None => JsError("Missing required submission field: kind")
+          }
+        case obj: JsObject => JsSuccess(obj)
+        case _             => JsError("Expected submission object")
+      }
+      normalized.flatMap(underlying.reads)
+    }
+
+    override def writes(data: SubmissionData): JsObject = underlying.writes(data)
+  }
 
   def scopeKey(subscriptionId: String, kind: SubmissionKind, key: String): String =
     hash(Json.arr(subscriptionId, kind.toString, key).toString)
@@ -77,7 +101,7 @@ object SubmissionData {
       subscriptionId: String,
       correlationId: String,
       request: NotificationRequest,
-      auditTags: Option[AuditTags] = None
+      auditTags: AuditTags
   ): SubmissionData =
     SubmissionData(
       orchestrationId = UUID.randomUUID().toString,
@@ -94,7 +118,7 @@ object SubmissionData {
       subscriptionId: String,
       correlationId: String,
       request: CertificateRequest,
-      auditTags: Option[AuditTags] = None
+      auditTags: AuditTags
   ): SubmissionData =
     SubmissionData(
       orchestrationId = UUID.randomUUID().toString,

@@ -68,11 +68,10 @@ object SubmissionAuditEvent {
   def apply(data: SubmissionData, now: Instant): ExtendedDataEvent = {
     val reference =
       data.reference.getOrElse(throw new IllegalStateException("Missing required submission field: reference"))
-    val (auditType, path, detail) = data.kind match {
+    val (auditType, detail) = data.kind match {
       case SubmissionKind.Notification =>
         (
           "NotificationSubmitted",
-          "/senior-accounting-officer/notification",
           notificationDetail(
             subscriptionId = data.subscriptionId,
             request = data.notification.getOrElse(throw new IllegalStateException("Missing notification")),
@@ -83,7 +82,6 @@ object SubmissionAuditEvent {
       case SubmissionKind.Certificate =>
         (
           "CertificateSubmitted",
-          "/senior-accounting-officer/certificate",
           certificateDetail(
             subscriptionId = data.subscriptionId,
             request = data.certificate.getOrElse(throw new IllegalStateException("Missing certificate")),
@@ -99,7 +97,7 @@ object SubmissionAuditEvent {
         .orElse(data.submittedAt.map(_.atZone(ZoneId.of("Europe/London")).toInstant))
         .getOrElse(now),
       detail = detail,
-      tags = data.auditTags.getOrElse(AuditTags.missing(path = path))
+      tags = data.auditTags
     )
   }
 
@@ -130,11 +128,11 @@ object SubmissionAuditEvent {
       "notificationReference" -> reference,
       "companies"             -> request.companies.value.map(c =>
         Json.obj(
-          "accPeriodEnd" -> c.accPeriodEnd.toString,
-          "utr"          -> c.utr.value,
-          "name"         -> c.name.value,
-          "status"       -> c.status.toString.toLowerCase,
-          "type"         -> c.`type`.toString
+          "accountingPeriodEnd" -> c.accPeriodEnd.toString,
+          "utr"                 -> c.utr.value,
+          "name"                -> c.name.value,
+          "status"              -> c.status.toString.toLowerCase,
+          "type"                -> c.`type`.toString
         ) ++ c.crn.fold(Json.obj())(v => Json.obj("crn" -> v.value))
       ),
       "seniorAccountingOfficer" -> request.saos.value.map(s =>
@@ -158,23 +156,23 @@ object SubmissionAuditEvent {
       "seniorAccountingOfficerEmail" -> request.saoEmail.value,
       "companies"                    -> request.companies.value.map(c =>
         Json.obj(
-          "accountingPeriodEnd"            -> c.accPeriodEnd.toString,
-          "utr"                            -> c.utr.value,
-          "name"                           -> c.name.value,
-          "status"                         -> c.status.toString.toLowerCase,
-          "type"                           -> c.`type`.toString,
-          "isBankLevyQualified"            -> c.isBankLevyQualified,
-          "isCorporationTaxQualified"      -> c.isCorporationTaxQualified,
-          "isCustomsDutiesQualified"       -> c.isCustomsDutiesQualified,
-          "isExciseDutiesQualified"        -> c.isExciseDutiesQualified,
-          "isInsurancePremiumTaxQualified" -> c.isInsurancePremiumTaxQualified,
-          "isPayeQualified"                -> c.isPayeQualified,
-          "isPetroleumRevenueTaxQualified" -> c.isPetroleumRevenueTaxQualified,
-          "isStampDutyLandTaxQualified"    -> c.isStampDutyLandTaxQualified,
-          "isStampDutyReserveTaxQualified" -> c.isStampDutyReserveTaxQualified,
-          "isVatQualified"                 -> c.isVatQualified
-        ) ++ c.crn.fold(Json.obj())(v => Json.obj("crn" -> v.value)) ++
-          c.qualificationStatement.fold(Json.obj())(v => Json.obj("qualificationStatement" -> v.value))
+          "accountingPeriodEnd"             -> c.accPeriodEnd.toString,
+          "utr"                             -> c.utr.value,
+          "name"                            -> c.name.value,
+          "status"                          -> c.status.toString.toLowerCase,
+          "type"                            -> c.`type`.toString,
+          "isQualificationStatementPresent" -> c.qualificationStatement.isDefined,
+          "isBankLevyQualified"             -> c.isBankLevyQualified,
+          "isCorporationTaxQualified"       -> c.isCorporationTaxQualified,
+          "isCustomsDutiesQualified"        -> c.isCustomsDutiesQualified,
+          "isExciseDutiesQualified"         -> c.isExciseDutiesQualified,
+          "isInsurancePremiumTaxQualified"  -> c.isInsurancePremiumTaxQualified,
+          "isPayeQualified"                 -> c.isPayeQualified,
+          "isPetroleumRevenueTaxQualified"  -> c.isPetroleumRevenueTaxQualified,
+          "isStampDutyLandTaxQualified"     -> c.isStampDutyLandTaxQualified,
+          "isStampDutyReserveTaxQualified"  -> c.isStampDutyReserveTaxQualified,
+          "isVatQualified"                  -> c.isVatQualified
+        ) ++ c.crn.fold(Json.obj())(v => Json.obj("crn" -> v.value))
       )
     ) ++ customerId.fold(Json.obj())(v => Json.obj("customerId" -> v)) ++
       request.staffPid.fold(Json.obj())(v => Json.obj("staffPid" -> v.value)) ++

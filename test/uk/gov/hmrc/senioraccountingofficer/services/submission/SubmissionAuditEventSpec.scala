@@ -40,7 +40,7 @@ class SubmissionAuditEventSpec extends AnyFreeSpec with Matchers with OptionValu
     )
 
   "notification audit preserves its CIP detail and request tags" in {
-    val submission = data().copy(auditTags = Some(capturedTags), auditGeneratedAt = Some(at))
+    val submission = data().copy(auditTags = capturedTags, auditGeneratedAt = Some(at))
     val event      = SubmissionAuditEvent(
       data = submission,
       now = at.plusSeconds(60)
@@ -55,8 +55,8 @@ class SubmissionAuditEventSpec extends AnyFreeSpec with Matchers with OptionValu
     detail.value("notificationReference") mustBe Json.toJson("REF123")
     detail.value("customerId") mustBe Json.toJson("customer-number")
     val company = detail.value("companies").as[JsArray].value.head.as[JsObject]
-    company.value("accPeriodEnd") mustBe Json.toJson(date.toString)
-    company.keys must not contain "accountingPeriodEnd"
+    company.value("accountingPeriodEnd") mustBe Json.toJson(date.toString)
+    company.keys must not contain "accPeriodEnd"
     detail.value("seniorAccountingOfficer").as[JsArray].value must have size 1
   }
 
@@ -70,15 +70,39 @@ class SubmissionAuditEventSpec extends AnyFreeSpec with Matchers with OptionValu
     val company = detail.value("companies").as[JsArray].value.head.as[JsObject]
     company.value("accountingPeriodEnd") mustBe Json.toJson(date.toString)
     company.value("isVatQualified") mustBe Json.toJson(false)
-    company.keys.count(_.startsWith("is")) mustBe 10
+    company.value("isQualificationStatementPresent") mustBe Json.toJson(false)
+    company.keys must not contain "qualificationStatement"
+    company.keys.count(_.startsWith("is")) mustBe 11
     event.tags("deviceID") mustBe "-"
   }
 
+  "certificate audit records qualification statement presence without its text" in {
+    val company = certificate.companies.value.head.copy(
+      isVatQualified = true,
+      qualificationStatement = Some(FreeText("Private qualification detail"))
+    )
+    val submission = data(SubmissionKind.Certificate).copy(
+      certificate = Some(certificate.copy(companies = CertificateCompanies(List(company))))
+    )
+    val detail         = SubmissionAuditEvent(data = submission, now = at).detail.as[JsObject]
+    val auditedCompany = detail.value("companies").as[JsArray].value.head.as[JsObject]
+    auditedCompany.value("isQualificationStatementPresent") mustBe Json.toJson(true)
+    auditedCompany.keys must not contain "qualificationStatement"
+  }
+
   "older queued submissions remain readable without audit fields" in {
-    val legacy   = Json.toJson(data()).as[JsObject] - "auditTags" - "auditGeneratedAt"
-    val restored = legacy.as[SubmissionData]
-    restored.auditTags mustBe None
-    restored.auditGeneratedAt mustBe None
+    for kind <- Seq(SubmissionKind.Notification, SubmissionKind.Certificate) do {
+      val original = data(kind)
+      val legacy   = Json.toJson(original).as[JsObject] - "auditTags" - "auditGeneratedAt"
+      val restored = legacy.as[SubmissionData]
+      restored.auditTags mustBe original.auditTags
+      restored.auditGeneratedAt mustBe None
+    }
+  }
+
+  "new queued submissions preserve their request tags" in {
+    val submission = data().copy(auditTags = capturedTags)
+    Json.toJson(submission).as[SubmissionData].auditTags mustBe capturedTags
   }
 
   "legacy and queued events use the same notification and certificate detail" in {

@@ -199,7 +199,12 @@ class SubmissionOrchestrationISpec
 
     "accept a submission with a generated idempotency key" in {
       val generated =
-        SubmissionData.notification("subscription", "correlation", notification.copy(idempotencyKey = None))
+        SubmissionData.notification(
+          "subscription",
+          "correlation",
+          notification.copy(idempotencyKey = None),
+          AuditTags.missing("/senior-accounting-officer/notification")
+        )
       UUID.fromString(generated.idempotencyKey) mustBe a[UUID]
       service.submit(generated).futureValue.header.status mustBe 202
     }
