@@ -20,7 +20,7 @@ import play.api.libs.json.Format
 
 enum SubmissionStep {
   case RetrieveSubscription, RetrieveCustomer, SubmitDps, InitialPdf, SendEmail, EnsurePdf, PackageDocumentum,
-    NotifySdes
+    NotifySdes, Audit
 }
 object SubmissionStep {
 

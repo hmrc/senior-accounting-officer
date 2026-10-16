@@ -29,6 +29,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.dps.{
   GetSubscriptionDpsResponse
 }
 import uk.gov.hmrc.senioraccountingofficer.models.requests.CertificateRequest
+import uk.gov.hmrc.senioraccountingofficer.models.submission.AuditTags
+import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionAuditSender
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.*
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.PostCertificateResponse.*
@@ -48,17 +50,31 @@ class CertificateService @Inject() (
     certificateConnector: CertificateConnector,
     documentumPackageService: DocumentumPackageService,
     pdfService: PdfService,
-    emailService: EmailService
+    emailService: EmailService,
+    audit: SubmissionAuditSender
 )(using ExecutionContext) {
 
-  def postCertificate(subscriptionId: String, request: CertificateRequest)(using
-      HeaderCarrier
+  def postCertificate(
+      subscriptionId: String,
+      request: CertificateRequest,
+      auditTags: AuditTags = AuditTags.missing(path = "/senior-accounting-officer/certificate")
+  )(using
+      hc: HeaderCarrier
   ): Future[PostCertificateResponse] = {
     for {
       dpsSubscription <- getSubscriptionDps(subscriptionId)
       customerId <- retrieveCrmmCustomerId(dpsSubscription.nominatedCompany.crn, dpsSubscription.nominatedCompany.utr)
       requestWithCustomerId = request.toCertificateDpsRequest(customerId)
       dpsResult <- postCertificateDps(subscriptionId, requestWithCustomerId)
+      _         <- EitherT.right[PostCertificateResponse with Failure](
+        audit.certificate(
+          subscriptionId = subscriptionId,
+          request = request,
+          reference = dpsResult.certificateRef,
+          customerId = customerId,
+          tags = auditTags
+        )
+      )
       submissionDateTime = LocalDateTime.now(ukTimeZone)
       _ <- EitherT.right[PostCertificateResponse with Failure](
         sendCertificateConfirmationEmail(dpsSubscription, dpsResult.certificateRef, requestWithCustomerId)

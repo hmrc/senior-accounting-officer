@@ -35,6 +35,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
+import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionAuditSender
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.PostNotificationResponse.*
@@ -66,6 +67,7 @@ class NotificationServiceSpec
   val mockDocumentumPackageService: DocumentumPackageService = mock[DocumentumPackageService]
   val mockPdfService: PdfService                             = mock[PdfService]
   val mockEmailService: EmailService                         = mock[EmailService]
+  val mockAuditSender: SubmissionAuditSender                 = mock[SubmissionAuditSender]
 
   val service = new NotificationService(
     mockNotificationDpsConnector,
@@ -73,7 +75,8 @@ class NotificationServiceSpec
     mockCrmmConnector,
     mockDocumentumPackageService,
     mockPdfService,
-    mockEmailService
+    mockEmailService,
+    mockAuditSender
   )
 
   override def beforeEach(): Unit = {
@@ -84,6 +87,9 @@ class NotificationServiceSpec
     reset(mockEmailService)
     reset(mockDocumentumPackageService)
     reset(mockPdfService)
+    reset(mockAuditSender)
+    when(mockAuditSender.notification(any(), any(), any(), any(), any())(using any()))
+      .thenReturn(Future.successful(()))
     when(mockEmailService.sendNotificationEmail(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
   }
@@ -395,6 +401,19 @@ class NotificationServiceSpec
 
     "DPS post notification customer endpoint response is" - {
       "201 Created" - {
+        "fail after DPS acceptance if direct audit delivery fails" in {
+          configureSubscriptionResponse()
+          configureCrmmResponse()
+          configureDpsResponse(201, validDpsResponseBody)
+          when(mockAuditSender.notification(any(), any(), any(), any(), any())(using any()))
+            .thenReturn(Future.failed(new IllegalStateException("audit unavailable")))
+
+          service.postNotification(exampleSubscriptionId, incomingRequest).failed.futureValue.getMessage mustBe
+            "audit unavailable"
+          verify(mockNotificationDpsConnector).postNotification(any(), any())(using any())
+          verifyNoInteractions(mockEmailService, mockDocumentumPackageService)
+        }
+
         "Valid repsonse; Continue down happy path" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
@@ -404,6 +423,13 @@ class NotificationServiceSpec
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
+          verify(mockAuditSender).notification(
+            meq(exampleSubscriptionId),
+            meq(incomingRequest),
+            meq(exampleNotificationReference),
+            meq(Some(exampleCustomerId)),
+            any()
+          )(using any())
           verify(mockEmailService, Times(1)).sendNotificationEmail(
             exampleContacts,
             exampleNominatedCompany.name,

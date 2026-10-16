@@ -25,6 +25,7 @@ import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 import uk.gov.hmrc.senioraccountingofficer.models.notification.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
+import uk.gov.hmrc.senioraccountingofficer.models.submission.AuditTags
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService
 import uk.gov.hmrc.senioraccountingofficer.services.v1.NotificationService.PostNotificationResponse.*
 
@@ -45,7 +46,11 @@ class NotificationController @Inject() (
     implicit request =>
       ValidateRequest.as[NotificationRequest] { notificationRequest =>
         notificationService
-          .postNotification(request.saoSubscriptionId, notificationRequest)
+          .postNotification(
+            subscriptionId = request.saoSubscriptionId,
+            request = notificationRequest,
+            auditTags = AuditTags.from(path = request.path, hc = hc)
+          )
           .map {
             case Success(notificationId) =>
               Ok(Json.toJson(NotificationResponse(notificationId)))

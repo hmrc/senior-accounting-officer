@@ -187,7 +187,8 @@ class SubmissionWorker @Inject() (
     SendEmail,
     EnsurePdf,
     PackageDocumentum,
-    NotifySdes
+    NotifySdes,
+    Audit
   )
 
   private def isActiveOrchestration(orchestrationId: String): Future[Boolean] = {
