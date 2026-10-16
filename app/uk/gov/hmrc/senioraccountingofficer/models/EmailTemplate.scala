@@ -20,7 +20,7 @@ import play.api.libs.json.*
 import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.*
 
 enum EmailTemplate(val templateId: JsString) {
-  case CertificateConfirmationSubmitter extends EmailTemplate(JsString("dsao_certificate_confirmation_for_submitter"))
+  case CertificateConfirmationSubmitter extends EmailTemplate(JsString("dsao_certificate_confirmation_for_submitterA"))
   case CertificateConfirmationSubmitterSao
       extends EmailTemplate(JsString("dsao_certificate_confirmation_for_submitter_sao"))
   case CertificateConfirmationSAO extends EmailTemplate(JsString("dsao_certificate_confirmation_for_sao"))

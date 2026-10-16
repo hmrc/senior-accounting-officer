@@ -986,16 +986,18 @@ object CertificateControllerISpec {
                                                     |    "referenceId": "$certificateReference"
                                                     |  }
                                                     |}""".stripMargin
+
     val confirmationForSao = s"""{
-                                                       |  "to": [
-                                                       |    "$saoEmail"
-                                                       |  ],
-                                                       |  "templateId": "dsao_certificate_confirmation_for_sao",
-                                                       |  "parameters": {
-                                                       |    "saoName": "$saoName",
-                                                       |    "referenceId": "$certificateReference"
-                                                       |  }
-                                                       |}""".stripMargin
+                             |  "to": [
+                             |    "$saoEmail"
+                             |  ],
+                             |  "templateId": "dsao_certificate_confirmation_for_sao",
+                             |  "parameters": {
+                             |    "saoName": "$saoName",
+                             |    "referenceId": "$certificateReference"
+                             |  }
+                             |}""".stripMargin
+
     val firstContactConfirmationForSubmitter = s"""{
                                                |  "to": [
                                                |    "$firstContactEmail"
@@ -1023,16 +1025,16 @@ object CertificateControllerISpec {
                                                 |}""".stripMargin
 
     val confirmationForSubmitterSao = s"""{
-                                                   |  "to": [
-                                                   |    "$saoEmail"
-                                                   |  ],
-                                                   |  "templateId": "dsao_certificate_confirmation_for_submitter_sao",
-                                                   |  "parameters": {
-                                                   |    "submitterName": "$submitterName",
-                                                   |    "saoName": "$saoName",
-                                                   |    "referenceId": "$certificateReference"
-                                                   |  }
-                                                   |}""".stripMargin
+                                      |  "to": [
+                                      |    "$saoEmail"
+                                      |  ],
+                                      |  "templateId": "dsao_certificate_confirmation_for_submitter_sao",
+                                      |  "parameters": {
+                                      |    "submitterName": "$submitterName",
+                                      |    "saoName": "$saoName",
+                                      |    "referenceId": "$certificateReference"
+                                      |  }
+                                      |}""".stripMargin
   }
 
   val objectStoreUploadResponse = """{

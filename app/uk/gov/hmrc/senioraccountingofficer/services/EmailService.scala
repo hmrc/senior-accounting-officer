@@ -43,6 +43,7 @@ class EmailService @Inject() (
       .collectFirst { case (name, value) if name.equalsIgnoreCase("correlationId") => value }
       .fold("not-provided")(identity)
 
+    println("HERE:::")
     emailConnector
       .postEmail(email)
       .map {
