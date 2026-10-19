@@ -19,7 +19,7 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureCorrelationIdAction, IdentifierAction}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.NotificationRequest
-import uk.gov.hmrc.senioraccountingofficer.models.submission.{SubmissionData, SubmissionKind}
+import uk.gov.hmrc.senioraccountingofficer.models.submission.{AuditTags, SubmissionData, SubmissionKind}
 import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionService
 
 import scala.concurrent.ExecutionContext
@@ -36,7 +36,16 @@ class NotificationController @Inject() (
   def postNotificationWithFaultTolerance: Action[String] =
     (identify andThen ensureCorrelationId).async(parse.tolerantText) { implicit request =>
       ValidateRequest.as[NotificationRequest] { payload =>
-        submissions.get().submit(SubmissionData.notification(request.saoSubscriptionId, getCorrelationId, payload))
+        submissions
+          .get()
+          .submit(
+            SubmissionData.notification(
+              subscriptionId = request.saoSubscriptionId,
+              correlationId = getCorrelationId,
+              request = payload,
+              auditTags = AuditTags.from(path = request.path, hc = hc)
+            )
+          )
       }
     }
 

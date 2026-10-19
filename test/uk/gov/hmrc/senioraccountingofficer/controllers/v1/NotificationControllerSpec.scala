@@ -80,12 +80,12 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
       status(result) mustBe Status.BAD_REQUEST
       contentAsString(result) must include("MALFORMED_REQUEST")
 
-      verify(mockNotificationService, never()).postNotification(any(), any())(using any())
+      verify(mockNotificationService, never()).postNotification(any(), any(), any())(using any())
     }
 
     "NotificationService returns Success must return 200" in {
       val mockResponse = Success("ID")
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -128,12 +128,12 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
         )
 
       verify(mockNotificationService, times(1))
-        .postNotification(meq(testSaoSubscriptionId), meq(expectedDpsRequest))(using any())
+        .postNotification(meq(testSaoSubscriptionId), meq(expectedDpsRequest), any())(using any())
     }
 
     "NotificationService returns MalformedResponse; controller must return 500" in {
       val mockResponse = MalformedResponse(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -151,7 +151,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
     "NotificationService returns InternalServerFailure must return 502" in {
       val mockResponse = DownstreamServiceError(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -169,7 +169,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
     "NotificationService returns ServiceUnavailableFailure must return 502" in {
       val mockResponse = DownstreamServiceUnavailable(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -187,7 +187,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
     "NotificationService returns UnknownFailure must return 502" in {
       val mockResponse = UnknownFailure(DPS, 1)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -220,7 +220,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
     "NotificationService returns Misalignment; controller must return 500" in {
       val mockResponse = Misalignment(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -238,7 +238,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
     "NotificationService returns DownstreamUnauthorised; controller must return 500" in {
       val mockResponse = DownstreamUnauthorised(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url
@@ -256,7 +256,7 @@ class NotificationControllerSpec extends AnyWordSpec with Matchers with GuiceOne
 
     "NotificationService returns DownstreamForbidden; controller must return 500" in {
       val mockResponse = DownstreamForbidden(DPS)
-      when(mockNotificationService.postNotification(any(), any())(using any()))
+      when(mockNotificationService.postNotification(any(), any(), any())(using any()))
         .thenReturn(Future.successful(mockResponse))
 
       val url     = routes.NotificationController.postNotification().url

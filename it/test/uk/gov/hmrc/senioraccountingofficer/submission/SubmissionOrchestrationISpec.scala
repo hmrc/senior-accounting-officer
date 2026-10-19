@@ -199,7 +199,12 @@ class SubmissionOrchestrationISpec
 
     "accept a submission with a generated idempotency key" in {
       val generated =
-        SubmissionData.notification("subscription", "correlation", notification.copy(idempotencyKey = None))
+        SubmissionData.notification(
+          "subscription",
+          "correlation",
+          notification.copy(idempotencyKey = None),
+          AuditTags.missing("/senior-accounting-officer/notification")
+        )
       UUID.fromString(generated.idempotencyKey) mustBe a[UUID]
       service.submit(generated).futureValue.header.status mustBe 202
     }
@@ -400,8 +405,32 @@ class SubmissionOrchestrationISpec
       run(SubmitDps)
       verify(mockSubmissionOperations, never()).execute(any())(using any())
       entries(InitialPdf).size mustBe 1
+      entries(Audit).size mustBe 1
       entries(SubmitDps).head.status mustBe ProcessingStatus.Succeeded
       states.get(submission.data.scopeKey).futureValue.value.reference mustBe Some("REF123")
+    }
+
+    "retry audit delivery independently after DPS succeeds" in {
+      val submission = command(SubmitDps)
+      seed(submission)
+      run(SubmitDps)
+      entries(Audit).size mustBe 1
+      doReturn(Future.failed(new RuntimeException("audit unavailable")))
+        .when(mockSubmissionOperations)
+        .execute(any())(using any())
+      run(Audit)
+      entries(Audit).head.status mustBe ProcessingStatus.Failed
+      entries(InitialPdf).size mustBe 1
+      entries(SubmitDps).head.status mustBe ProcessingStatus.Succeeded
+      clock.advance(61)
+      reset(mockSubmissionOperations)
+      when(mockSubmissionOperations.successors(any())).thenCallRealMethod()
+      when(mockSubmissionOperations.execute(any())(using any())).thenAnswer { invocation =>
+        Future.successful(invocation.getArgument[SubmissionCommand](0).copy(operationFinished = true))
+      }
+      run(Audit)
+      entries(Audit).head.status mustBe ProcessingStatus.Succeeded
+      entries(SubmitDps).head.status mustBe ProcessingStatus.Succeeded
     }
 
     "complete an interrupted initial PDF attempt without regenerating it" in {

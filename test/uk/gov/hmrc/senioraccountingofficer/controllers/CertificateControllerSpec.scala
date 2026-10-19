@@ -84,12 +84,12 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
 
     status(result) shouldBe Status.BAD_REQUEST
     contentAsJson(result) shouldBe Json.arr(expectedError)
-    verify(mockCertificateService, never()).postCertificate(any(), any())(using any())
+    verify(mockCertificateService, never()).postCertificate(any(), any(), any())(using any())
   }
 
   "POST /certificate" should {
     "return 201 with the certificateRef when the service returns Success" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
+      when(mockCertificateService.postCertificate(any(), any(), any())(using any()))
         .thenReturn(Future.successful(Success("CRT0001234567")))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
@@ -129,13 +129,17 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
           staffPid = None
         )
 
-      verify(mockCertificateService, times(1)).postCertificate(meq(testSaoSubscriptionId), meq(expectedRequest))(using
+      verify(mockCertificateService, times(1)).postCertificate(
+        meq(testSaoSubscriptionId),
+        meq(expectedRequest),
+        any()
+      )(using
         any()
       )
     }
 
     "return 500 when the service returns MalformedResponse" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
+      when(mockCertificateService.postCertificate(any(), any(), any())(using any()))
         .thenReturn(Future.successful(MalformedResponse(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
@@ -145,7 +149,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 500 when the service returns Misalignment" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
+      when(mockCertificateService.postCertificate(any(), any(), any())(using any()))
         .thenReturn(Future.successful(Misalignment(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
@@ -155,7 +159,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 502 when the service returns DownstreamServiceError" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
+      when(mockCertificateService.postCertificate(any(), any(), any())(using any()))
         .thenReturn(Future.successful(DownstreamServiceError(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
@@ -165,7 +169,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 502 when the service returns DownstreamServiceUnavailable" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
+      when(mockCertificateService.postCertificate(any(), any(), any())(using any()))
         .thenReturn(Future.successful(DownstreamServiceUnavailable(DPS)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
@@ -175,7 +179,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
     }
 
     "return 502 when the service returns UnknownFailure" in {
-      when(mockCertificateService.postCertificate(any(), any())(using any()))
+      when(mockCertificateService.postCertificate(any(), any(), any())(using any()))
         .thenReturn(Future.successful(UnknownFailure(DPS, 1)))
 
       val result = routeResult(certificateRequest(validPayload.toString()))
@@ -274,7 +278,7 @@ class CertificateControllerSpec extends AnyWordSpec with Matchers with GuiceOneA
       val result = routeResult(request)
       status(result) shouldBe Status.BAD_REQUEST
       contentAsString(result) should include("MALFORMED_REQUEST")
-      verify(mockCertificateService, never()).postCertificate(any(), any())(using any())
+      verify(mockCertificateService, never()).postCertificate(any(), any(), any())(using any())
     }
   }
 
