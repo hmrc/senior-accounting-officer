@@ -420,13 +420,20 @@ class EmailServiceSpec
         to = List("sao@example.com"),
         parameters = SaoCertificateEmailParameters(
           saoName = "saoName",
-          contactName = "contactName", 
+          contactName = "contactName",
           submittedDateTime = "any",
           referenceId = "certRef"
         )
       )
 
-      val result: Unit = emailService.sendSaoCertificateEmail(email = "sao@example.com", contactName = "contactName", saoName = "saoName", referenceId = "certRef").futureValue
+      val result: Unit = emailService
+        .sendSaoCertificateEmail(
+          email = "sao@example.com",
+          contactName = "contactName",
+          saoName = "saoName",
+          referenceId = "certRef"
+        )
+        .futureValue
 
       verify(mockEmailConnector, Times(1)).postEmail(captor.capture())(using any)
 

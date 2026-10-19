@@ -294,7 +294,7 @@ class SubmissionOperations @Inject() (
           NotificationEmailParameters(recipient.recipientName, company, timestamp, reference)
         )
       case "submitter" =>
-        val request = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
+        val request       = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
         val submitterName = required(request.submitterName, "submitterName")
         SubmitterSaoCertificateEmail(
           List(recipient.address),

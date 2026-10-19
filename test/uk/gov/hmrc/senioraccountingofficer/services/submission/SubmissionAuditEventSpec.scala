@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services.submission
 
-import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.OptionValues
+import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import play.api.libs.json.{JsArray, JsObject, Json}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
