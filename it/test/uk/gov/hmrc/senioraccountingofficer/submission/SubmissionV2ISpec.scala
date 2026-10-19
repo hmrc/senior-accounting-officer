@@ -62,7 +62,7 @@ class SubmissionV2ISpec extends ISpecBase {
       ObjectStoreHelper.mockPdfUpload(pdfFilename, 200, Some(objectStoreUploadResponse))
       ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
       ObjectStoreHelper.mockNotificationZipUpload(notificationReference, 200, Some(objectStoreUploadResponse))
-      SdesHelper.mock(202, None)
+      SdesHelper.mock(204, None)
 
       val accepted = makeRequest("notification", correlationId).post(Json.parse(requestBody)).futureValue
       accepted.status mustBe 202

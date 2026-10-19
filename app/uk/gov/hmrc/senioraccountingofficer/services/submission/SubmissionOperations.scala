@@ -20,7 +20,7 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import play.api.http.Status.ACCEPTED
+import play.api.http.Status.{ACCEPTED, NO_CONTENT}
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
@@ -100,7 +100,8 @@ class SubmissionOperations @Inject() (
               contentLength = prepared.contentLength
             )
             .map { response =>
-              if response.status != ACCEPTED then throw SubmissionFailures.response(status = response.status)
+              if response.status != ACCEPTED && response.status != NO_CONTENT then
+                throw SubmissionFailures.response(status = response.status)
               command
             }
         case Audit => audit.send(data).map(_ => command)
