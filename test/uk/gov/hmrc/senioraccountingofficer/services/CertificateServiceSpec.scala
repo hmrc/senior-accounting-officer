@@ -92,7 +92,7 @@ class CertificateServiceSpec
     reset(mockAuditSender)
     when(mockAuditSender.certificate(any(), any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
-    when(mockEmailService.sendSubmitterCertificateEmail(any(), any(), any(), any(), any(), any())(using any()))
+    when(mockEmailService.sendSubmitterCertificateEmail(any(), any(), any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
     when(mockEmailService.sendSaoCertificateEmail(any(), any(), any())(using any()))
       .thenReturn(Future.successful(()))
