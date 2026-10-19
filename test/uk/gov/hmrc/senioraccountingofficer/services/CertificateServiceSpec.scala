@@ -35,8 +35,8 @@ import uk.gov.hmrc.senioraccountingofficer.models.crmm.{RetrieveCustomerRequest,
 import uk.gov.hmrc.senioraccountingofficer.models.documentum.{DocumentumPackageContext, DocumentumPackageResult}
 import uk.gov.hmrc.senioraccountingofficer.models.dps.*
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
-import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionAuditSender
 import uk.gov.hmrc.senioraccountingofficer.services.CertificateServiceSpec.*
+import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionAuditSender
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService
 import uk.gov.hmrc.senioraccountingofficer.services.v1.CertificateService.DownstreamService.*
 import uk.gov.hmrc.senioraccountingofficer.services.v1.DocumentumPackageService
