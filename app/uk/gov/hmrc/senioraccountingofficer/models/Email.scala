@@ -75,6 +75,7 @@ final case class SubmitterSaoCertificateEmailParameters(
 )
 
 final case class SaoCertificateEmailParameters(
+    contactName: String,
     saoName: String,
     submittedDateTime: String,
     referenceId: String

@@ -197,6 +197,7 @@ class CertificateService @Inject() (
       case None =>
         val sendSaoEmail = emailService.sendSaoCertificateEmail(
           email = request.saoEmail,
+          contactName = request.saoName,
           saoName = request.saoName,
           referenceId = certificateReference
         )

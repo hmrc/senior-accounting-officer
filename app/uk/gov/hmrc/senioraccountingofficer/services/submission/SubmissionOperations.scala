@@ -295,12 +295,12 @@ class SubmissionOperations @Inject() (
         )
       case "submitter" =>
         val request = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
-        SubmitterCertificateEmail(
+        val submitterName = required(request.submitterName, "submitterName")
+        SubmitterSaoCertificateEmail(
           List(recipient.address),
-          parameters = SubmitterCertificateEmailParameters(
-            recipient.recipientName,
-            request.submitterName,
+          parameters = SubmitterSaoCertificateEmailParameters(
             request.saoName,
+            submitterName,
             timestamp,
             reference
           )
@@ -311,7 +311,7 @@ class SubmissionOperations @Inject() (
           List(recipient.address),
           if template == "sao" then EmailTemplate.CertificateConfirmationSAO
           else EmailTemplate.CertificateConfirmationSAOToContacts,
-          SaoCertificateEmailParameters(request.saoName, timestamp, reference)
+          SaoCertificateEmailParameters(recipient.recipientName, request.saoName, timestamp, reference)
         )
     }
   }

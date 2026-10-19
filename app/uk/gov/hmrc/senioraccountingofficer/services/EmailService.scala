@@ -118,10 +118,12 @@ class EmailService @Inject() (
 
   def sendSaoCertificateEmail(
       email: String,
+      contactName: String,
       saoName: String,
       referenceId: String
   )(using HeaderCarrier): Future[Unit] = {
     val emailParameters = SaoCertificateEmailParameters(
+      contactName = contactName,
       saoName = saoName,
       submittedDateTime = timestamp,
       referenceId = referenceId

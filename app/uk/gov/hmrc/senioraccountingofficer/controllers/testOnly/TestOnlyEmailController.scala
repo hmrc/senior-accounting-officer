@@ -72,6 +72,7 @@ class TestOnlyEmailController @Inject() (
           emailService
             .sendSaoCertificateEmail(
               email = email,
+              contactName = recipientName,
               saoName = recipientName,
               referenceId = testCertificateReference
             )
