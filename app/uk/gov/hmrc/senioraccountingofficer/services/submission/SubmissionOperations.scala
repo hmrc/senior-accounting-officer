@@ -271,9 +271,12 @@ class SubmissionOperations @Inject() (
         .distinctBy(_._2)
       people.map { (name, email) =>
         val template =
-          if request.submitterName.isDefined then "submitter"
-          else if email == request.saoEmail then "sao"
-          else "contact"
+          (request.submitterName.isDefined, email == request.saoEmail) match {
+            case (true, true)   => "submitter-sao"
+            case (true, false)  => "submitter-contact"
+            case (false, true)  => "sao"
+            case (false, false) => "contact"
+          }
         SubmissionEmail(name, email, template)
       }
   }
@@ -293,7 +296,7 @@ class SubmissionOperations @Inject() (
           EmailTemplate.NotificationConfirmation,
           NotificationEmailParameters(recipient.recipientName, company, timestamp, reference)
         )
-      case "submitter" =>
+      case "submitter-sao" =>
         val request       = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
         val submitterName = required(request.submitterName, "submitterName")
         SubmitterSaoCertificateEmail(
@@ -301,6 +304,18 @@ class SubmissionOperations @Inject() (
           parameters = SubmitterSaoCertificateEmailParameters(
             request.saoName,
             submitterName,
+            timestamp,
+            reference
+          )
+        )
+      case "submitter-contact" =>
+        val request = required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
+        SubmitterCertificateEmail(
+          List(recipient.address),
+          parameters = SubmitterCertificateEmailParameters(
+            recipient.recipientName,
+            request.submitterName,
+            request.saoName,
             timestamp,
             reference
           )
