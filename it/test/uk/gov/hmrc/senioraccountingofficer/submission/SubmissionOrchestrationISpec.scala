@@ -98,8 +98,7 @@ class SubmissionOrchestrationISpec
   val config        = Configuration(
     "work-items.lease-seconds"             -> 120,
     "work-items.operation-timeout-seconds" -> 1,
-    "work-items.retry-base-seconds"        -> 60,
-    "work-items.retry-max-seconds"         -> 900,
+    "work-items.retry-delays-seconds"      -> Seq(60L, 300L, 900L, 3600L),
     "work-items.retention-seconds"         -> retentionSeconds
   )
   val queues                                         = new SubmissionQueues(mongo, config, clock)
@@ -353,6 +352,24 @@ class SubmissionOrchestrationISpec
       clock.advance(61)
       run(RetrieveCustomer)
       verify(mockSubmissionOperations, times(2)).execute(any())(using any())
+    }
+
+    "use configured retry delays and keep using the last delay" in {
+      val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
+      seed(submission)
+      doReturn(Future.failed(SubmissionFailures.response(503)))
+        .when(mockSubmissionOperations)
+        .execute(any())(using any())
+
+      run(RetrieveCustomer)
+      Seq(60L, 300L, 900L, 3600L, 3600L).zipWithIndex.foreach { case (delay, index) =>
+        clock.advance(delay - 1)
+        run(RetrieveCustomer)
+        verify(mockSubmissionOperations, times(index + 1)).execute(any())(using any())
+        clock.advance(2)
+        run(RetrieveCustomer)
+        verify(mockSubmissionOperations, times(index + 2)).execute(any())(using any())
+      }
     }
 
     "publish a permanent customer lookup failure without submitting to DPS" in {

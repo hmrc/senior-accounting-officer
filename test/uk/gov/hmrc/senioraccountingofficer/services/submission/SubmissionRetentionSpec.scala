@@ -108,8 +108,7 @@ class SubmissionRetentionSpec
     Configuration(
       "work-items.operation-timeout-seconds" -> 60,
       "work-items.lease-seconds"             -> 120,
-      "work-items.retry-base-seconds"        -> 60,
-      "work-items.retry-max-seconds"         -> 900,
+      "work-items.retry-delays-seconds"      -> Seq(60L, 300L, 900L, 3600L),
       "work-items.retention-seconds"         -> retentionPeriod.toSeconds
     ),
     summon[ActorSystem],
