@@ -20,17 +20,8 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import play.api.http.{HeaderNames, MimeTypes, Status}
 import support.ISpecBase
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.{
-  NotificationConfirmation
-}
-import uk.gov.hmrc.senioraccountingofficer.models.{
-  NotificationEmail,
-  NotificationEmailParameters,
-  SaoCertificateEmail,
-  SaoCertificateEmailParameters,
-  SubmitterCertificateEmail,
-  SubmitterCertificateEmailParameters
-}
+import uk.gov.hmrc.senioraccountingofficer.models.EmailTemplate.NotificationConfirmation
+import uk.gov.hmrc.senioraccountingofficer.models.*
 
 import java.util.UUID
 
@@ -83,10 +74,9 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
       connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
     }
 
-    "post the certificate email to the HMRC domain" in {
+    "post the submitter contact certificate email to the HMRC domain" in {
       val parameters = SubmitterCertificateEmailParameters(
-        recipientName = "recipient name",
-        companyName = "companyName",
+        contactName = "contact name",
         submitterName = Some("submitter name"),
         saoName = "sao name",
         submittedDateTime = "17 January 2025 at 11:45am",
@@ -101,8 +91,7 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
           |  "to": ["email@example.com"],
           |  "templateId": "dsao_certificate_confirmation_for_submitter",
           |  "parameters": {
-          |    "recipientName": "recipient name",
-          |    "companyName": "companyName",
+          |    "contactName": "contact name",
           |    "submitterName": "submitter name",
           |    "saoName": "sao name",
           |    "submittedDateTime": "17 January 2025 at 11:45am",
@@ -121,11 +110,44 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
       connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
     }
 
+    "post certificate email (to SAO) to the HMRC domain when submitter submitted the certificate" in {
+
+      val parameters = SubmitterSaoCertificateEmailParameters(
+        saoName = "sao name", submitterName = "submitter name", submittedDateTime = "17 January 2025 at 11:45am", referenceId = "abc"
+      )
+      val request = SubmitterSaoCertificateEmail(
+        to = List("email@example.com"),
+        parameters = parameters
+      )
+
+      val expectedRequestBody = """{
+                                  |  "to": ["email@example.com"],
+                                  |  "templateId": "dsao_certificate_confirmation_for_submitter_sao",
+                                  |  "parameters": {
+                                  |    "submitterName": "submitter name",
+                                  |    "saoName": "sao name",
+                                  |    "submittedDateTime": "17 January 2025 at 11:45am",
+                                  |    "referenceId": "abc"
+                                  |  }
+                                  |}""".stripMargin
+
+      stubFor(
+        post(urlEqualTo("/hmrc/email"))
+          .withHeader(HeaderNames.CONTENT_TYPE, containing(MimeTypes.JSON))
+          .withHeader("CorrelationId", equalTo(correlationId))
+          .withRequestBody(equalToJson(expectedRequestBody))
+          .willReturn(aResponse().withStatus(Status.ACCEPTED))
+      )
+
+      connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
+    }
+
+
+
     "post the SAO certificate email to the HMRC domain without a submitter name" in {
       val parameters = SaoCertificateEmailParameters(
-        recipientName = "recipient name",
-        companyName = "companyName",
         saoName = "sao name",
+        contactName = "contact name",
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"
       )
@@ -138,8 +160,7 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
           |  "to": ["email@example.com"],
           |  "templateId": "dsao_certificate_confirmation_for_sao",
           |  "parameters": {
-          |    "recipientName": "recipient name",
-          |    "companyName": "companyName",
+          |    "contactName": "contact name",
           |    "saoName": "sao name",
           |    "submittedDateTime": "17 January 2025 at 11:45am",
           |    "referenceId": "abc"
@@ -157,11 +178,10 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
       connector.postEmail(request).futureValue.status mustBe Status.ACCEPTED
     }
 
-    "post the SAO contact certificate email to the HMRC domain" in {
+    "post the SAO contact certificate email to the HMRC domain without submitter" in {
       val parameters = SaoCertificateEmailParameters(
-        recipientName = "recipient name",
-        companyName = "companyName",
         saoName = "sao name",
+        contactName = "contact name",
         submittedDateTime = "17 January 2025 at 11:45am",
         referenceId = "abc"
       )
@@ -175,8 +195,7 @@ class EmailConnectorIntegrationSpec extends ISpecBase {
           |  "to": ["email@example.com"],
           |  "templateId": "dsao_certificate_confirmation_for_sao_to_contacts",
           |  "parameters": {
-          |    "recipientName": "recipient name",
-          |    "companyName": "companyName",
+          |    "contactName": "contact name",
           |    "saoName": "sao name",
           |    "submittedDateTime": "17 January 2025 at 11:45am",
           |    "referenceId": "abc"
