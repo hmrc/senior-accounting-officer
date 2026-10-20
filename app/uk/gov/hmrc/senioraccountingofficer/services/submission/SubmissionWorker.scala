@@ -48,15 +48,14 @@ class SubmissionWorker @Inject() (
 )(using ExecutionContext)
     extends Logging {
 
-  private val heartbeatDivisor     = 3
-  private val maxBackoffExponent   = 20
-  private val operationTimeout     = config.get[Long]("work-items.operation-timeout-seconds").seconds
-  private val leaseDuration        = config.get[Long]("work-items.lease-seconds")
-  private val initialDelay: Double = config.get[Long]("work-items.retry-base-seconds").toDouble
-  private val maximumDelay: Double = config.get[Long]("work-items.retry-max-seconds").toDouble
+  private val heartbeatDivisor = 3
+  private val operationTimeout = config.get[Long]("work-items.operation-timeout-seconds").seconds
+  private val leaseDuration    = config.get[Long]("work-items.lease-seconds")
+  private val retryDelays      = config.get[Seq[Long]]("work-items.retry-delays-seconds")
 
   private val queueCounts = TrieMap.empty[String, AtomicInteger]
   require(operationTimeout.toSeconds < leaseDuration, "Operation timeout must be shorter than the work item lease")
+  require(retryDelays.nonEmpty && retryDelays.forall(_ > 0), "Retry delays must be positive")
 
   def processNext(step: SubmissionStep): Future[Unit] = {
     val repository = queues(step)
@@ -121,9 +120,7 @@ class SubmissionWorker @Inject() (
       s"[Submission][${command.step}][Retry][OrchestrationId=${command.data.orchestrationId}][CorrelationId=${command.data.correlationId}]",
       error
     )
-    val delay = math
-      .min(maximumDelay, initialDelay * math.pow(2, math.min(work.failureCount, maxBackoffExponent)))
-      .toLong
+    val delay = retryDelays(math.min(work.failureCount, retryDelays.size - 1))
     repository.retry(work, delay, error.getClass.getSimpleName)
   }
 
