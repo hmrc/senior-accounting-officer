@@ -18,7 +18,6 @@ package support
 
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
-import uk.gov.hmrc.senioraccountingofficer.models.{SaoContactCertificateEmail, SubmitterCertificateEmail}
 
 object EmailHelper {
   def mock(status: Int): StubMapping = {
