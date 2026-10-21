@@ -25,7 +25,7 @@ object SubmissionFailures {
   def unknownDpsOutcome: SubmissionFailure =
     SubmissionFailure(502, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), dpsOutcomeUnknown = true)
 
-  def response(status: Int, isDpsSubmission: Boolean = false): OperationRejected = {
+  def response(status: Int, isDpsSubmission: Boolean = false, isInitialLookup: Boolean = false): OperationRejected = {
     val (httpStatus, apiError) = status match {
       case 400           => (500, DOWNSTREAM_SERVICE_MISALIGNMENT)
       case 401 | 403     => (500, SERVICE_MISCONFIGURATION)
@@ -39,7 +39,9 @@ object SubmissionFailures {
         error = ApiError(apiError),
         dpsOutcomeUnknown = isDpsSubmission && status >= 500
       ),
-      retryable = status == 429 || (!isDpsSubmission && status >= 500)
+      retryable =
+        if isDpsSubmission || isInitialLookup then status == 408 || status == 422 || status == 429
+        else status == 429 || status >= 500
     )
   }
 

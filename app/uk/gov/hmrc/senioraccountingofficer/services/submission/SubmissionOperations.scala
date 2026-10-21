@@ -67,12 +67,14 @@ class SubmissionOperations @Inject() (
       command.step match {
         case RetrieveSubscription =>
           subscriptions.getSubscription(data.subscriptionId).map { response =>
-            command.copy(data = data.copy(subscription = Some(decode[GetSubscriptionDpsResponse](response, 200))))
+            command.copy(data =
+              data.copy(subscription = Some(decode[GetSubscriptionDpsResponse](response, 200, isInitialLookup = true)))
+            )
           }
         case RetrieveCustomer =>
           val company = required(data.subscription, "subscription").nominatedCompany
           customers.retrieveCustomer(RetrieveCustomerRequest(company.crn, Some(company.utr))).map { response =>
-            val customer = decode[RetrieveCustomerResponse](response, 200)
+            val customer = decode[RetrieveCustomerResponse](response, 200, isInitialLookup = true)
             command.copy(data = data.copy(customerNumber = customer.customerId))
           }
         case SubmitDps  => submitDps(command)
@@ -112,7 +114,8 @@ class SubmissionOperations @Inject() (
         Future.failed(
           SubmissionFailures.response(
             status = e.statusCode,
-            isDpsSubmission = command.step == SubmitDps
+            isDpsSubmission = command.step == SubmitDps,
+            isInitialLookup = command.step == RetrieveSubscription || command.step == RetrieveCustomer
           )
         )
     }
@@ -191,9 +194,18 @@ class SubmissionOperations @Inject() (
         case SendEmail | NotifySdes | Audit => Seq.empty
       }
 
-  private def decode[A: Reads](response: HttpResponse, expected: Int, isDpsSubmission: Boolean = false): A = {
+  private def decode[A: Reads](
+      response: HttpResponse,
+      expected: Int,
+      isDpsSubmission: Boolean = false,
+      isInitialLookup: Boolean = false
+  ): A = {
     if response.status != expected then
-      throw SubmissionFailures.response(status = response.status, isDpsSubmission = isDpsSubmission)
+      throw SubmissionFailures.response(
+        status = response.status,
+        isDpsSubmission = isDpsSubmission,
+        isInitialLookup = isInitialLookup
+      )
     Try(Json.parse(response.body).as[A]).getOrElse(
       throw SubmissionFailures.malformed(isDpsSubmission = isDpsSubmission)
     )
