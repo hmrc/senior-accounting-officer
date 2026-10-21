@@ -99,7 +99,7 @@
                     <tbody>
                         <tr>
                             <th class="bold">SAO name</th>
-                            <td>@wrapLines(certificate.saoName, 40)</td>
+                            <td>@wrapLines(certificate.saoName, 40, 40)</td>
                         </tr>
                         <tr>
                             <th class="bold">SAO email address</th>
@@ -124,7 +124,7 @@
                                 </tr>
                                 <tr>
                                     <th class="bold">SAO name on the declaration</th>
-                                    <td>@wrapLines(certificate.saoDeclarationName, 40)</td>
+                                    <td>@wrapLines(certificate.saoDeclarationName, 40, 40)</td>
                                 </tr>
                             }
                             case _ => {
@@ -134,7 +134,7 @@
                                 </tr>
                                 <tr>
                                     <th class="bold">SAO name on the declaration</th>
-                                    <td>@wrapLines(certificate.saoDeclarationName, 40)</td>
+                                    <td>@wrapLines(certificate.saoDeclarationName, 40, 40)</td>
                                 </tr>
                             }
                         }
@@ -145,7 +145,7 @@
                 <!-- ADDITIONAL INFORMATION -->
                 <tables-page>
                     <h2 id="additional-information">Additional information about your certificate</h2>
-                    <p>@wrapLines(certificate.additionalInformation.getOrElse("Not provided"), 70)</p>
+                    <p>@wrapLines(certificate.additionalInformation.getOrElse("Not provided"), 70, 70)</p>
                 </tables-page>
 
                 <!-- QUALIFIED CERTIFICATES -->
@@ -170,7 +170,7 @@
                     @if(certificate.unqualified.isEmpty) {
                       <p>Not provided</p>
                     } else {
-                        <p>In accordance with Paragraph 2, Schedule 46 of the Finance Act 2009, I @wrapLines(certificate.saoName, 70), the Senior Accounting Officer hereby certify that @certificate.unqualified.size @companyNoun(certificate.unqualified.size) had appropriate tax accounting arrangements throughout the year.</p>
+                        <p>In accordance with Paragraph 2, Schedule 46 of the Finance Act 2009, I @wrapLines(certificate.saoName, 70, 70), the Senior Accounting Officer hereby certify that @certificate.unqualified.size @companyNoun(certificate.unqualified.size) had appropriate tax accounting arrangements throughout the year.</p>
                         <table>
                             <thead>
                                 <tr>
@@ -206,7 +206,7 @@
     <qualified-page>
         @saoName.map { case (sao, total) =>
             <h2 id="qualified-certificates">Companies with a qualified certificate</h2>
-            <p>In accordance with paragraph 2, Schedule 46 of the Finance Act 2009, I @wrapLines(sao, 70), the Senior Accounting Officer, hereby certify that @total @companyNoun(total) did not have appropriate tax accounting arrangements.</p>
+            <p>In accordance with paragraph 2, Schedule 46 of the Finance Act 2009, I @wrapLines(sao, 70, 70), the Senior Accounting Officer, hereby certify that @total @companyNoun(total) did not have appropriate tax accounting arrangements.</p>
         }
         <table>
             <tbody>
@@ -240,7 +240,7 @@
                 </tr>
                 <tr>
                     <th class="bold">Explain why the certificate is qualified</th>
-                    <td>@wrapLines(row.additionalInformation.getOrElse(""), 70)</td>
+                    <td>@wrapLines(row.additionalInformation.getOrElse(""), 70, 70)</td>
                 </tr>
             </tbody>
         </table>

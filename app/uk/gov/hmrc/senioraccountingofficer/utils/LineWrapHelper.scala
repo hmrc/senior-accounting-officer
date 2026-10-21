@@ -18,27 +18,40 @@ package uk.gov.hmrc.senioraccountingofficer.utils
 
 import scala.annotation.tailrec
 
+// TODO: maybe overengineered. how does the line wrap in the pdf happen currently?
 object LineWrapHelper {
-  def wrapLines(text: String, maxLength: Int): String = {
-    val words = text.split(" ").toList
+  // def wrapLines(text: String, maxLength: Int): String = {
+  //   val words = text.split(" ").toList
 
-    @tailrec
-    def loop(words: List[String], spaceLeft: Int, result: String): String = {
-      words match {
-        case word :: words if (word.length > maxLength) => {
-          val splitWord = word.grouped(maxLength).toList
-          loop(words, maxLength - splitWord.last.length, result + splitWord.mkString("-\n"))
-        }
-        case word :: words if (word.length + 1) > spaceLeft => {
-          loop(words, maxLength - word.length, result + "\n" + word)
-        }
-        case word :: words => {
-          loop(words, spaceLeft - word.length - 1, if result == "" then word else result + " " + word)
-        }
-        case Nil => { result }
-      }
-    }
+  //   @tailrec
+  //   def loop(words: List[String], spaceLeft: Int, result: String): String = {
+  //     val isFirstWord = result == ""
+  //     words match {
+  //       case word :: words if (word.length > maxLength) => {
+  //         val splitWord = word.take(spaceLeft) :: word.drop(spaceLeft).grouped(maxLength).toList
+  //         loop(
+  //           words,
+  //           maxLength - splitWord.last.length - 1,
+  //           if isFirstWord then splitWord.mkString("-\n") else result + " " + splitWord.mkString("-\n")
+  //         )
+  //       }
+  //       case word :: words if (word.length + 1) > spaceLeft => {
+  //         loop(words, maxLength - word.length, if isFirstWord then word else result + "\n" + word)
+  //       }
+  //       case word :: words => {
+  //         loop(words, spaceLeft - word.length - 1, if isFirstWord then word else result + " " + word)
+  //       }
+  //       case Nil => { result }
+  //     }
+  //   }
 
-    loop(words, maxLength, "")
+  //   loop(words, maxLength, "")
+  // }
+
+  def wrapLines(text: String, maxLineLength: Int, spaceOnCurrentLine: Int): String = {
+    val firstLine      = text.take(spaceOnCurrentLine)
+    val remainingLines = text.drop(spaceOnCurrentLine).grouped(maxLineLength).toList
+    val lines          = firstLine :: remainingLines
+    lines.mkString("\n")
   }
 }

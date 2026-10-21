@@ -21,13 +21,10 @@ import uk.gov.hmrc.senioraccountingofficer.utils.LineWrapHelper.wrapLines
 import org.scalatest.matchers.must.Matchers
 
 class LineWrapHelperSpec extends AnyFreeSpec with Matchers {
-  "wrapLines" - {
-    "must do no wrapping when input string is shorter than line length" in {
-      val result = wrapLines("abcd", 5)
-      result mustBe "abcd"
-    }
-    "must move words onto new lines if one line is exceeding line length" in {
-      wrapLines("abcd efgh", 4) mustBe "abcd\nefgh"
-    }
+  "wrapLines" in {
+    wrapLines("abcd", 5) mustBe "abcd"
+    wrapLines("abcd efgh", 4) mustBe "abcd\nefgh"
+    wrapLines("abcd efgh", 3) mustBe "abc-\nd e-\nfgh"
+    wrapLines("abcd efgh", 2) mustBe "ab-\ncd\nefg-\nh"
   }
 }
