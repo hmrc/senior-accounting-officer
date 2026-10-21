@@ -303,7 +303,6 @@ class SubmissionOperationsSpec
       for (status, retryable) <- Seq(
           200 -> false,
           201 -> false,
-          204 -> false,
           299 -> false,
           400 -> false,
           401 -> false,
@@ -348,7 +347,7 @@ class SubmissionOperationsSpec
       result.data.prepared mustBe Some(prepared)
     }
 
-    "notify SDES with the prepared parameters and complete when accepted" in {
+    "notify SDES with the prepared parameters and complete on 202 or 204" in {
       val prepared = PreparedSdesSubmission(
         fileName = "file.zip",
         owner = "owner",
@@ -357,10 +356,12 @@ class SubmissionOperationsSpec
         contentLength = 100
       )
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
-      when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(202)))
-      operations.execute(submission).futureValue.operationFinished mustBe true
-      verify(mockSdesConnector).notifyFileReady(
+      for status <- Seq(202, 204) do {
+        when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
+          .thenReturn(Future.successful(HttpResponse(status)))
+        operations.execute(submission).futureValue.operationFinished mustBe true
+      }
+      verify(mockSdesConnector, times(2)).notifyFileReady(
         meq("file.zip"),
         meq("owner"),
         meq("/sdes/file.zip"),

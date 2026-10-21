@@ -36,18 +36,27 @@ class TestOnlyEmailController @Inject() (
 )(using ExecutionContext)
     extends BackendController(cc) {
 
-  private val testCompanyName           = "Test Company Ltd"
-  private val testSaoName               = "Test SAO"
+  private val testCompanyName   = "Test Company Ltd"
+  private val testSaoName       = "Test SAO"
+  private val testSubmitterName = "Test Submitter"
+
   private val testNotificationReference = "NOT0123456789"
   private val testCertificateReference  = "CRT0123456789"
 
-  private val validTemplates = Seq("notification", "certificate-sao", "certificate-submitter")
+  private val validTemplates = Seq(
+    "notification",
+    "certificate-sao",
+    "certificate-sao-to-contacts",
+    "certificate-submitter",
+    "certificate-submitter-sao"
+  )
 
   def sendEmail(email: String, name: Option[String], template: Option[String]): Action[AnyContent] =
     Action.async { request =>
       given HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
-      val recipientName = name.map(_.trim).filter(_.nonEmpty).getOrElse(TestOnlyEmailController.nameFrom(email))
+      val recipientName   = name.map(_.trim).filter(_.nonEmpty).getOrElse(TestOnlyEmailController.nameFrom(email))
+      val testContactName = recipientName
 
       template.map(_.trim.toLowerCase).getOrElse("notification") match {
         case "notification" =>
@@ -63,24 +72,45 @@ class TestOnlyEmailController @Inject() (
           emailService
             .sendSaoCertificateEmail(
               email = email,
-              recipientName = recipientName,
-              companyName = testCompanyName,
-              referenceId = testCertificateReference,
-              saoName = recipientName
+              contactName = recipientName,
+              saoName = recipientName,
+              referenceId = testCertificateReference
             )
             .map(_ => accepted(email, recipientName, EmailTemplate.CertificateConfirmationSAO))
 
-        case "certificate-submitter" =>
+        case "certificate-sao-to-contacts" => {
+          emailService
+            .sendSaoContactCertificateEmail(
+              email = email,
+              contactName = testContactName,
+              referenceId = testCertificateReference,
+              saoName = testSaoName
+            )
+            .map(_ => accepted(email, testContactName, EmailTemplate.CertificateConfirmationSAOToContacts))
+        }
+
+        case "certificate-submitter" => {
           emailService
             .sendSubmitterCertificateEmail(
               email = email,
-              recipientName = recipientName,
-              companyName = testCompanyName,
+              contactName = testContactName,
               referenceId = testCertificateReference,
-              submitterName = recipientName,
+              submitterName = testSubmitterName,
               saoName = testSaoName
             )
-            .map(_ => accepted(email, recipientName, EmailTemplate.CertificateConfirmationSubmitter))
+            .map(_ => accepted(email, testContactName, EmailTemplate.CertificateConfirmationSubmitter))
+        }
+
+        case "certificate-submitter-sao" => {
+          emailService
+            .sendSubmitterSaoCertificateEmail(
+              email = email,
+              saoName = testSaoName,
+              submitterName = testSubmitterName,
+              referenceId = testCertificateReference
+            )
+            .map(_ => accepted(email, testSaoName, EmailTemplate.CertificateConfirmationSubmitterSao))
+        }
 
         case unknown =>
           Future.successful(

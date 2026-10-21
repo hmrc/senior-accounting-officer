@@ -83,7 +83,7 @@ class EmailServiceSpec
     notificationEmails
   }
 
-  private def assertEmail(actualEmail: NotificationEmail, expectedEmail: NotificationEmail): Unit = {
+  private def assertNotificationEmail(actualEmail: NotificationEmail, expectedEmail: NotificationEmail): Unit = {
 
     val actualParams   = actualEmail.parameters
     val expectedParams = expectedEmail.parameters
@@ -136,7 +136,7 @@ class EmailServiceSpec
         captor.capture()
       )(using any())
       val actualEmail: NotificationEmail = captor.getValue.asInstanceOf[NotificationEmail]
-      assertEmail(actualEmail = actualEmail, expectedEmail = expectedEmails(0))
+      assertNotificationEmail(actualEmail = actualEmail, expectedEmail = expectedEmails(0))
       result shouldBe ()
     }
 
@@ -150,8 +150,8 @@ class EmailServiceSpec
 
       verify(mockEmailConnector, Times(2)).postEmail(captor.capture())(using any())
       val actualEmails = captor.getAllValues.asScala.map(email => email.asInstanceOf[NotificationEmail])
-      assertEmail(actualEmails(0), expectedEmails(0))
-      assertEmail(actualEmails(1), expectedEmails(1))
+      assertNotificationEmail(actualEmails(0), expectedEmails(0))
+      assertNotificationEmail(actualEmails(1), expectedEmails(1))
       result shouldBe ()
     }
 
@@ -199,8 +199,7 @@ class EmailServiceSpec
         emailService
           .sendSaoCertificateEmail(
             email = "email@example.com",
-            recipientName = "name",
-            companyName = "companyName",
+            contactName = "contactName",
             referenceId = "abc",
             saoName = "name"
           )
@@ -300,6 +299,149 @@ class EmailServiceSpec
       actualParams.referenceId shouldBe expectedParams.referenceId
 
       result shouldBe ()
+    }
+
+    "send submitter certificate email confirmation to one contact" in {
+      when(mockEmailConnector.postEmail(any())(using any))
+        .thenReturn(Future.successful(HttpResponse(202)))
+
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+
+      val expectedContactEmails = contacts.map { contact =>
+        val emailParams = SubmitterCertificateEmailParameters(
+          contactName = contact.name,
+          submitterName = Some("submitterName"),
+          saoName = "saoName",
+          submittedDateTime = "any",
+          referenceId = "certRef"
+        )
+        SubmitterCertificateEmail(to = List(contact.email), parameters = emailParams)
+      }
+      expectedContactEmails.foreach { contactEmail =>
+        val result: Unit = emailService
+          .sendSubmitterCertificateEmail(
+            email = contactEmail.to.head,
+            contactName = contactEmail.parameters.contactName,
+            referenceId = "certRef",
+            submitterName = "submitterName",
+            saoName = "saoName"
+          )
+          .futureValue
+        result shouldBe ()
+      }
+
+      expectedContactEmails.foreach { expectedContactEmail =>
+        verify(mockEmailConnector, Times(1)).postEmail(captor.capture())(using any)
+        val actualEmail = captor.getValue.asInstanceOf[SubmitterCertificateEmail]
+        actualEmail.copy(parameters =
+          actualEmail.parameters.copy(submittedDateTime = "any")
+        ) shouldBe expectedContactEmail
+      }
+    }
+
+    "send submitter email certificate confirmation to SAO" in {
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+
+      val expectedSaoEmail = Some(
+        SubmitterSaoCertificateEmail(
+          to = List("sao@example.com"),
+          parameters = SubmitterSaoCertificateEmailParameters(
+            saoName = "saoName",
+            submitterName = "submitterName",
+            submittedDateTime = "any",
+            referenceId = "certRef"
+          )
+        )
+      )
+
+      expectedSaoEmail.foreach { sao =>
+        val saoParams    = sao.parameters
+        val result: Unit = emailService
+          .sendSubmitterSaoCertificateEmail(
+            email = sao.to.head,
+            saoName = saoParams.saoName,
+            submitterName = saoParams.submitterName,
+            referenceId = saoParams.referenceId
+          )
+          .futureValue
+
+        verify(mockEmailConnector, Times(1)).postEmail(captor.capture())(using any)
+
+        captor.getValue.asInstanceOf[SubmitterSaoCertificateEmail]
+        result shouldBe ()
+      }
+
+    }
+
+    "send sao email certificate confirmation to two contacts" in {
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+
+      val twoContacts    = contacts ++ List(Contact("name2", "email2@example.com", "en", "ACTIVE"))
+      val expectedEmails = twoContacts.map { contact =>
+        SaoContactCertificateEmail(
+          to = List(contact.email),
+          parameters = SaoContactCertificateEmailParameters(
+            contactName = contact.name,
+            saoName = "saoName",
+            submittedDateTime = "any",
+            referenceId = "certRef"
+          )
+        )
+      }
+
+      val actualEmails = twoContacts.zipWithIndex.map { (contact, index) =>
+        val result: Unit = emailService
+          .sendSaoContactCertificateEmail(
+            email = contact.email,
+            contactName = contact.name,
+            referenceId = "certRef",
+            saoName = "saoName"
+          )
+          .futureValue
+        result shouldBe ()
+
+        verify(mockEmailConnector, Times(index + 1)).postEmail(captor.capture())(using any)
+        val actualEmail = captor.getValue.asInstanceOf[SaoContactCertificateEmail]
+
+        actualEmail.copy(parameters = actualEmail.parameters.copy(submittedDateTime = "any"))
+
+      }
+      actualEmails shouldBe expectedEmails
+    }
+
+    "send sao email certificate confirmation to two contacts and the SAO" in {
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+
+      val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
+
+      val expectedEmail = SaoCertificateEmail(
+        to = List("sao@example.com"),
+        parameters = SaoCertificateEmailParameters(
+          saoName = "saoName",
+          contactName = "contactName",
+          submittedDateTime = "any",
+          referenceId = "certRef"
+        )
+      )
+
+      val result: Unit = emailService
+        .sendSaoCertificateEmail(
+          email = "sao@example.com",
+          contactName = "contactName",
+          saoName = "saoName",
+          referenceId = "certRef"
+        )
+        .futureValue
+
+      verify(mockEmailConnector, Times(1)).postEmail(captor.capture())(using any)
+
+      val actualEmail = captor.getValue.asInstanceOf[SaoCertificateEmail]
+
+      result shouldBe ()
+      actualEmail.copy(parameters = actualEmail.parameters.copy(submittedDateTime = "any")) shouldBe expectedEmail
+
     }
   }
 }
