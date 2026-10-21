@@ -18,6 +18,7 @@ http:
         "submitterName": "Submittername",
         "saoName": "SubmitterTestName",
         "saoEmail": "test@email.com",
+        "saoDeclarationName": "SAOname",
         "companies": [
           {
             "crn": "12435678",
@@ -48,3 +49,4 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
+  forwardAuthorizationHeader: true
