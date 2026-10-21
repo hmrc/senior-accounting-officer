@@ -338,10 +338,10 @@ class SubmissionOrchestrationISpec
       entries(RetrieveCustomer).size mustBe 1
     }
 
-    "wait for backoff before retrying a transient customer lookup failure" in {
+    "wait for backoff before retrying a 408 customer lookup response" in {
       val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
       seed(submission)
-      doReturn(Future.failed(SubmissionFailures.response(503)))
+      doReturn(Future.failed(SubmissionFailures.response(408, isInitialLookup = true)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
       run(RetrieveCustomer)
@@ -357,7 +357,7 @@ class SubmissionOrchestrationISpec
     "use configured retry delays and keep using the last delay" in {
       val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
       seed(submission)
-      doReturn(Future.failed(SubmissionFailures.response(503)))
+      doReturn(Future.failed(SubmissionFailures.response(408, isInitialLookup = true)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
 
@@ -369,6 +369,27 @@ class SubmissionOrchestrationISpec
         clock.advance(2)
         run(RetrieveCustomer)
         verify(mockSubmissionOperations, times(index + 2)).execute(any())(using any())
+      }
+    }
+
+    for step <- Seq(RetrieveSubscription, RetrieveCustomer, SubmitDps) do {
+      s"permanently fail $step after a downstream 503 response" in {
+        val submission = command(step).copy(data = data().copy(reference = None))
+        seed(submission)
+        doReturn(Future.failed(SubmissionFailures.response(
+          503,
+          isDpsSubmission = step == SubmitDps,
+          isInitialLookup = step != SubmitDps
+        )))
+          .when(mockSubmissionOperations)
+          .execute(any())(using any())
+        run(step)
+        entries(step).head.status mustBe ProcessingStatus.PermanentlyFailed
+        entries(step).head.failureCount mustBe 0
+        statusOf(submission.data) mustBe 502
+        Seq(RetrieveCustomer, SubmitDps, InitialPdf, Audit).filterNot(_ == step).foreach { next =>
+          entries(next) mustBe empty
+        }
       }
     }
 

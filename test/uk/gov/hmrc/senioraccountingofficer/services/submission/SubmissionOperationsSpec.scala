@@ -123,6 +123,29 @@ class SubmissionOperationsSpec
   }
 
   "execute" - {
+    for {
+      step   <- Seq(RetrieveSubscription, RetrieveCustomer, SubmitDps)
+      status <- Seq(408, 422, 429, 500, 503)
+    } do {
+      s"Check the HTTP response $status for $step returns the correct outcome" in {
+        val response = Future.successful(HttpResponse(status))
+        step match {
+          case RetrieveSubscription =>
+            when(mockGetSubscriptionConnector.getSubscription(any())(using any())).thenReturn(response)
+          case RetrieveCustomer =>
+            when(mockCrmmConnector.retrieveCustomer(any())(using any())).thenReturn(response)
+          case SubmitDps =>
+            when(mockNotificationConnector.postNotification(any(), any())(using any())).thenReturn(response)
+          case _ => fail(s"Unexpected step: $step")
+        }
+
+        inside(operations.execute(command(step)).failed.futureValue) { case rejection: OperationRejected =>
+          rejection.retryable mustBe Set(408, 422, 429).contains(status)
+          rejection.failure.dpsOutcomeUnknown mustBe (step == SubmitDps && status >= 500)
+        }
+      }
+    }
+
     "fail the audit step when delivery fails" in {
       val auditCommand = command(Audit)
       when(mockAuditSender.send(any())(using any()))
