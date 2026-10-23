@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 
 object ObjectStoreHelper {
+  // Close upload connections to mitigate the CI HTTP encoder failure when a later request reuses them.
   def mockPdfUpload(filename: String, status: Int, body: Option[String]): StubMapping = {
     stubFor(
       put(
@@ -31,10 +32,12 @@ object ObjectStoreHelper {
           body match {
             case Some(body) =>
               aResponse()
+                .withHeader("Connection", "close")
                 .withStatus(status)
                 .withBody(body)
             case None =>
               aResponse()
+                .withHeader("Connection", "close")
                 .withStatus(status)
           }
         )
@@ -79,10 +82,12 @@ object ObjectStoreHelper {
           body match {
             case Some(body) =>
               aResponse()
+                .withHeader("Connection", "close")
                 .withStatus(status)
                 .withBody(body)
             case None =>
               aResponse()
+                .withHeader("Connection", "close")
                 .withStatus(status)
           }
         )
@@ -100,10 +105,12 @@ object ObjectStoreHelper {
           body match {
             case Some(body) =>
               aResponse()
+                .withHeader("Connection", "close")
                 .withStatus(status)
                 .withBody(body)
             case None =>
               aResponse()
+                .withHeader("Connection", "close")
                 .withStatus(status)
           }
         )
