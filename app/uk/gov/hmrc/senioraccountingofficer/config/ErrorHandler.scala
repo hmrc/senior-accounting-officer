@@ -41,7 +41,7 @@ class ErrorHandler @Inject() (
       val contentLength = request.headers.get(HeaderNames.CONTENT_LENGTH).getOrElse("undefined")
       val correlationId = request.headers.get("correlationId").getOrElse("undefined")
       logger.warn(
-        s"${request.method} ${request.uri} [REQUEST_ENTITY_TOO_LARGE][CorrelationId=$correlationId] CONTENT_LENGTH=$contentLength "
+        s"[${request.method}][REQUEST_ENTITY_TOO_LARGE][CorrelationId=$correlationId] CONTENT_LENGTH=$contentLength "
       )
     }
 
