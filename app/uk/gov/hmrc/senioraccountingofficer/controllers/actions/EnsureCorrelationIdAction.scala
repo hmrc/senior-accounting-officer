@@ -32,7 +32,7 @@ class EnsureCorrelationIdAction @Inject() ()(override implicit val executionCont
 
   override def filter[A](request: IdentifierRequest[A]): Future[Option[Result]] =
     if request.headers.get("correlationId").isEmpty then {
-      logger.warn(s"[BAD_REQUEST][MISSING_CORRELATION_ID] ${request.method} ${request.uri}")
+      logger.warn(s"[BAD_REQUEST][MISSING_CORRELATION_ID] ${request.method}")
       Future.successful(Some(JsonErrorHandling.badRequest(Seq(ApiError(reason = Reason.MISSING_CORRELATION_ID)))))
     } else Future.successful(None)
 
