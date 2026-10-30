@@ -299,9 +299,13 @@ class SubmissionOperations @Inject() (
     val recipient = required(command.email, "email")
     val company   = required(data.subscription, "subscription").nominatedCompany.name
     val reference = required(data.reference, "reference")
-    val timestamp = required(data.submittedAt, "submittedAt").format(
-      DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
-    )
+    val timestamp = required(data.submittedAt, "submittedAt")
+      .format(
+        DateTimeFormatter.ofPattern("d MMMM yyyy 'at' h:mma", Locale.ENGLISH)
+      )
+      .replaceFirst("AM$", "am")
+      .replaceFirst("PM$", "pm")
+
     recipient.template match {
       case "notification" =>
         NotificationEmail(
