@@ -152,12 +152,14 @@ class EmailService @Inject() (
     sendEmail(emailModel, "certificate")
   }
 
-  private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
+  private val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' h:mma", Locale.ENGLISH)
 
   private def timestamp: String = {
     ZonedDateTime
       .now(clock)
       .withZoneSameInstant(ZoneId.of("Europe/London"))
       .format(formatter)
+      .replaceFirst("AM$", "am")
+      .replaceFirst("PM$", "pm")
   }
 }

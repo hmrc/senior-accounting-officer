@@ -57,7 +57,7 @@ class EmailServiceSpec
   val mockEmailConnector: EmailConnector = mock[EmailConnector]
   val emailService: EmailService = EmailService(mockEmailConnector, Clock.systemDefaultZone.withZone(ZoneOffset.UTC))
 
-  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' hh:mma", Locale.ENGLISH)
+  private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy 'at' h:mma", Locale.ENGLISH)
   private val testCorrelationId                = "e6b3b05b-1fd7-4b88-8fd5-06e7c9268885"
 
   override def beforeEach(): Unit = {
@@ -94,7 +94,12 @@ class EmailServiceSpec
     actualParams.recipientName shouldBe expectedParams.recipientName
     actualParams.companyName shouldBe expectedParams.companyName
 
-    Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter)).isSuccess shouldBe true
+    Try(
+      LocalDateTime.parse(
+        actualParams.submittedDateTime.replaceFirst("am$", "AM").replaceFirst("pm$", "PM"),
+        dateFormatter
+      )
+    ).isSuccess shouldBe true
     actualParams.referenceId shouldBe expectedParams.referenceId
   }
 
@@ -241,7 +246,12 @@ class EmailServiceSpec
       actualParams.recipientName shouldBe expectedParams.recipientName
       actualParams.companyName shouldBe expectedParams.companyName
 
-      val actualDateTry = Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter))
+      val actualDateTry = Try(
+        LocalDateTime.parse(
+          actualParams.submittedDateTime.replaceFirst("am$", "AM").replaceFirst("pm$", "PM"),
+          dateFormatter
+        )
+      )
 
       actualDateTry.isSuccess shouldBe true
 
@@ -286,7 +296,12 @@ class EmailServiceSpec
       actualParams.recipientName shouldBe expectedParams.recipientName
       actualParams.companyName shouldBe expectedParams.companyName
 
-      val actualDateTry = Try(LocalDateTime.parse(actualParams.submittedDateTime, dateFormatter))
+      val actualDateTry = Try(
+        LocalDateTime.parse(
+          actualParams.submittedDateTime.replaceFirst("am$", "AM").replaceFirst("pm$", "PM"),
+          dateFormatter
+        )
+      )
 
       actualDateTry.isSuccess shouldBe true
 
