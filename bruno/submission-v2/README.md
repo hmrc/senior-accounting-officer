@@ -27,7 +27,7 @@ Configure the downstream stub before a fresh successful POST. Restore it after o
 
 | Stub/action | Check |
 |---|---|
-| Subscription lookup returns SERVICE_UNAVAILABLE | GET stays pending, restore stub and poll until 200. First retry defaults to 60 seconds. |
+| Subscription lookup returns 503 | GET stays pending, restore stub and poll until 200. First retry defaults to 60 seconds. |
 | Initial PDF upload fails | GET reaches 200, restore stub and verify document delivery completes. |
 | Email or SDES fails | GET remains 200, restore stub and verify failed work retries. |
 | DPS POST times out | Wait for the operation timeout (default 60 seconds), then send **get → (502) dps-timeout**. Expect `DOWNSTREAM_SERVICE_UNAVAILABLE`, verify no second DPS POST, including after restart. |

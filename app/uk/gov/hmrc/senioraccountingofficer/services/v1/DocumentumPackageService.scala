@@ -21,7 +21,6 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 import play.api.Logging
-import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
@@ -108,7 +107,7 @@ class DocumentumPackageService @Inject() (
         zipSummary.contentLength
       )
     } yield {
-      if response.status < OK || response.status >= 300 then
+      if response.status < 200 || response.status >= 300 then
         logger.warn(
           s"[DocumentumPackage][SDES][UnexpectedStatus][CorrelationId=$getCorrelationId][Status=${response.status}]"
         )
