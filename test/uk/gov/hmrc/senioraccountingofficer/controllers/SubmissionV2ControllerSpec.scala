@@ -74,7 +74,7 @@ class SubmissionV2ControllerSpec
           .thenReturn(Future.successful(Results.Accepted(Json.obj("idempotencyKey" -> "test-key"))))
         val request = FakeRequest(POST, endpoint).withHeaders("correlationId" -> "trace").withJsonBody(payload)
         val result  = route(app, request).value
-        status(result) mustBe 202
+        status(result) mustBe ACCEPTED
         contentAsJson(result) mustBe Json.obj("idempotencyKey" -> "test-key")
         val captor = ArgumentCaptor.forClass(classOf[SubmissionData])
         verify(mockSubmissionService).submit(captor.capture())
@@ -91,7 +91,7 @@ class SubmissionV2ControllerSpec
             .withHeaders("correlationId" -> "trace")
             .withJsonBody(payload.as[play.api.libs.json.JsObject] - "idempotencyKey")
         ).value
-        status(result) mustBe 202
+        status(result) mustBe ACCEPTED
         val captor = ArgumentCaptor.forClass(classOf[SubmissionData])
         verify(mockSubmissionService).submit(captor.capture())
         java.util.UUID.fromString(captor.getValue.idempotencyKey) mustBe a[java.util.UUID]
@@ -100,12 +100,12 @@ class SubmissionV2ControllerSpec
       "reject malformed requests before enqueuing" in {
         val result =
           route(app, FakeRequest(POST, endpoint).withHeaders("correlationId" -> "trace").withTextBody("not-json")).value
-        status(result) mustBe 400
+        status(result) mustBe BAD_REQUEST
         verifyNoInteractions(mockSubmissionService)
       }
 
       "reject missing correlation IDs before enqueuing" in {
-        status(route(app, FakeRequest(POST, endpoint).withJsonBody(payload)).value) mustBe 400
+        status(route(app, FakeRequest(POST, endpoint).withJsonBody(payload)).value) mustBe BAD_REQUEST
         verifyNoInteractions(mockSubmissionService)
       }
 
@@ -116,7 +116,7 @@ class SubmissionV2ControllerSpec
         when(mockSubmissionService.status(any(), any(), any())).thenReturn(Future.successful(Results.NoContent))
         val result =
           route(app, FakeRequest(GET, s"$endpoint/url-key").withHeaders("correlationId" -> "different-trace")).value
-        status(result) mustBe 204
+        status(result) mustBe NO_CONTENT
         verify(mockSubmissionService).status(meq(testSaoSubscriptionId), meq(kind), meq("url-key"))
       }
     }

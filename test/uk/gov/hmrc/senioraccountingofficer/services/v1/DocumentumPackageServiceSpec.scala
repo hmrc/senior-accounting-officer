@@ -29,6 +29,7 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, NO_CONTENT}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.objectstore.client.play.PlayObjectStoreClient
 import uk.gov.hmrc.objectstore.client.{Object as ObjectStoreObject, *}
@@ -124,7 +125,7 @@ class DocumentumPackageServiceSpec
           meq(100L)
         )(using any())
       )
-        .thenReturn(Future.successful(HttpResponse(204)))
+        .thenReturn(Future.successful(HttpResponse(NO_CONTENT)))
 
       val result = service.packageAndSubmit(context, generatedPdfSource).futureValue
 
@@ -185,7 +186,7 @@ class DocumentumPackageServiceSpec
           meq(100L)
         )(using any())
       )
-        .thenReturn(Future.successful(HttpResponse(500)))
+        .thenReturn(Future.successful(HttpResponse(INTERNAL_SERVER_ERROR)))
 
       val result = service.packageAndSubmit(context, generatedPdfSource).futureValue
 

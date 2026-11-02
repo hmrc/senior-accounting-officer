@@ -20,6 +20,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSRequest
 import play.api.http.HeaderNames
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import play.api.http.Status.*
 import support.*
 import uk.gov.hmrc.senioraccountingofficer.controllers.{
   NotificationControllerISpec as Notification,
@@ -55,29 +56,29 @@ class SubmissionV2ISpec extends ISpecBase {
       import Notification.*
 
       MockAuthHelper.mockAuthOk()
-      GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-      RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-      SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitNotificationResponse))
+      GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+      RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+      SubmitNotificationHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitNotificationResponse))
       EmailHelper.mock(202)
-      ObjectStoreHelper.mockPdfUpload(pdfFilename, 200, Some(objectStoreUploadResponse))
-      ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-      ObjectStoreHelper.mockNotificationZipUpload(notificationReference, 200, Some(objectStoreUploadResponse))
-      SdesHelper.mock(204, None)
+      ObjectStoreHelper.mockPdfUpload(pdfFilename, OK, Some(objectStoreUploadResponse))
+      ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
+      ObjectStoreHelper.mockNotificationZipUpload(notificationReference, OK, Some(objectStoreUploadResponse))
+      SdesHelper.mock(NO_CONTENT, None)
 
       val accepted = makeRequest("notification", correlationId).post(Json.parse(requestBody)).futureValue
       accepted.status mustBe 202
       val key = (accepted.json \ "idempotencyKey").as[String]
-      makeRequest(s"notification/$key", correlationId).get().futureValue.status mustBe 204
+      makeRequest(s"notification/$key", correlationId).get().futureValue.status mustBe NO_CONTENT
       GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 0)
 
       val worker = app.injector.instanceOf[SubmissionWorker]
       Seq(SubmissionStep.RetrieveSubscription, SubmissionStep.RetrieveCustomer, SubmissionStep.SubmitDps)
         .foreach(step => worker.processNext(step).futureValue)
-      makeRequest(s"notification/$key", correlationId).get().futureValue.status mustBe 204
+      makeRequest(s"notification/$key", correlationId).get().futureValue.status mustBe NO_CONTENT
       worker.processNext(SubmissionStep.InitialPdf).futureValue
 
       val completed = makeRequest(s"notification/$key", correlationId).get().futureValue
-      completed.status mustBe 200
+      completed.status mustBe OK
       completed.json mustBe Json.obj("notificationRef" -> notificationReference)
 
       (1 to 2).foreach(_ => worker.processNext(SubmissionStep.SendEmail).futureValue)
@@ -93,7 +94,7 @@ class SubmissionV2ISpec extends ISpecBase {
       )
       ObjectStoreHelper.verifyNotificationZipUpload(notificationReference, 1)
       SdesHelper.verifyCalled(sdesRequest, 1)
-      makeRequest(s"notification/$key", correlationId).get().futureValue.status mustBe 200
+      makeRequest(s"notification/$key", correlationId).get().futureValue.status mustBe OK
     }
   }
 
@@ -102,29 +103,29 @@ class SubmissionV2ISpec extends ISpecBase {
       import Certificate.*
 
       MockAuthHelper.mockAuthOk()
-      GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-      RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-      SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
+      GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+      RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+      SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
       EmailHelper.mock(202)
-      ObjectStoreHelper.mockPdfUpload(pdfFilename, 200, Some(objectStoreUploadResponse))
-      ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
-      ObjectStoreHelper.mockCertificateZipUpload(certificateReference, 200, Some(objectStoreUploadResponse))
+      ObjectStoreHelper.mockPdfUpload(pdfFilename, OK, Some(objectStoreUploadResponse))
+      ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
+      ObjectStoreHelper.mockCertificateZipUpload(certificateReference, OK, Some(objectStoreUploadResponse))
       SdesHelper.mock(202, None)
 
       val accepted = makeRequest("certificate", correlationId).post(Json.parse(requestBody)).futureValue
       accepted.status mustBe 202
       val key = (accepted.json \ "idempotencyKey").as[String]
-      makeRequest(s"certificate/$key", correlationId).get().futureValue.status mustBe 204
+      makeRequest(s"certificate/$key", correlationId).get().futureValue.status mustBe NO_CONTENT
       GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 0)
 
       val worker = app.injector.instanceOf[SubmissionWorker]
       Seq(SubmissionStep.RetrieveSubscription, SubmissionStep.RetrieveCustomer, SubmissionStep.SubmitDps)
         .foreach(step => worker.processNext(step).futureValue)
-      makeRequest(s"certificate/$key", correlationId).get().futureValue.status mustBe 204
+      makeRequest(s"certificate/$key", correlationId).get().futureValue.status mustBe NO_CONTENT
       worker.processNext(SubmissionStep.InitialPdf).futureValue
 
       val completed = makeRequest(s"certificate/$key", correlationId).get().futureValue
-      completed.status mustBe 200
+      completed.status mustBe OK
       completed.json mustBe Json.obj("certificateRef" -> certificateReference)
 
       (1 to 3).foreach(_ => worker.processNext(SubmissionStep.SendEmail).futureValue)
@@ -136,7 +137,7 @@ class SubmissionV2ISpec extends ISpecBase {
       SubmitCertificateHelper.verifyCalled(MockAuthHelper.testSubscriptionId, Some(submitCertificateRequest), 1)
       ObjectStoreHelper.verifyCertificateZipUpload(certificateReference, 1)
       SdesHelper.verifyCalled(sdesRequest, 1)
-      makeRequest(s"certificate/$key", correlationId).get().futureValue.status mustBe 200
+      makeRequest(s"certificate/$key", correlationId).get().futureValue.status mustBe OK
     }
   }
 

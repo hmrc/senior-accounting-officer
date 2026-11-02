@@ -19,6 +19,7 @@ package support
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import sttp.model.HeaderNames
+import play.api.http.Status.OK
 
 object MockAuthHelper {
 
@@ -41,7 +42,7 @@ object MockAuthHelper {
                 |   }]
                 | }]
                 |}""".stripMargin)
-            .withStatus(200)
+            .withStatus(OK)
         )
     )
 
@@ -57,7 +58,7 @@ object MockAuthHelper {
                    | "internalId": "$testId",
                    | "allEnrolments" : []
                    |}""".stripMargin)
-              .withStatus(200)
+              .withStatus(OK)
           )
       )
 
@@ -68,7 +69,7 @@ object MockAuthHelper {
           aResponse()
             .withHeader("content-type", "application/json")
             .withBody("{}")
-            .withStatus(200)
+            .withStatus(OK)
         )
     )
 

@@ -20,6 +20,7 @@ import org.scalactic.Prettifier.default
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
+import play.api.http.Status.BAD_REQUEST
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.*
 
@@ -31,21 +32,21 @@ class JsonErrorHandlingSpec extends AnyWordSpec with Matchers with OptionValues 
       JsonErrorHandling
         .badRequest(Seq(ApiError(reason = Reason.MALFORMED_REQUEST)))
         .header
-        .status shouldBe 400
+        .status shouldBe BAD_REQUEST
     }
 
     "accept errors with a path" in {
       JsonErrorHandling
         .badRequest(Seq(ApiError(reason = Reason.MISSING_REQUIRED_FIELD, path = Some("companies.0.companyName"))))
         .header
-        .status shouldBe 400
+        .status shouldBe BAD_REQUEST
     }
 
     "accept errors without a path" in {
       JsonErrorHandling
         .badRequest(Seq(ApiError(reason = Reason.MALFORMED_REQUEST)))
         .header
-        .status shouldBe 400
+        .status shouldBe BAD_REQUEST
     }
 
     "accept a mix of errors with and without paths" in {
@@ -57,7 +58,7 @@ class JsonErrorHandlingSpec extends AnyWordSpec with Matchers with OptionValues 
           )
         )
         .header
-        .status shouldBe 400
+        .status shouldBe BAD_REQUEST
     }
   }
 }

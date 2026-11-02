@@ -28,6 +28,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.objectstore.client.Path.File
@@ -125,7 +126,13 @@ class SubmissionOperationsSpec
   "execute" - {
     for {
       step   <- Seq(RetrieveSubscription, RetrieveCustomer, SubmitDps)
-      status <- Seq(408, 422, 429, 500, 503)
+      status <- Seq(
+        REQUEST_TIMEOUT,
+        UNPROCESSABLE_ENTITY,
+        TOO_MANY_REQUESTS,
+        INTERNAL_SERVER_ERROR,
+        SERVICE_UNAVAILABLE
+      )
     } do {
       s"Check the HTTP response $status for $step returns the correct outcome" in {
         val response = Future.successful(HttpResponse(status))
@@ -140,8 +147,8 @@ class SubmissionOperationsSpec
         }
 
         inside(operations.execute(command(step)).failed.futureValue) { case rejection: OperationRejected =>
-          rejection.retryable mustBe Set(408, 422, 429).contains(status)
-          rejection.failure.dpsOutcomeUnknown mustBe (step == SubmitDps && status >= 500)
+          rejection.retryable mustBe Set(REQUEST_TIMEOUT, UNPROCESSABLE_ENTITY, TOO_MANY_REQUESTS).contains(status)
+          rejection.failure.dpsOutcomeUnknown mustBe (step == SubmitDps && status >= INTERNAL_SERVER_ERROR)
         }
       }
     }
@@ -216,14 +223,14 @@ class SubmissionOperationsSpec
 
     "store the subscription snapshot for customer lookup" in {
       when(mockGetSubscriptionConnector.getSubscription(any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(200, Json.toJson(subscription).toString)))
+        .thenReturn(Future.successful(HttpResponse(OK, Json.toJson(subscription).toString)))
       val result = operations.execute(command(RetrieveSubscription)).futureValue
       result.data.subscription mustBe Some(subscription)
     }
 
     "retrieve the customer using the nominated UTR and store the customer number" in {
       when(mockCrmmConnector.retrieveCustomer(any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(200, """{"customerId":"found"}""")))
+        .thenReturn(Future.successful(HttpResponse(OK, """{"customerId":"found"}""")))
       operations.execute(command(RetrieveCustomer)).futureValue.data.customerNumber mustBe Some("found")
       verify(mockCrmmConnector).retrieveCustomer(
         meq(
@@ -234,7 +241,7 @@ class SubmissionOperationsSpec
 
     "leave the customer number empty when CRMM does not return one" in {
       when(mockCrmmConnector.retrieveCustomer(any())(using any()))
-        .thenReturn(Future.successful(HttpResponse(200, "{}")))
+        .thenReturn(Future.successful(HttpResponse(OK, "{}")))
       operations.execute(command(RetrieveCustomer)).futureValue.data.customerNumber mustBe None
     }
 
@@ -242,9 +249,9 @@ class SubmissionOperationsSpec
       s"submit a $kind with the customer number and store its reference" in {
         val submission = command(SubmitDps, kind)
         when(mockNotificationConnector.postNotification(any(), any())(using any()))
-          .thenReturn(Future.successful(HttpResponse(201, """{"notificationRef":"NOT123"}""")))
+          .thenReturn(Future.successful(HttpResponse(CREATED, """{"notificationRef":"NOT123"}""")))
         when(mockCertificateConnector.postCertificate(any(), any())(using any()))
-          .thenReturn(Future.successful(HttpResponse(201, """{"certificateRef":"CRT123"}""")))
+          .thenReturn(Future.successful(HttpResponse(CREATED, """{"certificateRef":"CRT123"}""")))
         val result = operations.execute(submission).futureValue
         result.data.reference mustBe Some(if kind == SubmissionKind.Notification then "NOT123" else "CRT123")
         if kind == SubmissionKind.Notification then
@@ -262,7 +269,7 @@ class SubmissionOperationsSpec
     }
 
     "email delivery" - {
-      for (status, retryable) <- Seq(503 -> true, 400 -> false) do {
+      for (status, retryable) <- Seq(SERVICE_UNAVAILABLE -> true, BAD_REQUEST -> false) do {
         s"classify an HTTP $status rejection" in {
           val email = operations.successors(command(InitialPdf)).find(_.step == SendEmail).value
           when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(status)))
@@ -275,7 +282,7 @@ class SubmissionOperationsSpec
 
       "complete when the email is accepted" in {
         val email = operations.successors(command(InitialPdf)).find(_.step == SendEmail).value
-        when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(202)))
+        when(mockEmailConnector.postEmail(any())(using any())).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
         operations.execute(email).futureValue.operationFinished mustBe true
       }
@@ -283,7 +290,7 @@ class SubmissionOperationsSpec
 
     "DPS submission" - {
       for (description, response) <- Seq(
-          "server error"      -> HttpResponse(500),
+          "server error"      -> HttpResponse(INTERNAL_SERVER_ERROR),
           "malformed success" -> HttpResponse(201, "{}")
         )
       do {
@@ -324,15 +331,15 @@ class SubmissionOperationsSpec
 
     "SDES notification" - {
       for (status, retryable) <- Seq(
-          200 -> false,
-          201 -> false,
-          299 -> false,
-          400 -> false,
-          401 -> false,
-          403 -> false,
-          429 -> true,
-          500 -> true,
-          503 -> true
+          OK                    -> false,
+          CREATED               -> false,
+          299                   -> false,
+          BAD_REQUEST           -> false,
+          UNAUTHORIZED          -> false,
+          FORBIDDEN             -> false,
+          TOO_MANY_REQUESTS     -> true,
+          INTERNAL_SERVER_ERROR -> true,
+          SERVICE_UNAVAILABLE   -> true
         )
       do {
         s"reject HTTP $status with retryable=$retryable" in {
@@ -379,7 +386,7 @@ class SubmissionOperationsSpec
         contentLength = 100
       )
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
-      for status <- Seq(202, 204) do {
+      for status <- Seq(ACCEPTED, NO_CONTENT) do {
         when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
           .thenReturn(Future.successful(HttpResponse(status)))
         operations.execute(submission).futureValue.operationFinished mustBe true

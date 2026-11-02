@@ -28,6 +28,7 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.*
@@ -196,7 +197,7 @@ class NotificationServiceSpec
         }
 
         "Unparsable response; Return malformed response error" in {
-          configureSubscriptionResponse(200, "{")
+          configureSubscriptionResponse(OK, "{")
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -206,7 +207,7 @@ class NotificationServiceSpec
       }
 
       "400 Bad Request; Return misalignment error" in {
-        configureSubscriptionResponse(400)
+        configureSubscriptionResponse(BAD_REQUEST)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -214,7 +215,7 @@ class NotificationServiceSpec
       }
 
       "401 Unauthorized; Return downstream unauthorised error" in {
-        configureSubscriptionResponse(401)
+        configureSubscriptionResponse(UNAUTHORIZED)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -222,7 +223,7 @@ class NotificationServiceSpec
       }
 
       "403 Forbidden; Return downstream forbidden error" in {
-        configureSubscriptionResponse(403)
+        configureSubscriptionResponse(FORBIDDEN)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -230,7 +231,7 @@ class NotificationServiceSpec
       }
 
       "500 Internal Server Error; Return \"downstream service error\" error" in {
-        configureSubscriptionResponse(500)
+        configureSubscriptionResponse(INTERNAL_SERVER_ERROR)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -238,7 +239,7 @@ class NotificationServiceSpec
       }
 
       "503 Service Unavailable; Return downstream service unavailable error" in {
-        configureSubscriptionResponse(503)
+        configureSubscriptionResponse(SERVICE_UNAVAILABLE)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -332,9 +333,9 @@ class NotificationServiceSpec
         }
 
         "Unparsable response; Return malformed response error" in {
-          configureSubscriptionResponse(200)
+          configureSubscriptionResponse(OK)
           configureCrmmResponse(
-            200,
+            OK,
             "{"
           )
 
@@ -345,8 +346,8 @@ class NotificationServiceSpec
       }
 
       "400 Bad Request; Return misalignment error" in {
-        configureSubscriptionResponse(200)
-        configureCrmmResponse(400)
+        configureSubscriptionResponse(OK)
+        configureCrmmResponse(BAD_REQUEST)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -354,8 +355,8 @@ class NotificationServiceSpec
       }
 
       "401 Unauthorized; Return downstream unauthorised error" in {
-        configureSubscriptionResponse(200)
-        configureCrmmResponse(401)
+        configureSubscriptionResponse(OK)
+        configureCrmmResponse(UNAUTHORIZED)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -363,8 +364,8 @@ class NotificationServiceSpec
       }
 
       "403 Forbidden; Return downstream forbidden error" in {
-        configureSubscriptionResponse(200)
-        configureCrmmResponse(403)
+        configureSubscriptionResponse(OK)
+        configureCrmmResponse(FORBIDDEN)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -372,8 +373,8 @@ class NotificationServiceSpec
       }
 
       "500 Internal Server Error; Return \"downstream service error\" error" in {
-        configureSubscriptionResponse(200)
-        configureCrmmResponse(500)
+        configureSubscriptionResponse(OK)
+        configureCrmmResponse(INTERNAL_SERVER_ERROR)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -381,8 +382,8 @@ class NotificationServiceSpec
       }
 
       "503 Service Unavailable; Return downstream service unavailable error" in {
-        configureSubscriptionResponse(200)
-        configureCrmmResponse(503)
+        configureSubscriptionResponse(OK)
+        configureCrmmResponse(SERVICE_UNAVAILABLE)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -390,7 +391,7 @@ class NotificationServiceSpec
       }
 
       "an unknown response code; Return unknown failure error" in {
-        configureSubscriptionResponse(200)
+        configureSubscriptionResponse(OK)
         configureCrmmResponse(618)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
@@ -404,7 +405,7 @@ class NotificationServiceSpec
         "fail after DPS acceptance if direct audit delivery fails" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
-          configureDpsResponse(201, validDpsResponseBody)
+          configureDpsResponse(CREATED, validDpsResponseBody)
           when(mockAuditSender.notification(any(), any(), any(), any(), any())(using any()))
             .thenReturn(Future.failed(new IllegalStateException("audit unavailable")))
 
@@ -417,7 +418,7 @@ class NotificationServiceSpec
         "Valid repsonse; Continue down happy path" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
-          configureDpsResponse(201, validDpsResponseBody)
+          configureDpsResponse(CREATED, validDpsResponseBody)
           configurePdfGeneration()
           configureDocumentumPackageService()
 
@@ -456,7 +457,7 @@ class NotificationServiceSpec
         "Invalid response; Return malformed response error" in {
           configureSubscriptionResponse()
           configureCrmmResponse()
-          configureDpsResponse(201, "{")
+          configureDpsResponse(CREATED, "{")
 
           val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
           verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
@@ -467,7 +468,7 @@ class NotificationServiceSpec
       "400 Bad Request; Return misalignment error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
-        configureDpsResponse(400)
+        configureDpsResponse(BAD_REQUEST)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
         verify(mockEmailService, Times(0)).sendNotificationEmail(any(), any(), any())(using any)
@@ -478,7 +479,7 @@ class NotificationServiceSpec
       "401 Unauthorized; Return downstream unauthorised error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
-        configureDpsResponse(401)
+        configureDpsResponse(UNAUTHORIZED)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -489,7 +490,7 @@ class NotificationServiceSpec
       "403 Forbidden; Return downstream forbidden error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
-        configureDpsResponse(403)
+        configureDpsResponse(FORBIDDEN)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -500,7 +501,7 @@ class NotificationServiceSpec
       "500 Internal Server Error; Return \"downstream service error\" error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
-        configureDpsResponse(500)
+        configureDpsResponse(INTERNAL_SERVER_ERROR)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 
@@ -511,7 +512,7 @@ class NotificationServiceSpec
       "503 Service Unavailable; Return downstream service unavailable error" in {
         configureSubscriptionResponse()
         configureCrmmResponse()
-        configureDpsResponse(503)
+        configureDpsResponse(SERVICE_UNAVAILABLE)
 
         val result = service.postNotification(exampleSubscriptionId, incomingRequest).futureValue
 

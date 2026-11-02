@@ -31,6 +31,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.slf4j.LoggerFactory
 import play.api.http.Status
+import play.api.http.Status.ACCEPTED
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.senioraccountingofficer.connectors.EmailConnector
 import uk.gov.hmrc.senioraccountingofficer.models.*
@@ -318,7 +319,7 @@ class EmailServiceSpec
 
     "send submitter certificate email confirmation to one contact" in {
       when(mockEmailConnector.postEmail(any())(using any))
-        .thenReturn(Future.successful(HttpResponse(202)))
+        .thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
@@ -355,7 +356,7 @@ class EmailServiceSpec
     }
 
     "send submitter email certificate confirmation to SAO" in {
-      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
       val expectedSaoEmail = Some(
@@ -390,7 +391,7 @@ class EmailServiceSpec
     }
 
     "send sao email certificate confirmation to two contacts" in {
-      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 
       val twoContacts    = contacts ++ List(Contact("name2", "email2@example.com", "en", "ACTIVE"))
@@ -427,7 +428,7 @@ class EmailServiceSpec
     }
 
     "send sao email certificate confirmation to two contacts and the SAO" in {
-      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(202)))
+      when(mockEmailConnector.postEmail(any)(using any)).thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
       val captor: ArgumentCaptor[Email] = ArgumentCaptor.forClass(classOf[Email])
 

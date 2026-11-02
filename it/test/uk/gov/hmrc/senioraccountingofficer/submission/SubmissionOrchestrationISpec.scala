@@ -159,40 +159,40 @@ class SubmissionOrchestrationISpec
           .futureValue
         responses.map(_.header.status).distinct mustBe Seq(202)
         entries(RetrieveSubscription).size mustBe 1
-        statusOf(submissionData) mustBe 204
+        statusOf(submissionData) mustBe NO_CONTENT
       }
     }
 
     for kind <- SubmissionKind.values do {
       s"isolate $kind submissions for different subscriptions" in {
         val submissionData = data(kind).copy(reference = None, submittedAt = None)
-        service.submit(submissionData).futureValue.header.status mustBe 202
-        statusOf(submissionData.copy(subscriptionId = "another-subscription")) mustBe 404
+        service.submit(submissionData).futureValue.header.status mustBe ACCEPTED
+        statusOf(submissionData.copy(subscriptionId = "another-subscription")) mustBe NOT_FOUND
         service
           .submit(
             submissionData.copy(subscriptionId = "another-subscription", orchestrationId = UUID.randomUUID().toString)
           )
           .futureValue
           .header
-          .status mustBe 202
+          .status mustBe ACCEPTED
         entries(RetrieveSubscription).size mustBe 2
       }
     }
 
     "reject a changed payload submitted with an existing idempotency key" in {
       val submissionData = data()
-      service.submit(submissionData).futureValue.header.status mustBe 202
+      service.submit(submissionData).futureValue.header.status mustBe ACCEPTED
       val changed = submissionData.copy(notification =
         submissionData.notification.map(
           _.copy(remarks = Some(uk.gov.hmrc.senioraccountingofficer.models.requests.FreeText("changed")))
         )
       )
-      service.submit(changed).futureValue.header.status mustBe 409
+      service.submit(changed).futureValue.header.status mustBe CONFLICT
     }
 
     "allow notification and certificate submissions to use the same idempotency key" in {
-      service.submit(data()).futureValue.header.status mustBe 202
-      service.submit(data(SubmissionKind.Certificate)).futureValue.header.status mustBe 202
+      service.submit(data()).futureValue.header.status mustBe ACCEPTED
+      service.submit(data(SubmissionKind.Certificate)).futureValue.header.status mustBe ACCEPTED
       entries(RetrieveSubscription).size mustBe 2
     }
 
@@ -205,7 +205,7 @@ class SubmissionOrchestrationISpec
           AuditTags.missing("/senior-accounting-officer/notification")
         )
       UUID.fromString(generated.idempotencyKey) mustBe a[UUID]
-      service.submit(generated).futureValue.header.status mustBe 202
+      service.submit(generated).futureValue.header.status mustBe ACCEPTED
     }
   }
 
@@ -314,12 +314,12 @@ class SubmissionOrchestrationISpec
         val submissionData = data(kind).copy(reference = None, submittedAt = None)
         service.submit(submissionData).futureValue
         Seq(RetrieveSubscription, RetrieveCustomer, SubmitDps).foreach(run)
-        statusOf(submissionData) mustBe 204
+        statusOf(submissionData) mustBe NO_CONTENT
         doReturn(Future.failed(new RuntimeException("pdf unavailable")))
           .when(mockSubmissionOperations)
           .execute(any())(using any())
         run(InitialPdf)
-        statusOf(submissionData) mustBe 200
+        statusOf(submissionData) mustBe OK
         states.get(submissionData.scopeKey).futureValue.value.pdfStored mustBe false
         entries(EnsurePdf).size mustBe 1
         entries(SendEmail).size mustBe (if kind == SubmissionKind.Notification then 2 else 3)
@@ -332,23 +332,23 @@ class SubmissionOrchestrationISpec
     "create missing public state when processing an accepted root command" in {
       val submission = SubmissionCommand.start(data().copy(reference = None))
       queues(RetrieveSubscription).enqueue(submission).futureValue
-      statusOf(submission.data) mustBe 404
+      statusOf(submission.data) mustBe NOT_FOUND
       run(RetrieveSubscription)
-      statusOf(submission.data) mustBe 204
+      statusOf(submission.data) mustBe NO_CONTENT
       entries(RetrieveCustomer).size mustBe 1
     }
 
     "wait for backoff before retrying a 408 customer lookup response" in {
       val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
       seed(submission)
-      doReturn(Future.failed(SubmissionFailures.response(408, isInitialLookup = true)))
+      doReturn(Future.failed(SubmissionFailures.response(REQUEST_TIMEOUT, isInitialLookup = true)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
       run(RetrieveCustomer)
       entries(RetrieveCustomer).head.status mustBe ProcessingStatus.Failed
       run(RetrieveCustomer)
       verify(mockSubmissionOperations, times(1)).execute(any())(using any())
-      statusOf(submission.data) mustBe 204
+      statusOf(submission.data) mustBe NO_CONTENT
       clock.advance(61)
       run(RetrieveCustomer)
       verify(mockSubmissionOperations, times(2)).execute(any())(using any())
@@ -357,7 +357,7 @@ class SubmissionOrchestrationISpec
     "use configured retry delays and keep using the last delay" in {
       val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
       seed(submission)
-      doReturn(Future.failed(SubmissionFailures.response(408, isInitialLookup = true)))
+      doReturn(Future.failed(SubmissionFailures.response(REQUEST_TIMEOUT, isInitialLookup = true)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
 
@@ -377,7 +377,7 @@ class SubmissionOrchestrationISpec
         val submission = command(step).copy(data = data().copy(reference = None))
         seed(submission)
         doReturn(Future.failed(SubmissionFailures.response(
-          503,
+          SERVICE_UNAVAILABLE,
           isDpsSubmission = step == SubmitDps,
           isInitialLookup = step != SubmitDps
         )))
@@ -386,7 +386,7 @@ class SubmissionOrchestrationISpec
         run(step)
         entries(step).head.status mustBe ProcessingStatus.PermanentlyFailed
         entries(step).head.failureCount mustBe 0
-        statusOf(submission.data) mustBe 502
+        statusOf(submission.data) mustBe BAD_GATEWAY
         Seq(RetrieveCustomer, SubmitDps, InitialPdf, Audit).filterNot(_ == step).foreach { next =>
           entries(next) mustBe empty
         }
@@ -396,11 +396,11 @@ class SubmissionOrchestrationISpec
     "publish a permanent customer lookup failure without submitting to DPS" in {
       val submission = command(RetrieveCustomer).copy(data = data().copy(reference = None))
       seed(submission)
-      doReturn(Future.failed(SubmissionFailures.response(401)))
+      doReturn(Future.failed(SubmissionFailures.response(UNAUTHORIZED)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
       run(RetrieveCustomer)
-      statusOf(submission.data) mustBe 500
+      statusOf(submission.data) mustBe INTERNAL_SERVER_ERROR
       entries(SubmitDps) mustBe empty
     }
 
@@ -409,7 +409,7 @@ class SubmissionOrchestrationISpec
       seed(submission)
       run(SubmitDps)
       verify(mockSubmissionOperations, never()).execute(any())(using any())
-      statusOf(submission.data) mustBe 502
+      statusOf(submission.data) mustBe BAD_GATEWAY
       entries(SubmitDps).head.item.failure.value.dpsOutcomeUnknown mustBe true
       entries(InitialPdf) mustBe empty
     }
@@ -422,12 +422,12 @@ class SubmissionOrchestrationISpec
       clock.advance(1000)
       run(SubmitDps)
       verify(mockSubmissionOperations, times(1)).execute(any())(using any())
-      statusOf(submission.data) mustBe 502
+      statusOf(submission.data) mustBe BAD_GATEWAY
     }
 
     "allow a retry after an explicit DPS rate-limit rejection" in {
       seed(command(SubmitDps))
-      doReturn(Future.failed(SubmissionFailures.response(status = 429, isDpsSubmission = true)))
+      doReturn(Future.failed(SubmissionFailures.response(status = TOO_MANY_REQUESTS, isDpsSubmission = true)))
         .when(mockSubmissionOperations)
         .execute(any())(using any())
       run(SubmitDps)
@@ -476,7 +476,7 @@ class SubmissionOrchestrationISpec
       seed(submission)
       run(InitialPdf)
       verify(mockSubmissionOperations, never()).execute(any())(using any())
-      statusOf(submission.data) mustBe 200
+      statusOf(submission.data) mustBe OK
     }
 
     "retry public state publication without repeating a successful DPS call" in {
@@ -508,21 +508,21 @@ class SubmissionOrchestrationISpec
         seed(submission)
         states.publish(submission).futureValue
         val publicOutcome = states.get(submission.data.scopeKey).futureValue.value
-        doReturn(Future.failed(SubmissionFailures.response(503)))
+        doReturn(Future.failed(SubmissionFailures.response(SERVICE_UNAVAILABLE)))
           .when(mockSubmissionOperations)
           .execute(any())(using any())
         run(step)
         entries(step).head.status mustBe ProcessingStatus.Failed
-        statusOf(submission.data) mustBe 200
+        statusOf(submission.data) mustBe OK
         states.get(submission.data.scopeKey).futureValue.value mustBe publicOutcome
         clock.advance(61)
-        doReturn(Future.failed(SubmissionFailures.response(400)))
+        doReturn(Future.failed(SubmissionFailures.response(BAD_REQUEST)))
           .when(mockSubmissionOperations)
           .execute(any())(using any())
         run(step)
         entries(step).head.status mustBe ProcessingStatus.PermanentlyFailed
-        entries(step).head.item.failure mustBe Some(SubmissionFailures.response(400).failure)
-        statusOf(submission.data) mustBe 200
+        entries(step).head.item.failure mustBe Some(SubmissionFailures.response(BAD_REQUEST).failure)
+        statusOf(submission.data) mustBe OK
         states.get(submission.data.scopeKey).futureValue.value mustBe publicOutcome
       }
     }
@@ -537,14 +537,14 @@ class SubmissionOrchestrationISpec
       seed(root)
       run(RetrieveSubscription)
       worker.maintain().futureValue
-      statusOf(root.data) mustBe 502
+      statusOf(root.data) mustBe BAD_GATEWAY
       val before = states.get(root.data.scopeKey).futureValue.value.expiresAt
       service.status(root.data.subscriptionId, root.data.kind, root.data.idempotencyKey).futureValue
       states.get(root.data.scopeKey).futureValue.value.expiresAt mustBe before
       clock.advance(retentionSeconds + 1 )
-      statusOf(root.data) mustBe 404
+      statusOf(root.data) mustBe NOT_FOUND
       val replacement = data()
-      service.submit(replacement).futureValue.header.status mustBe 202
+      service.submit(replacement).futureValue.header.status mustBe ACCEPTED
       entries(RetrieveSubscription).head.item.data.orchestrationId mustBe replacement.orchestrationId
     }
 

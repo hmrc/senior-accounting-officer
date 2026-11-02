@@ -23,6 +23,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Company, NotificationDpsRequest, Sao}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.{CompanyType, CompanyStatus}
+import play.api.http.Status.{OK, BAD_REQUEST}
 import support.SubmitNotificationHelper
 
 class NotificationConnectorIntegrationSpec extends ISpecBase {
@@ -84,11 +85,11 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
   "postNotification" must {
 
     "pass through a successful downstream response" in {
-      SubmitNotificationHelper.mock("123", 200, None)
+      SubmitNotificationHelper.mock("123", OK, None)
 
       val result = connector.postNotification("123", request).futureValue
 
-      result.status mustBe 200
+      result.status mustBe OK
 
       verify(
         1,
@@ -102,11 +103,11 @@ class NotificationConnectorIntegrationSpec extends ISpecBase {
     "pass through a downstream validation error body" in {
       val downstreamBody = """[{"path":"companies[0].utr","reason":"INVALID_FORMAT"}]"""
 
-      SubmitNotificationHelper.mock("123", 400, Some(downstreamBody))
+      SubmitNotificationHelper.mock("123", BAD_REQUEST, Some(downstreamBody))
 
       val result = connector.postNotification("123", request).futureValue
 
-      result.status mustBe 400
+      result.status mustBe BAD_REQUEST
       result.body mustBe downstreamBody
 
       verify(

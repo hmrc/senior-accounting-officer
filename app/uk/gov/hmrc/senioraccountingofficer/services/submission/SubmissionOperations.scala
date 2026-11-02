@@ -20,7 +20,7 @@ import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.util.ByteString
-import play.api.http.Status.{ACCEPTED, NO_CONTENT}
+import play.api.http.Status.*
 import play.api.libs.json.*
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
 import uk.gov.hmrc.objectstore.client.play.Implicits.*
@@ -68,13 +68,13 @@ class SubmissionOperations @Inject() (
         case RetrieveSubscription =>
           subscriptions.getSubscription(data.subscriptionId).map { response =>
             command.copy(data =
-              data.copy(subscription = Some(decode[GetSubscriptionDpsResponse](response, 200, isInitialLookup = true)))
+              data.copy(subscription = Some(decode[GetSubscriptionDpsResponse](response, OK, isInitialLookup = true)))
             )
           }
         case RetrieveCustomer =>
           val company = required(data.subscription, "subscription").nominatedCompany
           customers.retrieveCustomer(RetrieveCustomerRequest(company.crn, Some(company.utr))).map { response =>
-            val customer = decode[RetrieveCustomerResponse](response, 200, isInitialLookup = true)
+            val customer = decode[RetrieveCustomerResponse](response, OK, isInitialLookup = true)
             command.copy(data = data.copy(customerNumber = customer.customerId))
           }
         case SubmitDps  => submitDps(command)
@@ -82,7 +82,7 @@ class SubmissionOperations @Inject() (
           uploadPdf(data).map(_ => command.copy(data = data.copy(pdfAttempted = true, pdfStored = true)))
         case SendEmail =>
           emails.postEmail(emailModel(command)).map { response =>
-            if response.status != 202 then throw SubmissionFailures.response(response.status)
+            if response.status != ACCEPTED then throw SubmissionFailures.response(response.status)
             command
           }
         case EnsurePdf =>
@@ -133,14 +133,14 @@ class SubmissionOperations @Inject() (
             data.subscriptionId,
             required(data.notification, "notification").toNotificationDpsRequest(data.customerNumber)
           )
-          .map(r => withReference(command, decode[NotificationDpsResponse](r, 201, true).notificationRef))
+          .map(r => withReference(command, decode[NotificationDpsResponse](r, CREATED, true).notificationRef))
       case Certificate =>
         certificates
           .postCertificate(
             data.subscriptionId,
             required(data.certificate, "certificate").toCertificateDpsRequest(data.customerNumber)
           )
-          .map(r => withReference(command, decode[CertificateDpsResponse](r, 201, true).certificateRef))
+          .map(r => withReference(command, decode[CertificateDpsResponse](r, CREATED, true).certificateRef))
     }
   }
 

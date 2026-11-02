@@ -25,6 +25,7 @@ import uk.gov.hmrc.senioraccountingofficer.connectors.CrmmConnectorIntegrationSp
 import uk.gov.hmrc.senioraccountingofficer.models.crmm.RetrieveCustomerRequest
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.*
 import play.api.libs.json.Json
+import play.api.http.Status.*
 import support.RetrieveCustomerHelper
 
 class CrmmConnectorIntegrationSpec extends ISpecBase {
@@ -47,7 +48,7 @@ class CrmmConnectorIntegrationSpec extends ISpecBase {
 
       val result = connector.retrieveCustomer(request).futureValue
 
-      result.status mustBe 200
+      result.status mustBe OK
       result.body mustBe Json
         .obj()
         .toString
@@ -59,7 +60,7 @@ class CrmmConnectorIntegrationSpec extends ISpecBase {
       )
     }
 
-    Seq(200, 400, 401, 403, 500, 503).foreach { expectedStatus =>
+    Seq(OK, BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE).foreach { expectedStatus =>
       s"return a $expectedStatus response from the service when the crmm feature toggle is enabled" in {
         AppConfig.setValue("feature-toggles.crmm", "true")
 
