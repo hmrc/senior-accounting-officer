@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.connectors
 
+import play.api.http.Status.OK
 import play.api.libs.json.Json
 import play.api.libs.ws.writeableOf_JsValue
 import uk.gov.hmrc.http.*
@@ -47,7 +48,7 @@ class CrmmConnector @Inject() (
     else
       Future.successful(
         HttpResponse(
-          200,
+          OK,
           Json.obj().toString()
         )
       )

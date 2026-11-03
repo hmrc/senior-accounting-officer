@@ -20,7 +20,7 @@ import com.github.tomakehurst.wiremock.client.WireMock.*
 import support.ISpecBase
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
 import uk.gov.hmrc.senioraccountingofficer.connectors.SdesConnectorIntegrationSpec.*
-
+import play.api.http.Status.*
 import java.util.UUID
 import scala.util.Random
 import support.SdesHelper
@@ -59,7 +59,7 @@ class SdesConnectorIntegrationSpec extends ISpecBase {
       )
     }
 
-    Seq(204, 400, 401, 403, 500, 503).foreach { expectedStatus =>
+    Seq(NO_CONTENT, BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE).foreach { expectedStatus =>
       given HeaderCarrier = HeaderCarrier(extraHeaders = Seq("correlationId" -> correlationId))
 
       s"return a Future.successful(HttpResponse) for a $expectedStatus response from SDES Proxy" in {

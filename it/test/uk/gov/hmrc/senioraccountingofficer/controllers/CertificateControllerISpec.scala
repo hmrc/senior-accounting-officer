@@ -20,6 +20,7 @@ import org.apache.pekko.util.ByteString
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Millis, Seconds, Span}
 import play.api.http.HeaderNames
+import play.api.http.Status.*
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.readableAsString
 import play.api.libs.ws.{BodyWritable, InMemoryBody}
@@ -76,26 +77,26 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       "returns 201" must {
         "CRMM gives us a customer id" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-          EmailHelper.mock(200)
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+          EmailHelper.mock(OK)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
           ObjectStoreHelper.mockCertificateZipUpload(
             certificateReference,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          SdesHelper.mock(200, None)
+          SdesHelper.mock(OK, None)
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 201
+          response.status mustBe CREATED
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -120,26 +121,26 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
         "CRMM does not give us a customer id" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-          EmailHelper.mock(200)
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerNotFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+          EmailHelper.mock(OK)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
           ObjectStoreHelper.mockCertificateZipUpload(
             certificateReference,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          SdesHelper.mock(200, None)
+          SdesHelper.mock(OK, None)
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 201
+          response.status mustBe CREATED
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -164,26 +165,26 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
         "submitterName is provided in the request therefore the 'dsao_certificate_confirmation_for_submitter' and 'dsao_certificate_confirmation_for_submitter_sao' templates are used" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-          EmailHelper.mock(200)
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerNotFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+          EmailHelper.mock(OK)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
           ObjectStoreHelper.mockCertificateZipUpload(
             certificateReference,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          SdesHelper.mock(200, None)
+          SdesHelper.mock(OK, None)
 
           val response = makeRequest(requestBodyWithSubmitterName)
 
-          response.status mustBe 201
+          response.status mustBe CREATED
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -208,26 +209,26 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
 
         "submitterName is not provided in the request therefore the 'dsao_certificate_confirmation_for_sao' and 'dsao_certificate_confirmation_for_sao_to_contacts' templates are used" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerNotFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-          EmailHelper.mock(200)
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerNotFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+          EmailHelper.mock(OK)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
           ObjectStoreHelper.mockCertificateZipUpload(
             certificateReference,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          SdesHelper.mock(200, None)
+          SdesHelper.mock(OK, None)
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 201
+          response.status mustBe CREATED
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -256,11 +257,11 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       "returns 200 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(unparsableResponse))
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(unparsableResponse))
 
           val response = makeRequest(requestBodyWithSubmitterName)
 
-          response.status mustBe 500
+          response.status mustBe INTERNAL_SERVER_ERROR
           response.body[String] mustBe s"""{"reason":"DOWNSTREAM_SERVICE_MISALIGNMENT"}"""
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -278,12 +279,12 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       }
 
       List(
-        (400, 500, "DOWNSTREAM_SERVICE_MISALIGNMENT"),
-        (401, 500, "SERVICE_MISCONFIGURATION"),
-        (403, 500, "SERVICE_MISCONFIGURATION"),
-        (500, 502, "DOWNSTREAM_SERVICE_ERROR"),
-        (503, 502, "DOWNSTREAM_SERVICE_UNAVAILABLE"),
-        (618, 502, "DOWNSTREAM_SERVICE_MISALIGNMENT")
+        (BAD_REQUEST, INTERNAL_SERVER_ERROR, "DOWNSTREAM_SERVICE_MISALIGNMENT"),
+        (UNAUTHORIZED, INTERNAL_SERVER_ERROR, "SERVICE_MISCONFIGURATION"),
+        (FORBIDDEN, INTERNAL_SERVER_ERROR, "SERVICE_MISCONFIGURATION"),
+        (INTERNAL_SERVER_ERROR, BAD_GATEWAY, "DOWNSTREAM_SERVICE_ERROR"),
+        (SERVICE_UNAVAILABLE, BAD_GATEWAY, "DOWNSTREAM_SERVICE_UNAVAILABLE"),
+        (618, BAD_GATEWAY, "DOWNSTREAM_SERVICE_MISALIGNMENT")
       ).foreach((downstreamResponseCode, expectedResponseCode, expectedReason) => {
         s"returns $downstreamResponseCode" must {
           s"return a $expectedResponseCode response reason $expectedReason" in {
@@ -315,12 +316,12 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       "returns 200 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(unparsableResponse))
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(unparsableResponse))
 
           val response = makeRequest(requestBodyWithSubmitterName)
 
-          response.status mustBe 500
+          response.status mustBe INTERNAL_SERVER_ERROR
           response.body[String] mustBe s"""{"reason":"DOWNSTREAM_SERVICE_MISALIGNMENT"}"""
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -338,17 +339,17 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       }
 
       List(
-        (400, 500, "DOWNSTREAM_SERVICE_MISALIGNMENT"),
-        (401, 500, "SERVICE_MISCONFIGURATION"),
-        (403, 500, "SERVICE_MISCONFIGURATION"),
-        (500, 502, "DOWNSTREAM_SERVICE_ERROR"),
-        (503, 502, "DOWNSTREAM_SERVICE_UNAVAILABLE"),
-        (618, 502, "DOWNSTREAM_SERVICE_MISALIGNMENT")
+        (BAD_REQUEST, INTERNAL_SERVER_ERROR, "DOWNSTREAM_SERVICE_MISALIGNMENT"),
+        (UNAUTHORIZED, INTERNAL_SERVER_ERROR, "SERVICE_MISCONFIGURATION"),
+        (FORBIDDEN, INTERNAL_SERVER_ERROR, "SERVICE_MISCONFIGURATION"),
+        (INTERNAL_SERVER_ERROR, BAD_GATEWAY, "DOWNSTREAM_SERVICE_ERROR"),
+        (SERVICE_UNAVAILABLE, BAD_GATEWAY, "DOWNSTREAM_SERVICE_UNAVAILABLE"),
+        (618, BAD_GATEWAY, "DOWNSTREAM_SERVICE_MISALIGNMENT")
       ).foreach((downstreamResponseCode, expectedResponseCode, expectedReason) => {
         s"returns $downstreamResponseCode" must {
           s"return a $expectedResponseCode response reason $expectedReason" in {
             MockAuthHelper.mockAuthOk()
-            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
             RetrieveCustomerHelper.mock(downstreamResponseCode, None)
 
             val response = makeRequest(requestBodyWithSubmitterName)
@@ -376,13 +377,13 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       "returns 201 with a response body that cannot be parsed" must {
         "return a 500 response reason DOWNSTREAM_SERVICE_MISALIGNMENT" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(unparsableResponse))
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(unparsableResponse))
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 500
+          response.status mustBe INTERNAL_SERVER_ERROR
           response.body[String] mustBe s"""{"reason":"DOWNSTREAM_SERVICE_MISALIGNMENT"}"""
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -404,18 +405,18 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       }
 
       List(
-        (400, 500, "DOWNSTREAM_SERVICE_MISALIGNMENT"),
-        (401, 500, "SERVICE_MISCONFIGURATION"),
-        (403, 500, "SERVICE_MISCONFIGURATION"),
-        (500, 502, "DOWNSTREAM_SERVICE_ERROR"),
-        (503, 502, "DOWNSTREAM_SERVICE_UNAVAILABLE"),
-        (618, 502, "DOWNSTREAM_SERVICE_MISALIGNMENT")
+        (BAD_REQUEST, INTERNAL_SERVER_ERROR, "DOWNSTREAM_SERVICE_MISALIGNMENT"),
+        (UNAUTHORIZED, INTERNAL_SERVER_ERROR, "SERVICE_MISCONFIGURATION"),
+        (FORBIDDEN, INTERNAL_SERVER_ERROR, "SERVICE_MISCONFIGURATION"),
+        (INTERNAL_SERVER_ERROR, BAD_GATEWAY, "DOWNSTREAM_SERVICE_ERROR"),
+        (SERVICE_UNAVAILABLE, BAD_GATEWAY, "DOWNSTREAM_SERVICE_UNAVAILABLE"),
+        (618, BAD_GATEWAY, "DOWNSTREAM_SERVICE_MISALIGNMENT")
       ).foreach((downstreamResponseCode, expectedResponseCode, expectedReason) => {
         s"returns $downstreamResponseCode" must {
           s"return a $expectedResponseCode response reason $expectedReason" in {
             MockAuthHelper.mockAuthOk()
-            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
             SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, downstreamResponseCode, None)
 
             val response = makeRequest(requestBody)
@@ -447,15 +448,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       "Fails" must {
         "despite the failure return 201 and continue to upload to object store" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-          EmailHelper.mock(400)
-          ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+          EmailHelper.mock(BAD_REQUEST)
+          ObjectStoreHelper.mockPdfUpload(pdfFilename, BAD_REQUEST, None)
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 201
+          response.status mustBe CREATED
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -485,15 +486,15 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
         "Fails" must {
           "return 201 despite the failure" in {
             MockAuthHelper.mockAuthOk()
-            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-            EmailHelper.mock(200)
-            ObjectStoreHelper.mockPdfUpload(pdfFilename, 400, None)
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+            EmailHelper.mock(OK)
+            ObjectStoreHelper.mockPdfUpload(pdfFilename, BAD_REQUEST, None)
 
             val response = makeRequest(requestBody)
 
-            response.status mustBe 201
+            response.status mustBe CREATED
             response.body[String] mustBe controllerSuccessResponse
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -522,20 +523,20 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
         "Fails" must {
           "return 201 despite the failure" in {
             MockAuthHelper.mockAuthOk()
-            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-            EmailHelper.mock(200)
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+            EmailHelper.mock(OK)
             ObjectStoreHelper.mockPdfUpload(
               pdfFilename,
-              200,
+              OK,
               Some(objectStoreUploadResponse)
             )
-            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 400, None)
+            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, BAD_REQUEST, None)
 
             val response = makeRequest(requestBody)
 
-            response.status mustBe 201
+            response.status mustBe CREATED
             response.body[String] mustBe controllerSuccessResponse
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -564,25 +565,25 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
         "Fails" must {
           "return 201 despite the failure" in {
             MockAuthHelper.mockAuthOk()
-            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-            RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-            EmailHelper.mock(200)
+            GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+            RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+            SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+            EmailHelper.mock(OK)
             ObjectStoreHelper.mockPdfUpload(
               pdfFilename,
-              200,
+              OK,
               Some(objectStoreUploadResponse)
             )
-            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+            ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
             ObjectStoreHelper.mockCertificateZipUpload(
               certificateReference,
-              400,
+              BAD_REQUEST,
               Some(objectStoreUploadResponse)
             )
 
             val response = makeRequest(requestBody)
 
-            response.status mustBe 201
+            response.status mustBe CREATED
             response.body[String] mustBe controllerSuccessResponse
 
             GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -612,26 +613,26 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
       "Fails" must {
         "return 201 despite the failure" in {
           MockAuthHelper.mockAuthOk()
-          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, 200, Some(getSubscriptionResponse))
-          RetrieveCustomerHelper.mock(200, Some(retrieveCustomerResponseCustomerFound))
-          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, 201, Some(submitCertificateResponse))
-          EmailHelper.mock(200)
+          GetSubscriptionHelper.mock(MockAuthHelper.testSubscriptionId, OK, Some(getSubscriptionResponse))
+          RetrieveCustomerHelper.mock(OK, Some(retrieveCustomerResponseCustomerFound))
+          SubmitCertificateHelper.mock(MockAuthHelper.testSubscriptionId, CREATED, Some(submitCertificateResponse))
+          EmailHelper.mock(OK)
           ObjectStoreHelper.mockPdfUpload(
             pdfFilename,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, 200, Some(objectStoreUploadResponse))
+          ObjectStoreHelper.mockPdfRetrieval(pdfFilename, OK, Some(objectStoreUploadResponse))
           ObjectStoreHelper.mockCertificateZipUpload(
             certificateReference,
-            200,
+            OK,
             Some(objectStoreUploadResponse)
           )
-          SdesHelper.mock(400, None)
+          SdesHelper.mock(BAD_REQUEST, None)
 
           val response = makeRequest(requestBody)
 
-          response.status mustBe 201
+          response.status mustBe CREATED
           response.body[String] mustBe controllerSuccessResponse
 
           GetSubscriptionHelper.verifyCalled(MockAuthHelper.testSubscriptionId, 1)
@@ -691,7 +692,7 @@ class CertificateControllerISpec extends ISpecBase with Eventually {
           .get()
           .futureValue
 
-      response.status mustBe 204
+      response.status mustBe NO_CONTENT
     }
   }
 }

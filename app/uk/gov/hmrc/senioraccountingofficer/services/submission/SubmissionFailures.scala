@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services.submission
 
+import play.api.http.Status.*
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason.*
 import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionFailure
@@ -23,32 +24,33 @@ import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionFailure
 object SubmissionFailures {
 
   def unknownDpsOutcome: SubmissionFailure =
-    SubmissionFailure(502, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), dpsOutcomeUnknown = true)
+    SubmissionFailure(BAD_GATEWAY, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), dpsOutcomeUnknown = true)
 
   def response(status: Int, isDpsSubmission: Boolean = false, isInitialLookup: Boolean = false): OperationRejected = {
     val (httpStatus, apiError) = status match {
-      case 400           => (500, DOWNSTREAM_SERVICE_MISALIGNMENT)
-      case 401 | 403     => (500, SERVICE_MISCONFIGURATION)
-      case 503           => (502, DOWNSTREAM_SERVICE_UNAVAILABLE)
-      case n if n >= 500 => (502, DOWNSTREAM_SERVICE_ERROR)
-      case _             => (502, DOWNSTREAM_SERVICE_MISALIGNMENT)
+      case BAD_REQUEST                     => (INTERNAL_SERVER_ERROR, DOWNSTREAM_SERVICE_MISALIGNMENT)
+      case UNAUTHORIZED | FORBIDDEN        => (INTERNAL_SERVER_ERROR, SERVICE_MISCONFIGURATION)
+      case SERVICE_UNAVAILABLE             => (BAD_GATEWAY, DOWNSTREAM_SERVICE_UNAVAILABLE)
+      case n if n >= INTERNAL_SERVER_ERROR => (BAD_GATEWAY, DOWNSTREAM_SERVICE_ERROR)
+      case _                               => (BAD_GATEWAY, DOWNSTREAM_SERVICE_MISALIGNMENT)
     }
     OperationRejected(
       failure = SubmissionFailure(
         httpStatus = httpStatus,
         error = ApiError(apiError),
-        dpsOutcomeUnknown = isDpsSubmission && status >= 500
+        dpsOutcomeUnknown = isDpsSubmission && status >= INTERNAL_SERVER_ERROR
       ),
       retryable =
-        if isDpsSubmission || isInitialLookup then status == 408 || status == 422 || status == 429
-        else status == 429 || status >= 500
+        if isDpsSubmission || isInitialLookup then
+          status == REQUEST_TIMEOUT || status == UNPROCESSABLE_ENTITY || status == TOO_MANY_REQUESTS
+        else status == TOO_MANY_REQUESTS || status >= INTERNAL_SERVER_ERROR
     )
   }
 
   def malformed(isDpsSubmission: Boolean): OperationRejected =
     OperationRejected(
       failure = SubmissionFailure(
-        httpStatus = 500,
+        httpStatus = INTERNAL_SERVER_ERROR,
         error = ApiError(DOWNSTREAM_SERVICE_MISALIGNMENT),
         dpsOutcomeUnknown = isDpsSubmission
       ),

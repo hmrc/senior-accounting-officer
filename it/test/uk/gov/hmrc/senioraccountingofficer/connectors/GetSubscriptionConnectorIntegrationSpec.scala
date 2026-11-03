@@ -22,6 +22,7 @@ import support.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.senioraccountingofficer.config.AppConfig
 import uk.gov.hmrc.senioraccountingofficer.connectors.GetSubscriptionConnectorIntegrationSpec.*
+import play.api.http.Status.*
 
 class GetSubscriptionConnectorIntegrationSpec extends ISpecBase {
 
@@ -36,14 +37,14 @@ class GetSubscriptionConnectorIntegrationSpec extends ISpecBase {
   )
 
   "GetSubscriptionConnector" must {
-    Seq(200, 204, 400, 401, 403, 500, 503).foreach { expectedStatus =>
+    Seq(OK, NO_CONTENT, BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE).foreach { expectedStatus =>
       s"return a Future.successful(HttpResponse) for a $expectedStatus response from HIP" in {
         GetSubscriptionHelper.mock(testSaoSubscriptionId, expectedStatus, Some(testResponse))
 
         val result = connector.getSubscription(testSaoSubscriptionId).futureValue
 
         result.status mustBe expectedStatus
-        if expectedStatus == 204 then result.body mustBe ""
+        if expectedStatus == NO_CONTENT then result.body mustBe ""
         else result.body mustBe testResponse
 
         verify(

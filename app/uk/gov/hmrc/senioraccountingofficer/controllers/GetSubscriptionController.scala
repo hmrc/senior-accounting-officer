@@ -44,7 +44,7 @@ class GetSubscriptionController @Inject() (
     getSubscriptionConnector
       .getSubscription(request.saoSubscriptionId)
       .map {
-        case HttpResponse(200, body, _) =>
+        case HttpResponse(OK, body, _) =>
           Try(Json.parse(body).validate[GetSubscriptionDpsResponse].asEither).toEither.flatten
             .map { response =>
               Ok(Json.toJson(response))
@@ -55,22 +55,22 @@ class GetSubscriptionController @Inject() (
               BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
             }
             .merge
-        case HttpResponse(status @ 204, body, _) =>
+        case HttpResponse(status @ NO_CONTENT, body, _) =>
           logger.warn(s"[GetSubscription][DPS][NO_CONTENT][CorrelationId=$getCorrelationId]")
           BadGateway(Json.toJson(ApiError(reason = Reason.SUBSCRIPTION_NOT_FOUND)))
-        case HttpResponse(400, body, _) =>
+        case HttpResponse(BAD_REQUEST, body, _) =>
           logger.warn(s"[GetSubscription][DPS][BAD_REQUEST][CorrelationId=$getCorrelationId]")
           InternalServerError(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_MISALIGNMENT)))
-        case HttpResponse(401, body, _) =>
+        case HttpResponse(UNAUTHORIZED, body, _) =>
           logger.warn(s"[GetSubscription][DPS][UNAUTHORIZED][CorrelationId=$getCorrelationId]")
           InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-        case HttpResponse(403, body, _) =>
+        case HttpResponse(FORBIDDEN, body, _) =>
           logger.warn(s"[GetSubscription][DPS][FORBIDDEN][CorrelationId=$getCorrelationId]")
           InternalServerError(Json.toJson(ApiError(reason = Reason.SERVICE_MISCONFIGURATION)))
-        case HttpResponse(500, body, _) =>
+        case HttpResponse(INTERNAL_SERVER_ERROR, body, _) =>
           logger.warn(s"[GetSubscription][DPS][INTERNAL_SERVER_ERROR][CorrelationId=$getCorrelationId]")
           BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_ERROR)))
-        case HttpResponse(503, body, _) =>
+        case HttpResponse(SERVICE_UNAVAILABLE, body, _) =>
           logger.warn(s"[GetSubscription][DPS][INTERNAL_SERVER_ERROR][CorrelationId=$getCorrelationId]")
           BadGateway(Json.toJson(ApiError(reason = Reason.DOWNSTREAM_SERVICE_UNAVAILABLE)))
         case HttpResponse(status, _, _) =>
