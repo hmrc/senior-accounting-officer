@@ -293,3 +293,5 @@ GET         /v2/certificate/:idempotencyKey      uk.gov.hmrc.senioraccountingoff
 GET         /subscription        uk.gov.hmrc.senioraccountingofficer.controllers.GetSubscriptionController.getSubscription()
 
 POST        /sdes-callback      uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.callback
+
+POST /email-bounce/:string uk.gov.hmrc.senioraccountingofficer.controllers.EmailCallbackController.post(string: String)
