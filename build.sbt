@@ -11,7 +11,7 @@ lazy val microservice = Project("senior-accounting-officer", file("."))
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
-    PlayKeys.playDefaultPort := 10060,
+    PlayKeys.playDefaultPort := 8080,
     Compile / unmanagedResourceDirectories += baseDirectory.value / "resources",
     Compile / unmanagedResourceDirectories += baseDirectory.value / "target/swagger",
     resolvers += MavenRepository( // needed for object-store-client

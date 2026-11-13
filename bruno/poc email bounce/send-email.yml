@@ -1,0 +1,33 @@
+info:
+  name: send-email
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:8300/hmrc/email
+  body:
+    type: json
+    data: |-
+      {
+        "to": ["jacob.leeming@digital.hmrc.gov.uk"],
+        "templateId": "newMessageAlert",
+        "parameters": {
+          "name": "Mr Joe Bloggs"
+        },
+        "enrolment": "HMRC-DSAO-ORG~EORINumber~GB123456789000",
+        "force": false,
+        "eventUrl": "http://localhost:8080/senior-accounting-officer/email-bounce/testyxyz",
+        "tags": {
+          "anyKey1": "anyValue",
+          "anyKey2": "anyValue"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
