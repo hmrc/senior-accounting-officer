@@ -150,6 +150,81 @@ class SubmissionOrchestrationISpec
     }
   }
 
+  "Configured SDES replay" must {
+    "replay a configured failure through maintenance and complete successfully" in {
+      val prepared = uk.gov.hmrc.senioraccountingofficer.models.documentum.PreparedSdesSubmission(
+        "file.zip", "owner", "/sdes/file.zip", "checksum", 100L
+      )
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
+      seed(submission)
+      doReturn(Future.failed(SubmissionFailures.response(FORBIDDEN)))
+        .when(mockSubmissionOperations).execute(any())(using any())
+      run(NotifySdes)
+      val replayWorker = new SubmissionWorker(
+        queues, states, mockSubmissionOperations,
+        config ++ Configuration("work-items.sdes-replay-orchestration-ids" -> Seq(submission.data.orchestrationId)),
+        summon[ActorSystem], new MetricRegistry, clock
+      )
+      replayWorker.maintain().futureValue
+      doAnswer { invocation =>
+        Future.successful(invocation.getArgument[SubmissionCommand](0).copy(operationFinished = true))
+      }.when(mockSubmissionOperations).execute(any())(using any())
+      run(NotifySdes)
+      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
+      replayWorker.maintain().futureValue
+      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
+      entries(SubmitDps) mustBe empty
+      entries(SendEmail) mustBe empty
+      entries(PackageDocumentum) mustBe empty
+    }
+
+    "atomically replay only once, execute the notification again and preserve its data" in {
+      val prepared = uk.gov.hmrc.senioraccountingofficer.models.documentum.PreparedSdesSubmission(
+        "file.zip", "owner", "/sdes/file.zip", "checksum", 100L
+      )
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
+      seed(submission)
+      doReturn(Future.failed(SubmissionFailures.response(FORBIDDEN)))
+        .when(mockSubmissionOperations).execute(any())(using any())
+      run(NotifySdes)
+      val repository = queues(NotifySdes)
+      entries(NotifySdes).head.status mustBe ProcessingStatus.PermanentlyFailed
+      val results = Future.traverse(1 to 8)(_ => repository.replayFailedSdes(submission.data.orchestrationId)).futureValue
+      results.count(identity) mustBe 1
+      val replay = entries(NotifySdes).head.item
+      replay.operationFinished mustBe false
+      replay.failure mustBe None
+      replay.leaseToken mustBe None
+      replay.data mustBe submission.data
+      replay.sdesReplayRequestedAt mustBe defined
+      run(NotifySdes)
+      entries(NotifySdes).head.status mustBe ProcessingStatus.PermanentlyFailed
+      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+      verify(mockSubmissionOperations, times(2)).execute(any())(using any())
+    }
+
+    "ignore pending, successful, missing and expired work items" in {
+      val prepared = uk.gov.hmrc.senioraccountingofficer.models.documentum.PreparedSdesSubmission(
+        "file.zip", "owner", "/sdes/file.zip", "checksum", 100L
+      )
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(prepared)))
+      seed(submission)
+      val repository = queues(NotifySdes)
+      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+      run(NotifySdes)
+      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replayFailedSdes("missing").futureValue mustBe false
+      repository.collection.updateMany(
+        Filters.empty(),
+        org.mongodb.scala.model.Updates.combine(
+          org.mongodb.scala.model.Updates.set("status", ProcessingStatus.PermanentlyFailed),
+          org.mongodb.scala.model.Updates.set("item.expiresAt", clock.instant().minusSeconds(1))
+        )
+      ).toFuture().futureValue
+      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+    }
+  }
+
   "SubmissionService.submit" must {
     for kind <- SubmissionKind.values do {
       s"queue one root command for concurrent identical $kind submissions" in {

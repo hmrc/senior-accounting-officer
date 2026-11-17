@@ -73,6 +73,35 @@ class SubmissionWorkRepository(
       case Some(work) => claimLease(work)
     }
 
+  def replayFailedSdes(orchestrationId: String): Future[Boolean] = {
+    require(step == SubmissionStep.NotifySdes)
+    val requestedAt = now()
+    collection
+      .updateOne(
+        Filters.and(
+          Filters.equal("item.data.orchestrationId", orchestrationId),
+          Filters.equal("status", ProcessingStatus.PermanentlyFailed),
+          Filters.exists("item.sdesReplayRequestedAt", false),
+          Filters.exists("item.data.prepared", true),
+          Filters.or(Filters.exists("item.expiresAt", false), Filters.gt("item.expiresAt", requestedAt))
+        ),
+        Updates.combine(
+          Updates.set("status", ProcessingStatus.Failed),
+          Updates.set("availableAt", requestedAt),
+          Updates.set("updatedAt", requestedAt),
+          Updates.set("item.operationFinished", false),
+          Updates.set("item.sdesReplayRequestedAt", requestedAt),
+          Updates
+            .set("item.expiresAt", requestedAt.plusSeconds(configuration.get[Long]("work-items.retention-seconds"))),
+          Updates.unset("item.failure"),
+          Updates.unset("item.leaseToken"),
+          Updates.unset("item.lastError")
+        )
+      )
+      .toFuture()
+      .map(_.getModifiedCount == 1)
+  }
+
   private def claimLease(work: WorkItem[SubmissionCommand]): Future[Option[WorkItem[SubmissionCommand]]] =
     collection
       .findOneAndUpdate(
