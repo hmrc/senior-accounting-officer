@@ -105,7 +105,7 @@ class SubmissionWorker @Inject() (
     command.failure match {
       case Some(failure) =>
         logger.warn(
-          s"$message[HttpStatus=${failure.upstreamHttpStatus}][DpsOutcomeUnknown=${failure.dpsOutcomeUnknown}]"
+          s"$message[HttpStatus=${failure.upstreamHttpStatus.getOrElse("")}][DpsOutcomeUnknown=${failure.dpsOutcomeUnknown}]"
         )
       case None => logger.info(message)
     }
