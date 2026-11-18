@@ -31,7 +31,8 @@ case class SubmissionCommand(
     failure: Option[SubmissionFailure] = None,
     lastError: Option[String] = None,
     leaseToken: Option[String] = None,
-    expiresAt: Option[Instant] = None
+    expiresAt: Option[Instant] = None,
+    sdesReplayRequestedAt: Option[Instant] = None
 ) {
 
   def next(step: SubmissionStep, email: Option[SubmissionEmail] = None): SubmissionCommand =

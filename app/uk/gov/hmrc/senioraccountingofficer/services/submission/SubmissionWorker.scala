@@ -201,6 +201,13 @@ class SubmissionWorker @Inject() (
   }
 
   def maintain(): Future[Unit] = for {
+    _ <- Future.traverse(
+      config.getOptional[Seq[String]]("work-items.sdes-replay-orchestration-ids").getOrElse(Seq.empty).distinct
+    ) { id =>
+      queues(NotifySdes).replayFailedSdes(id).map { replayed =>
+        if replayed then logger.warn(s"[Submission][NotifySdes][ReplayRequested][OrchestrationId=$id]")
+      }
+    }
     _          <- updateQueueMetrics()
     candidates <- queues(RetrieveSubscription).retentionCandidates()
     _          <- Future.traverse(candidates) { work =>
