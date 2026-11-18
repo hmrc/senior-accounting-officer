@@ -62,7 +62,10 @@ class SubmissionWorkRepository(
       _         <- collection.deleteOne(Filters.and(key, Filters.lte("item.expiresAt", now()))).toFuture()
       persisted <- pushNew(command).map(_.item).recoverWith {
         case error: MongoWriteException if error.getError.getCode == duplicateKeyErrorCode =>
-          collection.find(key).head().map(_.item)
+          if command.pdfReplayRequestedAt.isDefined &&
+            (step == SubmissionStep.PackageDocumentum || step == SubmissionStep.NotifySdes)
+          then replaySuccessor(command, key)
+          else collection.find(key).head().map(_.item)
       }
     } yield persisted
   }
@@ -73,16 +76,63 @@ class SubmissionWorkRepository(
       case Some(work) => claimLease(work)
     }
 
+  private def replaySuccessor(command: SubmissionCommand, key: Bson): Future[SubmissionCommand] =
+    collection
+      .findOneAndUpdate(
+        Filters.and(
+          key,
+          Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
+          Filters.exists("item.pdfReplayRequestedAt", false)
+        ),
+        Updates.combine(
+          Updates.set("item", Codecs.toBson(command)),
+          Updates.set("status", ProcessingStatus.Failed),
+          Updates.set("availableAt", now()),
+          Updates.set("updatedAt", now()),
+          Updates.set("failureCount", 0)
+        ),
+        FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+      )
+      .toFutureOption()
+      .flatMap {
+        case Some(work) => Future.successful(work.item)
+        case None       =>
+          collection.find(key).head().flatMap { work =>
+            if work.item.pdfReplayRequestedAt == command.pdfReplayRequestedAt then Future.successful(work.item)
+            else
+              Future.failed(new IllegalStateException("Replay successor is still active or belongs to another replay"))
+          }
+      }
+
+  def replayPdf(orchestrationId: String): Future[Boolean] = {
+    require(step == SubmissionStep.EnsurePdf)
+    replay(
+      orchestrationId,
+      "pdfReplayRequestedAt",
+      Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed)
+    )
+  }
+
   def replayFailedSdes(orchestrationId: String): Future[Boolean] = {
     require(step == SubmissionStep.NotifySdes)
+    replay(
+      orchestrationId,
+      "sdesReplayRequestedAt",
+      Filters.and(
+        Filters.equal("status", ProcessingStatus.PermanentlyFailed),
+        Filters.exists("item.data.prepared", true)
+      )
+    )
+  }
+
+  private def replay(orchestrationId: String, marker: String, eligible: Bson): Future[Boolean] = {
     val requestedAt = now()
     collection
       .updateOne(
         Filters.and(
           Filters.equal("item.data.orchestrationId", orchestrationId),
-          Filters.equal("status", ProcessingStatus.PermanentlyFailed),
-          Filters.exists("item.sdesReplayRequestedAt", false),
-          Filters.exists("item.data.prepared", true),
+          eligible,
+          Filters.exists(s"item.$marker", false),
           Filters.or(Filters.exists("item.expiresAt", false), Filters.gt("item.expiresAt", requestedAt))
         ),
         Updates.combine(
@@ -90,7 +140,7 @@ class SubmissionWorkRepository(
           Updates.set("availableAt", requestedAt),
           Updates.set("updatedAt", requestedAt),
           Updates.set("item.operationFinished", false),
-          Updates.set("item.sdesReplayRequestedAt", requestedAt),
+          Updates.set(s"item.$marker", requestedAt),
           Updates
             .set("item.expiresAt", requestedAt.plusSeconds(configuration.get[Long]("work-items.retention-seconds"))),
           Updates.unset("item.failure"),

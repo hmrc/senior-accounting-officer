@@ -312,24 +312,65 @@ class SubmissionOperationsSpec
       verifyNoInteractions(mockPdfService)
     }
 
-    "generate and upload a missing PDF before delivery" in {
-      when(mockObjectStoreClient.getObject[Source[ByteString, NotUsed]](any(), any())(using any(), any()))
-        .thenReturn(Future.successful(None), Future.successful(Some(stored)))
-      when(mockPdfService.generateNotificationPdf(any())).thenReturn(Source.single(ByteString("new-pdf")))
-      when(
-        mockObjectStoreClient.putObject(any(), any[Source[ByteString, ?]](), any(), any(), any(), any())(using
-          any(),
-          any()
-        )
+    for (scenario, requestedAt) <- Seq(
+        "initial delivery" -> None,
+        "PDF replay"       -> Some(replayRequestedAt)
       )
-        .thenReturn(
-          Future.successful(ObjectSummaryWithMd5(path, 3, Md5Hash("hash"), Instant.parse("2026-10-05T09:00:00Z")))
+    do {
+      s"generate and upload a missing PDF for $scenario" in {
+        when(mockObjectStoreClient.getObject[Source[ByteString, NotUsed]](any(), any())(using any(), any()))
+          .thenReturn(Future.successful(None), Future.successful(Some(stored)))
+        when(mockPdfService.generateNotificationPdf(any())).thenReturn(Source.single(ByteString("new-pdf")))
+        when(
+          mockObjectStoreClient.putObject(any(), any[Source[ByteString, ?]](), any(), any(), any(), any())(using
+            any(),
+            any()
+          )
         )
-      operations.execute(command(EnsurePdf)).futureValue.operationFinished mustBe true
-      verify(mockPdfService).generateNotificationPdf(any())
+          .thenReturn(
+            Future.successful(ObjectSummaryWithMd5(path, 3, Md5Hash("hash"), Instant.parse("2026-10-05T09:00:00Z")))
+          )
+        val submission =
+          command(EnsurePdf).copy(pdfReplayRequestedAt = requestedAt)
+        val result = operations.execute(submission).futureValue
+        result.operationFinished mustBe true
+        result.pdfReplayRequestedAt mustBe submission.pdfReplayRequestedAt
+        val successors = operations.successors(result)
+        successors.map(_.step) mustBe Seq(PackageDocumentum)
+        successors.head.pdfReplayRequestedAt mustBe submission.pdfReplayRequestedAt
+        verify(mockPdfService).generateNotificationPdf(any())
+      }
     }
 
     "SDES notification" - {
+      "use the rebuilt ZIP details after a PDF replay" in {
+        existingPdf()
+        val rebuilt = preparedSdesSubmission.copy(checksum = "new-checksum", contentLength = 200L)
+        when(mockDocumentumPackageService.preparePackage(any(), any(), any())(using any()))
+          .thenReturn(Future.successful(rebuilt))
+        when(mockSdesConnector.notifyFileReady(any(), any(), any(), any(), any())(using any()))
+          .thenReturn(Future.successful(HttpResponse(ACCEPTED)))
+        val submission = command(EnsurePdf).copy(
+          data = data().copy(prepared = Some(rebuilt.copy(checksum = "stale-checksum", contentLength = 100L))),
+          pdfReplayRequestedAt = Some(replayRequestedAt)
+        )
+        val ensured = operations.execute(submission).futureValue
+        verifyNoInteractions(mockSdesConnector)
+        val packaged = operations.execute(operations.successors(ensured).head).futureValue
+        packaged.data.prepared mustBe Some(rebuilt)
+        verifyNoInteractions(mockSdesConnector)
+        val notified = operations.execute(operations.successors(packaged).head).futureValue
+        operations.successors(notified) mustBe empty
+        verify(mockSdesConnector).notifyFileReady(
+          meq("file.zip"),
+          meq("owner"),
+          meq("/sdes/file.zip"),
+          meq("new-checksum"),
+          meq(200L)
+        )(using any())
+        verifyNoInteractions(mockNotificationConnector, mockCertificateConnector, mockEmailConnector, mockAuditSender)
+      }
+
       for (status, retryable) <- Seq(
           OK                    -> false,
           CREATED               -> false,
