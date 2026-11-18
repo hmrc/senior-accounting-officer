@@ -24,19 +24,21 @@ import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionFailure
 object SubmissionFailures {
 
   def unknownDpsOutcome: SubmissionFailure =
-    SubmissionFailure(BAD_GATEWAY, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), dpsOutcomeUnknown = true)
+    SubmissionFailure(BAD_GATEWAY, None, ApiError(DOWNSTREAM_SERVICE_UNAVAILABLE), dpsOutcomeUnknown = true)
 
   def response(status: Int, isDpsSubmission: Boolean = false, isInitialLookup: Boolean = false): OperationRejected = {
-    val (httpStatus, apiError) = status match {
-      case BAD_REQUEST                     => (INTERNAL_SERVER_ERROR, DOWNSTREAM_SERVICE_MISALIGNMENT)
-      case UNAUTHORIZED | FORBIDDEN        => (INTERNAL_SERVER_ERROR, SERVICE_MISCONFIGURATION)
+    val (saoHttpStatus, apiError) = status match {
+      case BAD_REQUEST              => (INTERNAL_SERVER_ERROR, DOWNSTREAM_SERVICE_MISALIGNMENT)
+      case UNAUTHORIZED | FORBIDDEN =>
+        (INTERNAL_SERVER_ERROR, SERVICE_MISCONFIGURATION)
       case SERVICE_UNAVAILABLE             => (BAD_GATEWAY, DOWNSTREAM_SERVICE_UNAVAILABLE)
       case n if n >= INTERNAL_SERVER_ERROR => (BAD_GATEWAY, DOWNSTREAM_SERVICE_ERROR)
       case _                               => (BAD_GATEWAY, DOWNSTREAM_SERVICE_MISALIGNMENT)
     }
     OperationRejected(
       failure = SubmissionFailure(
-        httpStatus = httpStatus,
+        saoHttpStatus = saoHttpStatus,
+        upstreamHttpStatus = Some(status),
         error = ApiError(apiError),
         dpsOutcomeUnknown = isDpsSubmission && status >= INTERNAL_SERVER_ERROR
       ),
@@ -50,7 +52,8 @@ object SubmissionFailures {
   def malformed(isDpsSubmission: Boolean): OperationRejected =
     OperationRejected(
       failure = SubmissionFailure(
-        httpStatus = INTERNAL_SERVER_ERROR,
+        saoHttpStatus = INTERNAL_SERVER_ERROR,
+        upstreamHttpStatus = None,
         error = ApiError(DOWNSTREAM_SERVICE_MISALIGNMENT),
         dpsOutcomeUnknown = isDpsSubmission
       ),

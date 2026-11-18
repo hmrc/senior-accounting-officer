@@ -19,7 +19,12 @@ package uk.gov.hmrc.senioraccountingofficer.models.submission
 import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.senioraccountingofficer.models.ApiError
 
-case class SubmissionFailure(httpStatus: Int, error: ApiError, dpsOutcomeUnknown: Boolean = false)
+case class SubmissionFailure(
+    saoHttpStatus: Int,
+    upstreamHttpStatus: Option[Int],
+    error: ApiError,
+    dpsOutcomeUnknown: Boolean = false
+)
 
 object SubmissionFailure {
   given OFormat[SubmissionFailure] = Json.format
