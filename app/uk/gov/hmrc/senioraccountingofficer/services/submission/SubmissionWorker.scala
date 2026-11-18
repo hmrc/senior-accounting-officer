@@ -104,7 +104,9 @@ class SubmissionWorker @Inject() (
       s"[Submission][${command.step}][$metric][OrchestrationId=${command.data.orchestrationId}][CorrelationId=${command.data.correlationId}]"
     command.failure match {
       case Some(failure) =>
-        logger.warn(s"$message[HttpStatus=${failure.httpStatus}][DpsOutcomeUnknown=${failure.dpsOutcomeUnknown}]")
+        logger.warn(
+          s"$message[HttpStatus=${failure.upstreamHttpStatus}][DpsOutcomeUnknown=${failure.dpsOutcomeUnknown}]"
+        )
       case None => logger.info(message)
     }
   }

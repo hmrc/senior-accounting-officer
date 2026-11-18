@@ -54,7 +54,7 @@ class SubmissionService @Inject() (queues: SubmissionQueues, states: SubmissionS
       case None        => Results.NotFound(Json.toJson(ApiError(NOT_FOUND)))
       case Some(state) =>
         (state.failure, state.reference, state.pdfAttempted) match {
-          case (Some(failure), _, _)         => Results.Status(failure.httpStatus)(Json.toJson(failure.error))
+          case (Some(failure), _, _)         => Results.Status(failure.saoHttpStatus)(Json.toJson(failure.error))
           case (None, Some(reference), true) =>
             val field = kind match {
               case SubmissionKind.Notification => "notificationRef"
