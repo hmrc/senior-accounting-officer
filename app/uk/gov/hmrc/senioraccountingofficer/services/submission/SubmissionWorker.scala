@@ -215,7 +215,7 @@ class SubmissionWorker @Inject() (
         .distinct
         .filterNot(pdfReplayIds.contains)
     ) { id =>
-      queues(NotifySdes).replayFailedSdes(id).map { replayed =>
+      queues(NotifySdes).replaySdes(id).map { replayed =>
         if replayed then logger.warn(s"[Submission][NotifySdes][ReplayRequested][OrchestrationId=$id]")
       }
     }

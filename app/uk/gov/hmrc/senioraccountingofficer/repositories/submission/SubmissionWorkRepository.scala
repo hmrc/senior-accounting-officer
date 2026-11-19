@@ -113,13 +113,13 @@ class SubmissionWorkRepository(
     )
   }
 
-  def replayFailedSdes(orchestrationId: String): Future[Boolean] = {
+  def replaySdes(orchestrationId: String): Future[Boolean] = {
     require(step == SubmissionStep.NotifySdes)
     replay(
       orchestrationId,
       "sdesReplayRequestedAt",
       Filters.and(
-        Filters.equal("status", ProcessingStatus.PermanentlyFailed),
+        Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
         Filters.exists("item.data.prepared", true)
       )
     )

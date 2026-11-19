@@ -165,6 +165,23 @@ class SubmissionOrchestrationISpec
   }
 
   "Configured SDES replay" must {
+    "replay a successful notification once when its ID is configured" in {
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
+      seed(submission)
+      run(NotifySdes)
+      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
+      val replayWorker = workerWithConfig(
+        Configuration("work-items.replay.sdes-replay-orchestration-ids" -> Seq(submission.data.orchestrationId))
+      )
+      replayWorker.maintain().futureValue
+      entries(NotifySdes).head.status mustBe ProcessingStatus.Failed
+      run(NotifySdes)
+      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
+      replayWorker.maintain().futureValue
+      run(NotifySdes)
+      verify(mockSubmissionOperations, times(2)).execute(any())(using any())
+    }
+
     "replay a configured failure at the configured UTC time and complete successfully" in {
       clock.set(Instant.parse("2030-07-01T10:59:00Z"))
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
@@ -206,7 +223,7 @@ class SubmissionOrchestrationISpec
       val repository = queues(NotifySdes)
       entries(NotifySdes).head.status mustBe ProcessingStatus.PermanentlyFailed
       val results =
-        Future.traverse(1 to 8)(_ => repository.replayFailedSdes(submission.data.orchestrationId)).futureValue
+        Future.traverse(1 to 8)(_ => repository.replaySdes(submission.data.orchestrationId)).futureValue
       results.count(identity) mustBe 1
       val replay = entries(NotifySdes).head.item
       replay.operationFinished mustBe false
@@ -216,18 +233,22 @@ class SubmissionOrchestrationISpec
       replay.sdesReplayRequestedAt mustBe defined
       run(NotifySdes)
       entries(NotifySdes).head.status mustBe ProcessingStatus.PermanentlyFailed
-      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
       verify(mockSubmissionOperations, times(2)).execute(any())(using any())
     }
 
-    "ignore pending, successful, missing and expired work items" in {
+    "ignore pending, active, missing and expired work items" in {
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
       seed(submission)
       val repository = queues(NotifySdes)
-      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      val claimed = repository.claim().futureValue.value
+      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.retry(claimed, 60, "error").futureValue
+      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      clock.advance(61)
       run(NotifySdes)
-      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
-      repository.replayFailedSdes("missing").futureValue mustBe false
+      repository.replaySdes("missing").futureValue mustBe false
       repository.collection
         .updateMany(
           Filters.empty(),
@@ -238,7 +259,7 @@ class SubmissionOrchestrationISpec
         )
         .toFuture()
         .futureValue
-      repository.replayFailedSdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
     }
   }
 
