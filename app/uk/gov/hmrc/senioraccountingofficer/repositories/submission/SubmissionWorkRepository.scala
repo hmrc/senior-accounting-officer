@@ -104,16 +104,17 @@ class SubmissionWorkRepository(
           }
       }
 
-  def replayPdf(orchestrationId: String): Future[Boolean] = {
+  def replayPdf(orchestrationId: String, replayWhen: Option[Instant]): Future[Boolean] = {
     require(step == SubmissionStep.EnsurePdf)
     replay(
       orchestrationId,
       "pdfReplayRequestedAt",
-      Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed)
+      Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
+      replayWhen
     )
   }
 
-  def replaySdes(orchestrationId: String): Future[Boolean] = {
+  def replaySdes(orchestrationId: String, replayWhen: Option[Instant]): Future[Boolean] = {
     require(step == SubmissionStep.NotifySdes)
     replay(
       orchestrationId,
@@ -121,18 +122,27 @@ class SubmissionWorkRepository(
       Filters.and(
         Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
         Filters.exists("item.data.prepared", true)
-      )
+      ),
+      replayWhen
     )
   }
 
-  private def replay(orchestrationId: String, marker: String, eligible: Bson): Future[Boolean] = {
-    val requestedAt = now()
+  private def replay(
+      orchestrationId: String,
+      marker: String,
+      eligible: Bson,
+      replayWhen: Option[Instant]
+  ): Future[Boolean] = {
+    val requestedAt = replayWhen match {
+      case None       => now()
+      case Some(when) => when
+    }
     collection
       .updateOne(
         Filters.and(
           Filters.equal("item.data.orchestrationId", orchestrationId),
           eligible,
-          Filters.exists(s"item.$marker", false),
+          Filters.ne(s"item.$marker", requestedAt),
           Filters.or(Filters.exists("item.expiresAt", false), Filters.gt("item.expiresAt", requestedAt))
         ),
         Updates.combine(

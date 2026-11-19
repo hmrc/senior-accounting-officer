@@ -262,14 +262,10 @@ class SubmissionOperations @Inject() (
   }
 
   private def storedPdf(data: SubmissionData)(using HeaderCarrier): Future[Source[ByteString, NotUsed]] =
-    objectStore.getObject[Source[ByteString, NotUsed]](path = pdfPath(data), owner = owner).flatMap {
-      case Some(value) => Future.successful(value.content)
-      case None        =>
-        for {
-          _      <- uploadPdf(data)
-          stored <- objectStore.getObject[Source[ByteString, NotUsed]](path = pdfPath(data), owner = owner)
-        } yield stored.getOrElse(throw new IllegalStateException("Uploaded PDF is missing")).content
-    }
+    for {
+      _      <- uploadPdf(data)
+      stored <- objectStore.getObject[Source[ByteString, NotUsed]](path = pdfPath(data), owner = owner)
+    } yield stored.getOrElse(throw new IllegalStateException("Uploaded PDF is missing")).content
 
   private def recipients(data: SubmissionData): Seq[SubmissionEmail] = data.kind match {
     case Notification =>
