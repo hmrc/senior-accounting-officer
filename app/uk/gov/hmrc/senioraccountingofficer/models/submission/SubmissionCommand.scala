@@ -32,7 +32,8 @@ case class SubmissionCommand(
     lastError: Option[String] = None,
     leaseToken: Option[String] = None,
     expiresAt: Option[Instant] = None,
-    sdesReplayRequestedAt: Option[Instant] = None
+    sdesReplayRequestedAt: Option[Instant] = None,
+    pdfReplayRequestedAt: Option[Instant] = None
 ) {
 
   def next(step: SubmissionStep, email: Option[SubmissionEmail] = None): SubmissionCommand =
@@ -40,7 +41,9 @@ case class SubmissionCommand(
       s"${data.orchestrationId}/$step/${email.map(e => SubmissionData.hash(e.address + e.template)).getOrElse("")}",
       step,
       data,
-      email
+      email,
+      expiresAt = if pdfReplayRequestedAt.isDefined then expiresAt else None,
+      pdfReplayRequestedAt = pdfReplayRequestedAt
     )
 }
 object SubmissionCommand {

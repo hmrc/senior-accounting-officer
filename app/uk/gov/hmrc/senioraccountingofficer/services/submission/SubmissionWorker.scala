@@ -31,7 +31,7 @@ import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import java.time.Clock
+import java.time.{Clock, LocalTime, ZoneId}
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.{Inject, Singleton}
@@ -52,6 +52,13 @@ class SubmissionWorker @Inject() (
   private val operationTimeout = config.get[Long]("work-items.operation-timeout-seconds").seconds
   private val leaseDuration    = config.get[Long]("work-items.lease-seconds")
   private val retryDelays      = config.get[Seq[Long]]("work-items.retry-delays-seconds")
+
+  private val replayTime =
+    config.getOptional[String]("work-items.replay.replay-time").map(LocalTime.parse)
+  private val replayZone =
+    ZoneId.of(config.getOptional[String]("work-items.replay.time-zone").getOrElse("Europe/London"))
+  private val pdfReplayIds =
+    config.getOptional[Seq[String]]("work-items.replay.pdf-replay-orchestration-ids").getOrElse(Seq.empty).distinct
 
   private val queueCounts = TrieMap.empty[String, AtomicInteger]
   require(operationTimeout.toSeconds < leaseDuration, "Operation timeout must be shorter than the work item lease")
@@ -200,14 +207,33 @@ class SubmissionWorker @Inject() (
     loop(retentionOrder)
   }
 
-  def maintain(): Future[Unit] = for {
+  private def replayConfigured(): Future[Unit] = for {
     _ <- Future.traverse(
-      config.getOptional[Seq[String]]("work-items.sdes-replay-orchestration-ids").getOrElse(Seq.empty).distinct
+      config
+        .getOptional[Seq[String]]("work-items.replay.sdes-replay-orchestration-ids")
+        .getOrElse(Seq.empty)
+        .distinct
+        .filterNot(pdfReplayIds.contains)
     ) { id =>
-      queues(NotifySdes).replayFailedSdes(id).map { replayed =>
+      queues(NotifySdes).replaySdes(id).map { replayed =>
         if replayed then logger.warn(s"[Submission][NotifySdes][ReplayRequested][OrchestrationId=$id]")
       }
     }
+    _ <- Future.traverse(pdfReplayIds) { id =>
+      (for {
+        packaging <- queues(PackageDocumentum).hasActive(id)
+        notifying <- queues(NotifySdes).hasActive(id)
+        replayed  <- if packaging || notifying then Future.successful(false) else queues(EnsurePdf).replayPdf(id)
+      } yield replayed).map { replayed =>
+        if replayed then logger.warn(s"[Submission][EnsurePdf][ReplayRequested][OrchestrationId=$id]")
+      }
+    }
+  } yield ()
+
+  def maintain(): Future[Unit] = for {
+    _ <-
+      if replayTime.exists(clock.instant().atZone(replayZone).toLocalTime.isBefore) then Future.unit
+      else replayConfigured()
     _          <- updateQueueMetrics()
     candidates <- queues(RetrieveSubscription).retentionCandidates()
     _          <- Future.traverse(candidates) { work =>

@@ -16,14 +16,24 @@
 
 package uk.gov.hmrc.senioraccountingofficer.services.submission
 
+import uk.gov.hmrc.senioraccountingofficer.models.documentum.PreparedSdesSubmission
 import uk.gov.hmrc.senioraccountingofficer.models.dps.{Contact, GetSubscriptionDpsResponse, NominatedCompany}
 import uk.gov.hmrc.senioraccountingofficer.models.requests.*
 import uk.gov.hmrc.senioraccountingofficer.models.submission.*
 import uk.gov.hmrc.senioraccountingofficer.utils.TestDataGenerator.generateUtr
 
-import java.time.{LocalDate, LocalDateTime}
+import java.time.{Instant, LocalDate, LocalDateTime}
 
 object SubmissionTestData {
+
+  val replayRequestedAt: Instant                     = Instant.parse("2026-11-18T10:00:00Z")
+  val preparedSdesSubmission: PreparedSdesSubmission = PreparedSdesSubmission(
+    fileName = "file.zip",
+    owner = "owner",
+    objectStorePath = "/sdes/file.zip",
+    checksum = "checksum",
+    contentLength = 100L
+  )
 
   val utr                               = generateUtr
   val date: LocalDate                   = LocalDate.parse("2025-12-31")
