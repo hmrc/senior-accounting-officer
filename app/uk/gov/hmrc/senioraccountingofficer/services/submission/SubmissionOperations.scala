@@ -85,7 +85,8 @@ class SubmissionOperations @Inject() (
             if response.status != ACCEPTED then throw SubmissionFailures.response(response.status)
             command
           }
-        case EnsurePdf =>
+        case EnsurePdf if command.pdfReplayRequestedAt.isDefined => uploadPdf(data).map(_ => command)
+        case EnsurePdf                                           =>
           storedPdf(data).map { source =>
             source.runWith(Sink.cancelled)
             command

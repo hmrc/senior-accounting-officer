@@ -82,10 +82,21 @@ class SubmissionWorkRepository(
         Filters.and(
           key,
           Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
-          Filters.exists("item.pdfReplayRequestedAt", false)
+          Filters.ne("item.replayRuns", command.replayRunId.getOrElse("legacy"))
         ),
         Updates.combine(
-          Updates.set("item", Codecs.toBson(command)),
+          Updates.set("item.data", Codecs.toBson(command.data)),
+          Updates.set("item.operationFinished", false),
+          Updates.set("item.pdfReplayRequestedAt", command.pdfReplayRequestedAt.get),
+          Updates.set("item.replayRunId", command.replayRunId.getOrElse("legacy")),
+          Updates.addToSet("item.replayRuns", command.replayRunId.getOrElse("legacy")),
+          Updates.max(
+            "item.expiresAt",
+            command.expiresAt.getOrElse(now().plusSeconds(configuration.get[Long]("work-items.retention-seconds")))
+          ),
+          Updates.unset("item.failure"),
+          Updates.unset("item.lastError"),
+          Updates.unset("item.leaseToken"),
           Updates.set("status", ProcessingStatus.Failed),
           Updates.set("availableAt", now()),
           Updates.set("updatedAt", now()),
@@ -98,22 +109,23 @@ class SubmissionWorkRepository(
         case Some(work) => Future.successful(work.item)
         case None       =>
           collection.find(key).head().flatMap { work =>
-            if work.item.pdfReplayRequestedAt == command.pdfReplayRequestedAt then Future.successful(work.item)
+            if work.item.replayRuns.contains(command.replayRunId.getOrElse("legacy")) then Future.successful(work.item)
             else
               Future.failed(new IllegalStateException("Replay successor is still active or belongs to another replay"))
           }
       }
 
-  def replayPdf(orchestrationId: String): Future[Boolean] = {
+  def replayPdf(orchestrationId: String, runId: String): Future[Boolean] = {
     require(step == SubmissionStep.EnsurePdf)
     replay(
       orchestrationId,
       "pdfReplayRequestedAt",
-      Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed)
+      Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
+      runId
     )
   }
 
-  def replaySdes(orchestrationId: String): Future[Boolean] = {
+  def replaySdes(orchestrationId: String, runId: String): Future[Boolean] = {
     require(step == SubmissionStep.NotifySdes)
     replay(
       orchestrationId,
@@ -121,18 +133,25 @@ class SubmissionWorkRepository(
       Filters.and(
         Filters.in("status", ProcessingStatus.Succeeded, ProcessingStatus.PermanentlyFailed),
         Filters.exists("item.data.prepared", true)
-      )
+      ),
+      runId
     )
   }
 
-  private def replay(orchestrationId: String, marker: String, eligible: Bson): Future[Boolean] = {
+  private def replay(
+      orchestrationId: String,
+      marker: String,
+      eligible: Bson,
+      runId: String
+  ): Future[Boolean] = {
+    require(runId.trim.nonEmpty, "Replay run-id must not be empty")
     val requestedAt = now()
     collection
       .updateOne(
         Filters.and(
           Filters.equal("item.data.orchestrationId", orchestrationId),
           eligible,
-          Filters.exists(s"item.$marker", false),
+          Filters.ne("item.replayRuns", runId),
           Filters.or(Filters.exists("item.expiresAt", false), Filters.gt("item.expiresAt", requestedAt))
         ),
         Updates.combine(
@@ -141,8 +160,10 @@ class SubmissionWorkRepository(
           Updates.set("updatedAt", requestedAt),
           Updates.set("item.operationFinished", false),
           Updates.set(s"item.$marker", requestedAt),
+          Updates.set("item.replayRunId", runId),
+          Updates.addToSet("item.replayRuns", runId),
           Updates
-            .set("item.expiresAt", requestedAt.plusSeconds(configuration.get[Long]("work-items.retention-seconds"))),
+            .max("item.expiresAt", requestedAt.plusSeconds(configuration.get[Long]("work-items.retention-seconds"))),
           Updates.unset("item.failure"),
           Updates.unset("item.leaseToken"),
           Updates.unset("item.lastError")
@@ -184,7 +205,18 @@ class SubmissionWorkRepository(
   def heartbeat(work: WorkItem[SubmissionCommand]): Future[Unit] = updateOwned(work, Updates.set("updatedAt", now()))
 
   def save(work: WorkItem[SubmissionCommand], command: SubmissionCommand): Future[WorkItem[SubmissionCommand]] =
-    updateOwned(work, Updates.combine(Updates.set("item", Codecs.toBson(command)), Updates.set("updatedAt", now())))
+    updateOwned(
+      work,
+      Updates.combine(
+        Updates.set("item.data", Codecs.toBson(command.data)),
+        Updates.set("item.operationFinished", command.operationFinished),
+        Updates.set("item.dispatched", command.dispatched),
+        command.failure.fold(Updates.unset("item.failure"))(failure =>
+          Updates.set("item.failure", Codecs.toBson(failure))
+        ),
+        Updates.set("updatedAt", now())
+      )
+    )
       .map(_ => work.copy(item = command))
 
   def finish(work: WorkItem[SubmissionCommand]): Future[Unit] = updateOwned(
@@ -194,9 +226,47 @@ class SubmissionWorkRepository(
         "status",
         if work.item.failure.isDefined then ProcessingStatus.PermanentlyFailed else ProcessingStatus.Succeeded
       ),
-      Updates.set("updatedAt", now())
+      Updates.set("updatedAt", now()),
+      if work.item.failure.isDefined then Updates.set("item.lastPermanentFailureAt", now())
+      else Updates.set("item.operationFinished", work.item.operationFinished)
     )
   )
+
+  def failureRetentionCandidates(): Future[Seq[WorkItem[SubmissionCommand]]] = collection
+    .find(
+      Filters.and(
+        Filters.or(
+          Filters.equal("status", ProcessingStatus.PermanentlyFailed),
+          Filters.exists("item.lastPermanentFailureAt", true)
+        ),
+        Filters.or(Filters.exists("item.expiresAt", false), Filters.gt("item.expiresAt", now()))
+      )
+    )
+    .toFuture()
+
+  def recordLegacyFailure(work: WorkItem[SubmissionCommand]): Future[Unit] = collection
+    .updateOne(
+      Filters.and(
+        Filters.equal("_id", work.id),
+        Filters.equal("status", ProcessingStatus.PermanentlyFailed),
+        Filters.equal("updatedAt", work.updatedAt),
+        Filters.exists("item.lastPermanentFailureAt", false)
+      ),
+      Updates.set("item.lastPermanentFailureAt", work.updatedAt)
+    )
+    .toFuture()
+    .map(_ => ())
+
+  def extendRetention(id: String, at: Instant): Future[Boolean] = collection
+    .updateMany(
+      Filters.and(
+        Filters.equal("item.data.orchestrationId", id),
+        Filters.or(Filters.exists("item.expiresAt", false), Filters.gt("item.expiresAt", now()))
+      ),
+      Updates.max("item.expiresAt", at)
+    )
+    .toFuture()
+    .map(_.getModifiedCount > 0)
 
   def retry(work: WorkItem[SubmissionCommand], delay: Long, error: String): Future[Unit] = updateOwned(
     work,
