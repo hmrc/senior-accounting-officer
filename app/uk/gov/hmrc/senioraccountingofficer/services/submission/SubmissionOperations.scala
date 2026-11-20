@@ -85,7 +85,8 @@ class SubmissionOperations @Inject() (
             if response.status != ACCEPTED then throw SubmissionFailures.response(response.status)
             command
           }
-        case EnsurePdf =>
+        case EnsurePdf if command.pdfReplayRequestedAt.isDefined => uploadPdf(data).map(_ => command)
+        case EnsurePdf                                           =>
           storedPdf(data).map { source =>
             source.runWith(Sink.cancelled)
             command
@@ -262,10 +263,14 @@ class SubmissionOperations @Inject() (
   }
 
   private def storedPdf(data: SubmissionData)(using HeaderCarrier): Future[Source[ByteString, NotUsed]] =
-    for {
-      _      <- uploadPdf(data)
-      stored <- objectStore.getObject[Source[ByteString, NotUsed]](path = pdfPath(data), owner = owner)
-    } yield stored.getOrElse(throw new IllegalStateException("Uploaded PDF is missing")).content
+    objectStore.getObject[Source[ByteString, NotUsed]](path = pdfPath(data), owner = owner).flatMap {
+      case Some(value) => Future.successful(value.content)
+      case None        =>
+        for {
+          _      <- uploadPdf(data)
+          stored <- objectStore.getObject[Source[ByteString, NotUsed]](path = pdfPath(data), owner = owner)
+        } yield stored.getOrElse(throw new IllegalStateException("Uploaded PDF is missing")).content
+    }
 
   private def recipients(data: SubmissionData): Seq[SubmissionEmail] = data.kind match {
     case Notification =>

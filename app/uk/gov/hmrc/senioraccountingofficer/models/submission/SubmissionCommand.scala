@@ -33,7 +33,10 @@ case class SubmissionCommand(
     leaseToken: Option[String] = None,
     expiresAt: Option[Instant] = None,
     sdesReplayRequestedAt: Option[Instant] = None,
-    pdfReplayRequestedAt: Option[Instant] = None
+    pdfReplayRequestedAt: Option[Instant] = None,
+    replayRunId: Option[String] = None,
+    replayRuns: Seq[String] = Seq.empty,
+    lastPermanentFailureAt: Option[Instant] = None
 ) {
 
   def next(step: SubmissionStep, email: Option[SubmissionEmail] = None): SubmissionCommand =
@@ -43,14 +46,17 @@ case class SubmissionCommand(
       data,
       email,
       expiresAt = if pdfReplayRequestedAt.isDefined then expiresAt else None,
-      pdfReplayRequestedAt = pdfReplayRequestedAt
+      pdfReplayRequestedAt = pdfReplayRequestedAt,
+      replayRunId = replayRunId,
+      replayRuns = replayRuns,
+      lastPermanentFailureAt = lastPermanentFailureAt
     )
 }
 object SubmissionCommand {
 
   given Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  given OFormat[SubmissionCommand] = Json.format
+  given OFormat[SubmissionCommand] = Json.using[Json.WithDefaultValues].format[SubmissionCommand]
 
   def start(data: SubmissionData): SubmissionCommand =
     SubmissionCommand(data.scopeKey, SubmissionStep.RetrieveSubscription, data)
