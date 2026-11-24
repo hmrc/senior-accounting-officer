@@ -312,14 +312,29 @@ class SubmissionOperationsSpec
       verifyNoInteractions(mockPdfService)
     }
 
-    for (scenario, requestedAt) <- Seq(
-        "initial delivery" -> None,
-        "PDF replay"       -> Some(replayRequestedAt)
+    "generate and upload a missing PDF before delivery" in {
+      when(mockObjectStoreClient.getObject[Source[ByteString, NotUsed]](any(), any())(using any(), any()))
+        .thenReturn(Future.successful(None), Future.successful(Some(stored)))
+      when(mockPdfService.generateNotificationPdf(any())).thenReturn(Source.single(ByteString("new-pdf")))
+      when(
+        mockObjectStoreClient.putObject(any(), any[Source[ByteString, ?]](), any(), any(), any(), any())(using
+          any(),
+          any()
+        )
       )
-    do {
-      s"generate and upload a missing PDF for $scenario" in {
-        when(mockObjectStoreClient.getObject[Source[ByteString, NotUsed]](any(), any())(using any(), any()))
-          .thenReturn(Future.successful(None), Future.successful(Some(stored)))
+        .thenReturn(
+          Future.successful(ObjectSummaryWithMd5(path, 3, Md5Hash("hash"), Instant.parse("2026-10-05T09:00:00Z")))
+        )
+      val result = operations.execute(command(EnsurePdf)).futureValue
+      result.operationFinished mustBe true
+      val successors = operations.successors(result)
+      successors.map(_.step) mustBe Seq(PackageDocumentum)
+      verify(mockPdfService).generateNotificationPdf(any())
+    }
+
+    "SDES notification" - {
+      "refresh an existing PDF once and use the rebuilt ZIP details after a PDF replay" in {
+        existingPdf()
         when(mockPdfService.generateNotificationPdf(any())).thenReturn(Source.single(ByteString("new-pdf")))
         when(
           mockObjectStoreClient.putObject(any(), any[Source[ByteString, ?]](), any(), any(), any(), any())(using
@@ -327,24 +342,7 @@ class SubmissionOperationsSpec
             any()
           )
         )
-          .thenReturn(
-            Future.successful(ObjectSummaryWithMd5(path, 3, Md5Hash("hash"), Instant.parse("2026-10-05T09:00:00Z")))
-          )
-        val submission =
-          command(EnsurePdf).copy(pdfReplayRequestedAt = requestedAt)
-        val result = operations.execute(submission).futureValue
-        result.operationFinished mustBe true
-        result.pdfReplayRequestedAt mustBe submission.pdfReplayRequestedAt
-        val successors = operations.successors(result)
-        successors.map(_.step) mustBe Seq(PackageDocumentum)
-        successors.head.pdfReplayRequestedAt mustBe submission.pdfReplayRequestedAt
-        verify(mockPdfService).generateNotificationPdf(any())
-      }
-    }
-
-    "SDES notification" - {
-      "use the rebuilt ZIP details after a PDF replay" in {
-        existingPdf()
+          .thenReturn(Future.successful(ObjectSummaryWithMd5(path, 3, Md5Hash("hash"), replayRequestedAt)))
         val rebuilt = preparedSdesSubmission.copy(checksum = "new-checksum", contentLength = 200L)
         when(mockDocumentumPackageService.preparePackage(any(), any(), any())(using any()))
           .thenReturn(Future.successful(rebuilt))
@@ -361,6 +359,15 @@ class SubmissionOperationsSpec
         verifyNoInteractions(mockSdesConnector)
         val notified = operations.execute(operations.successors(packaged).head).futureValue
         operations.successors(notified) mustBe empty
+        verify(mockPdfService).generateNotificationPdf(any())
+        verify(mockObjectStoreClient).putObject(
+          any(),
+          any[Source[ByteString, ?]](),
+          meq(RetentionPeriod.OneWeek),
+          any(),
+          any(),
+          any()
+        )(using any(), any())
         verify(mockSdesConnector).notifyFileReady(
           meq("file.zip"),
           meq("owner"),
