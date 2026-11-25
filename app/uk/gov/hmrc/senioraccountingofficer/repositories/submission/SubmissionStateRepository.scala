@@ -63,14 +63,16 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
     )
     .headOption()
 
-  def getSubscriptionIdFromSubmissionId(submissionId: String): Future[Option[SubmissionState]] = collection
+  def getSubscriptionIdFromSubmissionId(submissionId: String, subscriptionId: String): Future[Boolean] = collection
     .find(
       Filters.and(
         Filters.equal("reference", submissionId),
+        Filters.equal("subscriptionId", subscriptionId),
         Filters.or(Filters.exists("expiresAt", false), Filters.gt("expiresAt", clock.instant()))
       )
     )
     .headOption()
+    .map(_.isDefined)
 
   def publish(command: SubmissionCommand): Future[Unit] =
     Future.fromTry(Try(publicationUpdates(command))).flatMap { updates =>

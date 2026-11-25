@@ -524,25 +524,45 @@ class SubmissionOrchestrationISpec
     }
   }
 
-  "SubmissionStateRepository.getSubmissionIdFromSubscriptionId" must {
-    "return the matching submission state" in {
+  "SubmissionStateRepository.getSubscriptionIdFromSubmissionId" must {
+    "return true when the submission belongs to the subscription" in {
       val submissionId = "REF123"
       val submission = command(InitialPdf).copy(
-        data = data().copy(reference = Some(submissionId))
+        data = data().copy(
+          reference = Some(submissionId),
+          subscriptionId = "subscription-123"
+        )
       )
 
       states.initialize(submission.data).futureValue
       states.publish(submission).futureValue
 
-      val result =
-        states.getSubscriptionIdFromSubmissionId(submissionId).futureValue.value
-
-      result.reference mustBe Some(submissionId)
-      result.subscriptionId mustBe submission.data.subscriptionId
+      states
+        .getSubscriptionIdFromSubmissionId(submissionId, "subscription-123")
+        .futureValue mustBe true
     }
 
-    "return None when no submission matches" in {
-      states.getSubscriptionIdFromSubmissionId("missing").futureValue mustBe None
+    "return false when no submission matches" in {
+      states
+        .getSubscriptionIdFromSubmissionId("missing", "subscription-123")
+        .futureValue mustBe false
+    }
+
+    "return false when the submission belongs to a different subscription" in {
+      val submissionId = "REF456"
+      val submission = command(InitialPdf).copy(
+        data = data().copy(
+          reference = Some(submissionId),
+          subscriptionId = "subscription-123"
+        )
+      )
+
+      states.initialize(submission.data).futureValue
+      states.publish(submission).futureValue
+
+      states
+        .getSubscriptionIdFromSubmissionId(submissionId, "another-subscription")
+        .futureValue mustBe false
     }
   }
 
