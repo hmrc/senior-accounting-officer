@@ -19,6 +19,10 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.Logging
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureSaoSubscriptionIdAction, IdentifierAction}
+import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling
+import uk.gov.hmrc.senioraccountingofficer.helpers.JsonErrorHandling.badRequest
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError
+import uk.gov.hmrc.senioraccountingofficer.models.ApiError.Reason
 import uk.gov.hmrc.senioraccountingofficer.repositories.submission.SubmissionStateRepository
 import uk.gov.hmrc.senioraccountingofficer.services.ObjectStoreService
 import uk.gov.hmrc.senioraccountingofficer.services.SubmissionDocumentType.{Certificate, Notification}
@@ -83,10 +87,12 @@ class PDFController @Inject() (
     }
 
   def getDocumentumPackage(submissionId: String, fileName: String): Action[AnyContent] =
-    (identify).async { implicit req =>
-      repository.getSubscriptionIdFromSubmissionId(submissionId).flatMap { subId =>
-        val id = subId.get.subscriptionId
-        if req.saoSubscriptionId == id then {
+    identify.async { implicit req =>
+      repository.getSubscriptionIdFromSubmissionId(submissionId).flatMap {
+        case None                                                         => Future.successful(NotFound)
+        case Some(owner) if owner.subscriptionId != req.saoSubscriptionId =>
+          Future.successful(badRequest(Seq(ApiError(reason = Reason.AUTH_MISALIGNMENT))))
+        case Some(_) =>
           objectStore
             .downloadDocumentumPackage(submissionId, fileName)
             .map {
@@ -97,10 +103,6 @@ class PDFController @Inject() (
               case None =>
                 NotFound
             }
-        } else {
-          Future.successful(NotFound)
-        }
       }
     }
-
 }
