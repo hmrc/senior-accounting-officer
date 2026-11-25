@@ -119,6 +119,17 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
           }
     }
 
+  def extendRetention(id: String, at: Instant): Future[Boolean] = collection
+    .updateOne(
+      Filters.and(
+        Filters.equal("_id", id),
+        Filters.or(Filters.exists("expiresAt", false), Filters.gt("expiresAt", clock.instant()))
+      ),
+      Updates.max("expiresAt", at)
+    )
+    .toFuture()
+    .map(_.getModifiedCount > 0)
+
   private def expiryOf(state: SubmissionState): Instant =
     state.expiresAt.getOrElse(throw new IllegalStateException(SubmissionState.missingTerminalStateMessage))
 }

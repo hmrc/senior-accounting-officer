@@ -60,6 +60,19 @@ class SubmissionWorker @Inject() (
   private val pdfReplayIds =
     config.getOptional[Seq[String]]("work-items.replay.pdf-replay-orchestration-ids").getOrElse(Seq.empty).distinct
 
+  private val replayRunId = {
+    val runId = config.getOptional[String]("work-items.replay.run-id").getOrElse("").trim
+    require(
+      runId.nonEmpty || (pdfReplayIds.isEmpty && config
+        .getOptional[Seq[String]]("work-items.replay.sdes-replay-orchestration-ids")
+        .forall(_.isEmpty)),
+      "Replay run-id is required when replay IDs are configured"
+    )
+    runId
+  }
+  private val replayDue =
+    replayTime.map(clock.instant().atZone(replayZone).toLocalDate.atTime(_).atZone(replayZone).toInstant)
+
   private val queueCounts = TrieMap.empty[String, AtomicInteger]
   require(operationTimeout.toSeconds < leaseDuration, "Operation timeout must be shorter than the work item lease")
   require(retryDelays.nonEmpty && retryDelays.forall(_ > 0), "Retry delays must be positive")
@@ -215,24 +228,55 @@ class SubmissionWorker @Inject() (
         .distinct
         .filterNot(pdfReplayIds.contains)
     ) { id =>
-      queues(NotifySdes).replaySdes(id).map { replayed =>
-        if replayed then logger.warn(s"[Submission][NotifySdes][ReplayRequested][OrchestrationId=$id]")
+      queues(NotifySdes).replaySdes(id, replayRunId).map { replayed =>
+        if replayed then
+          logger.warn(s"[Submission][NotifySdes][ReplayRequested][OrchestrationId=$id][RunId=$replayRunId]")
       }
     }
     _ <- Future.traverse(pdfReplayIds) { id =>
       (for {
         packaging <- queues(PackageDocumentum).hasActive(id)
         notifying <- queues(NotifySdes).hasActive(id)
-        replayed  <- if packaging || notifying then Future.successful(false) else queues(EnsurePdf).replayPdf(id)
+        replayed  <-
+          if packaging || notifying then Future.successful(false) else queues(EnsurePdf).replayPdf(id, replayRunId)
       } yield replayed).map { replayed =>
-        if replayed then logger.warn(s"[Submission][EnsurePdf][ReplayRequested][OrchestrationId=$id]")
+        if replayed then
+          logger.warn(s"[Submission][EnsurePdf][ReplayRequested][OrchestrationId=$id][RunId=$replayRunId]")
+      }
+    }
+  } yield ()
+
+  private def extendFailedRetention(): Future[Unit] = for {
+    candidates <- Future.traverse(queues.all.values.toSeq) { repository =>
+      repository.failureRetentionCandidates().flatMap { failures =>
+        Future.traverse(failures) { work =>
+          repository.recordLegacyFailure(work).map { _ =>
+            work.item.data.orchestrationId -> work.item.lastPermanentFailureAt.getOrElse(work.updatedAt)
+          }
+        }
+      }
+    }
+    _ <- Future.traverse(candidates.flatten.groupMap(_._1)(_._2).toSeq) { (id, failureTimes) =>
+      val deadline = failureTimes
+        .maxBy(_.toEpochMilli)
+        .plusSeconds(
+          config.getOptional[Long]("work-items.failed-retention-seconds").getOrElse(2592000L)
+        )
+      for {
+        stateChanged <- states.extendRetention(id, deadline)
+        workChanged  <- Future.traverse(queues.all.values.toSeq)(_.extendRetention(id, deadline))
+      } yield {
+        if stateChanged || workChanged.contains(true) then
+          logger.info(s"[Submission][RetentionExtended][OrchestrationId=$id][ExpiresAt=$deadline]")
       }
     }
   } yield ()
 
   def maintain(): Future[Unit] = for {
+    _ <- extendFailedRetention()
+
     _ <-
-      if replayTime.exists(clock.instant().atZone(replayZone).toLocalTime.isBefore) then Future.unit
+      if replayDue.exists(clock.instant().isBefore) then Future.unit
       else replayConfigured()
     _          <- updateQueueMetrics()
     candidates <- queues(RetrieveSubscription).retentionCandidates()

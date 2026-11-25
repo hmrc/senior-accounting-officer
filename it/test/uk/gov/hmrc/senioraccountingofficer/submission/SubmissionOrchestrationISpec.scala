@@ -99,6 +99,7 @@ class SubmissionOrchestrationISpec
   private val clock = new TestClock
   val mongo         = MongoComponent(s"mongodb://localhost:27017/sao-orchestration-test-${UUID.randomUUID()}")
   val config        = Configuration(
+    "work-items.replay.run-id"             -> "test-run",
     "work-items.lease-seconds"             -> 120,
     "work-items.operation-timeout-seconds" -> 1,
     "work-items.retry-delays-seconds"      -> Seq(60L, 300L, 900L, 3600L),
@@ -164,22 +165,78 @@ class SubmissionOrchestrationISpec
     }
   }
 
+  "Failure retention" must {
+    "extend legacy failures from their failure time but leave expired records alone" in {
+      clock.set(Instant.parse("2030-07-01T10:00:00Z"))
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
+      seed(submission)
+      doReturn(Future.failed(SubmissionFailures.response(FORBIDDEN)))
+        .when(mockSubmissionOperations)
+        .execute(any())(using any())
+      run(NotifySdes)
+      val repository = queues(NotifySdes)
+      val failedAt   = entries(NotifySdes).head.updatedAt
+      repository.collection
+        .updateMany(
+          Filters.empty(),
+          Updates.combine(
+            Updates.unset("item.lastPermanentFailureAt"),
+            Updates.set("item.expiresAt", failedAt.plusSeconds(7.days.toSeconds))
+          )
+        )
+        .toFuture()
+        .futureValue
+      worker.maintain().futureValue
+      entries(NotifySdes).head.item.lastPermanentFailureAt mustBe Some(failedAt)
+      entries(NotifySdes).head.item.expiresAt mustBe Some(failedAt.plusSeconds(30.days.toSeconds))
+      val expiredAt = clock.instant().minusSeconds(1)
+      repository.collection.updateMany(Filters.empty(), Updates.set("item.expiresAt", expiredAt)).toFuture().futureValue
+      worker.maintain().futureValue
+      entries(NotifySdes).head.item.expiresAt mustBe Some(expiredAt)
+    }
+
+    "extend the whole orchestration from a stable failure timestamp and preserve it during replay" in {
+      val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
+      seed(submission)
+      queues(EnsurePdf).enqueue(submission.next(EnsurePdf)).futureValue
+      doReturn(Future.failed(SubmissionFailures.response(FORBIDDEN)))
+        .when(mockSubmissionOperations)
+        .execute(any())(using any())
+      run(NotifySdes)
+      val active   = queues(EnsurePdf).claim().futureValue.value
+      val failed   = entries(NotifySdes).head
+      val deadline = failed.item.lastPermanentFailureAt.value.plusSeconds(30.days.toSeconds)
+      worker.maintain().futureValue
+      entries(NotifySdes).head.item.expiresAt mustBe Some(deadline)
+      entries(EnsurePdf).head.item.expiresAt mustBe Some(deadline)
+      queues(EnsurePdf).save(active, active.item.copy(operationFinished = true)).futureValue
+      entries(EnsurePdf).head.item.expiresAt mustBe Some(deadline)
+      states.get(submission.data.scopeKey).futureValue.value.expiresAt mustBe Some(deadline)
+      clock.advance(60)
+      worker.maintain().futureValue
+      entries(NotifySdes).head.item.expiresAt mustBe Some(deadline)
+      queues(NotifySdes).replaySdes(submission.data.orchestrationId, "recovery").futureValue mustBe true
+      entries(NotifySdes).head.item.expiresAt mustBe Some(deadline)
+    }
+  }
+
   "Configured SDES replay" must {
-    "replay a successful notification once when its ID is configured" in {
+    "replay a successful notification once per configured run ID" in {
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
       seed(submission)
       run(NotifySdes)
-      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
-      val replayWorker = workerWithConfig(
-        Configuration("work-items.replay.sdes-replay-orchestration-ids" -> Seq(submission.data.orchestrationId))
-      )
-      replayWorker.maintain().futureValue
-      entries(NotifySdes).head.status mustBe ProcessingStatus.Failed
-      run(NotifySdes)
-      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
-      replayWorker.maintain().futureValue
-      run(NotifySdes)
-      verify(mockSubmissionOperations, times(2)).execute(any())(using any())
+      for runId <- Seq("first", "second", "first", "second") do {
+        val replayWorker = workerWithConfig(
+          Configuration(
+            "work-items.replay.run-id"                        -> runId,
+            "work-items.replay.sdes-replay-orchestration-ids" -> Seq(submission.data.orchestrationId)
+          )
+        )
+        replayWorker.maintain().futureValue
+        run(NotifySdes)
+        entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
+      }
+      verify(mockSubmissionOperations, times(3)).execute(any())(using any())
     }
 
     "replay a configured failure at the configured UTC time and complete successfully" in {
@@ -223,7 +280,7 @@ class SubmissionOrchestrationISpec
       val repository = queues(NotifySdes)
       entries(NotifySdes).head.status mustBe ProcessingStatus.PermanentlyFailed
       val results =
-        Future.traverse(1 to 8)(_ => repository.replaySdes(submission.data.orchestrationId)).futureValue
+        Future.traverse(1 to 8)(_ => repository.replaySdes(submission.data.orchestrationId, "test-run")).futureValue
       results.count(identity) mustBe 1
       val replay = entries(NotifySdes).head.item
       replay.operationFinished mustBe false
@@ -233,7 +290,7 @@ class SubmissionOrchestrationISpec
       replay.sdesReplayRequestedAt mustBe defined
       run(NotifySdes)
       entries(NotifySdes).head.status mustBe ProcessingStatus.PermanentlyFailed
-      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId, "test-run").futureValue mustBe false
       verify(mockSubmissionOperations, times(2)).execute(any())(using any())
     }
 
@@ -241,14 +298,14 @@ class SubmissionOrchestrationISpec
       val submission = command(NotifySdes).copy(data = data().copy(prepared = Some(preparedSdesSubmission)))
       seed(submission)
       val repository = queues(NotifySdes)
-      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId, "test-run").futureValue mustBe false
       val claimed = repository.claim().futureValue.value
-      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId, "test-run").futureValue mustBe false
       repository.retry(claimed, 60, "error").futureValue
-      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId, "test-run").futureValue mustBe false
       clock.advance(61)
       run(NotifySdes)
-      repository.replaySdes("missing").futureValue mustBe false
+      repository.replaySdes("missing", "test-run").futureValue mustBe false
       repository.collection
         .updateMany(
           Filters.empty(),
@@ -259,23 +316,11 @@ class SubmissionOrchestrationISpec
         )
         .toFuture()
         .futureValue
-      repository.replaySdes(submission.data.orchestrationId).futureValue mustBe false
+      repository.replaySdes(submission.data.orchestrationId, "test-run").futureValue mustBe false
     }
   }
 
   "Configured PDF replay" must {
-    "replay immediately on maintenance when no time is configured" in {
-      val submission = command(EnsurePdf)
-      seed(submission)
-      Seq(EnsurePdf, PackageDocumentum, NotifySdes).foreach(run)
-      val replayWorker = workerWithConfig(
-        Configuration("work-items.replay.pdf-replay-orchestration-ids" -> Seq(submission.data.orchestrationId))
-      )
-      replayWorker.maintain().futureValue
-      entries(EnsurePdf).head.status mustBe ProcessingStatus.Failed
-      entries(EnsurePdf).head.item.pdfReplayRequestedAt mustBe defined
-    }
-
     "rebuild the ZIP before notifying SDES at the configured UK time, even when both lists contain the ID" in {
       clock.set(Instant.parse("2030-07-01T08:59:00Z"))
       val oldPackage = preparedSdesSubmission.copy(checksum = "old-checksum")
@@ -338,7 +383,12 @@ class SubmissionOrchestrationISpec
       clock.advance(1.day.toSeconds)
       configuredWorker.maintain().futureValue
       entries(EnsurePdf).head.status mustBe ProcessingStatus.Succeeded
-      verify(mockSubmissionOperations, times(6)).execute(any())(using any())
+      val nextRun = workerWithConfig(replayConfig ++ Configuration("work-items.replay.run-id" -> "second-run"))
+      nextRun.maintain().futureValue
+      Seq(EnsurePdf, PackageDocumentum, NotifySdes).foreach(run)
+      entries(NotifySdes).head.status mustBe ProcessingStatus.Succeeded
+      entries(NotifySdes).head.item.replayRuns must contain allOf ("test-run", "second-run")
+      verify(mockSubmissionOperations, times(9)).execute(any())(using any())
     }
 
     "wait for active downstream work and refuse to overwrite an active successor" in {
@@ -381,42 +431,6 @@ class SubmissionOrchestrationISpec
       entries(EnsurePdf).head.status mustBe ProcessingStatus.Succeeded
     }
 
-    "reset a permanent failure once and refuse active or expired work" in {
-      val submission = command(EnsurePdf)
-      seed(submission)
-      val repository = queues(EnsurePdf)
-      repository.replayPdf(submission.data.orchestrationId).futureValue mustBe false
-      val claimed = repository.claim().futureValue.value
-      repository.replayPdf(submission.data.orchestrationId).futureValue mustBe false
-      repository.retry(claimed, 60, "error").futureValue
-      repository.replayPdf(submission.data.orchestrationId).futureValue mustBe false
-      clock.advance(61)
-      doReturn(Future.failed(SubmissionFailures.response(FORBIDDEN)))
-        .when(mockSubmissionOperations)
-        .execute(any())(using any())
-      run(EnsurePdf)
-      entries(EnsurePdf).head.status mustBe ProcessingStatus.PermanentlyFailed
-      val results = Future.traverse(1 to 8)(_ => repository.replayPdf(submission.data.orchestrationId)).futureValue
-      results.count(identity) mustBe 1
-      val replay = entries(EnsurePdf).head.item
-      replay.failure mustBe None
-      replay.lastError mustBe None
-      replay.leaseToken mustBe None
-      run(EnsurePdf)
-      repository.replayPdf(submission.data.orchestrationId).futureValue mustBe false
-      repository.replayPdf("missing").futureValue mustBe false
-      repository.collection
-        .updateMany(
-          Filters.empty(),
-          Updates.combine(
-            Updates.unset("item.pdfReplayRequestedAt"),
-            Updates.set("item.expiresAt", clock.instant().minusSeconds(1))
-          )
-        )
-        .toFuture()
-        .futureValue
-      repository.replayPdf(submission.data.orchestrationId).futureValue mustBe false
-    }
   }
 
   "SubmissionService.submit" must {
@@ -802,7 +816,19 @@ class SubmissionOrchestrationISpec
   }
 
   "SubmissionWorker.maintain" must {
-    "expire public status and allow key reuse seven days after all work finishes" in {
+    "expire successful submissions after seven days" in {
+      val root =
+        SubmissionCommand.start(data().copy(pdfAttempted = true, pdfStored = true)).copy(operationFinished = true)
+      doReturn(Seq.empty[SubmissionCommand]).when(mockSubmissionOperations).successors(any())
+      seed(root)
+      run(RetrieveSubscription)
+      worker.maintain().futureValue
+      statusOf(root.data) mustBe OK
+      clock.advance(retentionSeconds + 1)
+      statusOf(root.data) mustBe NOT_FOUND
+    }
+
+    "expire failed submissions and allow key reuse after thirty days" in {
       val root =
         SubmissionCommand
           .start(data())
@@ -814,7 +840,7 @@ class SubmissionOrchestrationISpec
       val before = states.get(root.data.scopeKey).futureValue.value.expiresAt
       service.status(root.data.subscriptionId, root.data.kind, root.data.idempotencyKey).futureValue
       states.get(root.data.scopeKey).futureValue.value.expiresAt mustBe before
-      clock.advance(retentionSeconds + 1)
+      clock.advance(30.days.toSeconds + 1)
       statusOf(root.data) mustBe NOT_FOUND
       val replacement = data()
       service.submit(replacement).futureValue.header.status mustBe ACCEPTED

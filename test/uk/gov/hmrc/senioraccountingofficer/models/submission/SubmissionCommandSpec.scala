@@ -18,10 +18,20 @@ package uk.gov.hmrc.senioraccountingofficer.models.submission
 
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.Json
 import uk.gov.hmrc.senioraccountingofficer.models.submission.SubmissionStep.*
 import uk.gov.hmrc.senioraccountingofficer.services.submission.SubmissionTestData.*
 
 class SubmissionCommandSpec extends AnyWordSpec with Matchers {
+  "JSON compatibility" must {
+    "read work items written before replay history and failure timestamps existed" in {
+      val original = SubmissionCommand.start(data())
+      val legacy   =
+        Json.toJsObject(original) - "replayRunId" - "replayRuns" - "lastPermanentFailureAt"
+      legacy.as[SubmissionCommand] mustBe original
+    }
+  }
+
   "next" must {
     "return the same command key for the same submission and step" in {
       val root = SubmissionCommand.start(data())

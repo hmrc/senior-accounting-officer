@@ -91,6 +91,7 @@ class SubmissionRetentionSpec
     )
 
     repositories.values.foreach { repository =>
+      when(repository.failureRetentionCandidates()).thenReturn(Future.successful(Seq.empty))
       when(repository.metrics).thenReturn(Future.successful(Map.empty[String, Int]))
       when(repository.hasActive(id)).thenReturn(Future.successful(false))
       when(repository.expire(id, expiresAt)).thenReturn(Future.unit)
