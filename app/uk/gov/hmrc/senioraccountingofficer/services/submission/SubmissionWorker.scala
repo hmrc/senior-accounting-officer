@@ -60,13 +60,16 @@ class SubmissionWorker @Inject() (
   private val pdfReplayIds =
     config.getOptional[Seq[String]]("work-items.replay.pdf-replay-orchestration-ids").getOrElse(Seq.empty).distinct
 
-  private val replayRunId = config.getOptional[String]("work-items.replay.run-id").getOrElse("").trim
-  require(
-    replayRunId.nonEmpty || (pdfReplayIds.isEmpty && config
-      .getOptional[Seq[String]]("work-items.replay.sdes-replay-orchestration-ids")
-      .forall(_.isEmpty)),
-    "Replay run-id is required when replay IDs are configured"
-  )
+  private val replayRunId = {
+    val runId = config.getOptional[String]("work-items.replay.run-id").getOrElse("").trim
+    require(
+      runId.nonEmpty || (pdfReplayIds.isEmpty && config
+        .getOptional[Seq[String]]("work-items.replay.sdes-replay-orchestration-ids")
+        .forall(_.isEmpty)),
+      "Replay run-id is required when replay IDs are configured"
+    )
+    runId
+  }
   private val replayDue =
     replayTime.map(clock.instant().atZone(replayZone).toLocalDate.atTime(_).atZone(replayZone).toInstant)
 
