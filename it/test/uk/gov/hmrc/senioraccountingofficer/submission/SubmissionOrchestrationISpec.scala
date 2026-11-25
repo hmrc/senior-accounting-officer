@@ -524,6 +524,48 @@ class SubmissionOrchestrationISpec
     }
   }
 
+  "SubmissionStateRepository.getSubscriptionIdFromSubmissionId" must {
+    "return true when the submission belongs to the subscription" in {
+      val submissionId = "REF123"
+      val submission = command(InitialPdf).copy(
+        data = data().copy(
+          reference = Some(submissionId),
+          subscriptionId = "subscription-123"
+        )
+      )
+
+      states.initialize(submission.data).futureValue
+      states.publish(submission).futureValue
+
+      states
+        .getSubscriptionIdFromSubmissionId(submissionId, "subscription-123")
+        .futureValue mustBe true
+    }
+
+    "return false when no submission matches" in {
+      states
+        .getSubscriptionIdFromSubmissionId("missing", "subscription-123")
+        .futureValue mustBe false
+    }
+
+    "return false when the submission belongs to a different subscription" in {
+      val submissionId = "REF456"
+      val submission = command(InitialPdf).copy(
+        data = data().copy(
+          reference = Some(submissionId),
+          subscriptionId = "subscription-123"
+        )
+      )
+
+      states.initialize(submission.data).futureValue
+      states.publish(submission).futureValue
+
+      states
+        .getSubscriptionIdFromSubmissionId(submissionId, "another-subscription")
+        .futureValue mustBe false
+    }
+  }
+
   "SubmissionWorkRepository lease ownership" must {
     for operation <- Seq("heartbeat", "save", "finish", "retry") do {
       s"reject $operation without a lease token and leave the work item unchanged" in {

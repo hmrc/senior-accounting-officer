@@ -293,3 +293,11 @@ GET         /v2/certificate/:idempotencyKey      uk.gov.hmrc.senioraccountingoff
 GET         /subscription        uk.gov.hmrc.senioraccountingofficer.controllers.GetSubscriptionController.getSubscription()
 
 POST        /sdes-callback      uk.gov.hmrc.senioraccountingofficer.controllers.SdesCallbackController.callback
+
+HEAD        /certificatePdf/:saoSubscriptionId/:certificateReference     uk.gov.hmrc.senioraccountingofficer.controllers.PDFController.pdfStatusCertificate(saoSubscriptionId: String, certificateReference: String)
+GET        /certificatePdf/:saoSubscriptionId/:certificateReference     uk.gov.hmrc.senioraccountingofficer.controllers.PDFController.getPDFCertificate(saoSubscriptionId: String, certificateReference: String)
+
+HEAD        /notificationPdf/:saoSubscriptionId/:notificationReference     uk.gov.hmrc.senioraccountingofficer.controllers.PDFController.pdfStatusNotification(saoSubscriptionId: String, notificationReference: String)
+GET        /notificationPdf/:saoSubscriptionId/:notificationReference     uk.gov.hmrc.senioraccountingofficer.controllers.PDFController.getPDFNotification(saoSubscriptionId: String, notificationReference: String)
+
+GET        /documentumPackage/:submissionId/:fileName     uk.gov.hmrc.senioraccountingofficer.controllers.PDFController.getDocumentumPackage(submissionId: String, fileName: String)
