@@ -62,10 +62,11 @@ class SubmissionWorkRepository(
       _         <- collection.deleteOne(Filters.and(key, Filters.lte("item.expiresAt", now()))).toFuture()
       persisted <- pushNew(command).map(_.item).recoverWith {
         case error: MongoWriteException if error.getError.getCode == duplicateKeyErrorCode =>
-          if command.pdfReplayRequestedAt.isDefined &&
-            (step == SubmissionStep.PackageDocumentum || step == SubmissionStep.NotifySdes)
-          then replaySuccessor(command, key)
-          else collection.find(key).head().map(_.item)
+          command.pdfReplayRequestedAt match {
+            case Some(requestedAt) if step == SubmissionStep.PackageDocumentum || step == SubmissionStep.NotifySdes =>
+              replaySuccessor(command, key, requestedAt)
+            case _ => collection.find(key).head().map(_.item)
+          }
       }
     } yield persisted
   }
@@ -76,7 +77,11 @@ class SubmissionWorkRepository(
       case Some(work) => claimLease(work)
     }
 
-  private def replaySuccessor(command: SubmissionCommand, key: Bson): Future[SubmissionCommand] =
+  private def replaySuccessor(
+      command: SubmissionCommand,
+      key: Bson,
+      requestedAt: Instant
+  ): Future[SubmissionCommand] =
     collection
       .findOneAndUpdate(
         Filters.and(
@@ -87,7 +92,7 @@ class SubmissionWorkRepository(
         Updates.combine(
           Updates.set("item.data", Codecs.toBson(command.data)),
           Updates.set("item.operationFinished", false),
-          Updates.set("item.pdfReplayRequestedAt", command.pdfReplayRequestedAt.get),
+          Updates.set("item.pdfReplayRequestedAt", requestedAt),
           Updates.set("item.replayRunId", command.replayRunId.getOrElse("legacy")),
           Updates.addToSet("item.replayRuns", command.replayRunId.getOrElse("legacy")),
           Updates.max(
