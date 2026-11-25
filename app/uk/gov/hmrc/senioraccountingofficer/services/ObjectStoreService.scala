@@ -91,7 +91,7 @@ class ObjectStoreService @Inject() (objectStoreClient: PlayObjectStoreClient)(us
   ): Future[Option[Source[ByteString, NotUsed]]] =
     objectStoreClient
       .getObject[Source[ByteString, NotUsed]](
-        path = Path.Directory(s"/$objectStoreOwner/sdes/$submissionId/").file(fileName),
+        path = Path.Directory(s"/sdes/$submissionId/").file(fileName),
         owner = objectStoreOwner
       )
       .map(_.map(_.content))

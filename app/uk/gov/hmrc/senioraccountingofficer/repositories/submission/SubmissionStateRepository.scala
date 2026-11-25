@@ -37,6 +37,7 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
       domainFormat = summon[play.api.libs.json.OFormat[SubmissionState]],
       indexes = Seq(
         IndexModel(Indexes.ascending("scopeKey")),
+        IndexModel(Indexes.ascending(("reference"))),
         IndexModel(Indexes.ascending("expiresAt"), IndexOptions().expireAfter(0L, TimeUnit.SECONDS))
       )
     ) {
@@ -44,7 +45,10 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
   def initialize(data: SubmissionData): Future[Unit] = collection
     .updateOne(
       Filters.equal("_id", data.orchestrationId),
-      Updates.setOnInsert("scopeKey", data.scopeKey),
+      Updates.combine(
+        Updates.setOnInsert("scopeKey", data.scopeKey),
+        Updates.setOnInsert("subscriptionId", data.subscriptionId)
+      ),
       UpdateOptions().upsert(true)
     )
     .toFuture()
@@ -54,6 +58,15 @@ class SubmissionStateRepository @Inject() (mongo: MongoComponent, clock: Clock)(
     .find(
       Filters.and(
         Filters.equal("scopeKey", scopeKey),
+        Filters.or(Filters.exists("expiresAt", false), Filters.gt("expiresAt", clock.instant()))
+      )
+    )
+    .headOption()
+
+  def getSubscriptionIdFromSubmissionId(submissionId: String): Future[Option[SubmissionState]] = collection
+    .find(
+      Filters.and(
+        Filters.equal("reference", submissionId),
         Filters.or(Filters.exists("expiresAt", false), Filters.gt("expiresAt", clock.instant()))
       )
     )

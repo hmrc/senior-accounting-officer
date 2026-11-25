@@ -24,6 +24,7 @@ import java.time.Instant
 case class SubmissionState(
     _id: String,
     scopeKey: String,
+    subscriptionId: String,
     reference: Option[String] = None,
     pdfAttempted: Boolean = false,
     pdfStored: Boolean = false,

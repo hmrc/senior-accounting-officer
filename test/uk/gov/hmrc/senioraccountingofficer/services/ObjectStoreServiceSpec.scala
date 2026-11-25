@@ -281,7 +281,7 @@ class ObjectStoreServiceSpec
 
     "must download the zip from the SDES object-store path" in {
       val expectedPath = Path
-        .Directory(s"/senior-accounting-officer/sdes/$notificationReference/")
+        .Directory(s"/sdes/$notificationReference/")
         .file(documentumPackageFileName)
       val storedObject = ObjectStoreObject(
         expectedPath,

@@ -19,17 +19,19 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 import play.api.Logging
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureSaoSubscriptionIdAction, IdentifierAction}
+import uk.gov.hmrc.senioraccountingofficer.repositories.submission.SubmissionStateRepository
 import uk.gov.hmrc.senioraccountingofficer.services.ObjectStoreService
 import uk.gov.hmrc.senioraccountingofficer.services.SubmissionDocumentType.{Certificate, Notification}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 
 class PDFController @Inject() (
     cc: ControllerComponents,
     objectStore: ObjectStoreService,
-    identify: IdentifierAction
+    identify: IdentifierAction,
+    repository: SubmissionStateRepository
 )(using
     ExecutionContext
 ) extends BaseController(cc)
@@ -81,17 +83,24 @@ class PDFController @Inject() (
     }
 
   def getDocumentumPackage(submissionId: String, fileName: String): Action[AnyContent] =
-    (identify andThen new EnsureSaoSubscriptionIdAction(submissionId)).async { implicit req =>
-      objectStore
-        .downloadDocumentumPackage(submissionId, fileName)
-        .map {
-          case Some(pdf) =>
-            Ok.chunked(pdf)
-              .as("application/zip")
+    (identify).async { implicit req =>
+      repository.getSubscriptionIdFromSubmissionId(submissionId).flatMap { subId =>
+        val id = subId.get.subscriptionId
+        if req.saoSubscriptionId == id then {
+          objectStore
+            .downloadDocumentumPackage(submissionId, fileName)
+            .map {
+              case Some(pdf) =>
+                Ok.chunked(pdf)
+                  .as("application/zip")
 
-          case None =>
-            NotFound
+              case None =>
+                NotFound
+            }
+        } else {
+          Future.successful(NotFound)
         }
+      }
     }
 
 }
