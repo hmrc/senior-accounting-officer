@@ -18,7 +18,11 @@ package uk.gov.hmrc.senioraccountingofficer.controllers
 
 import play.api.Logging
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
-import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{EnsureSaoSubscriptionIdAction, IdentifierAction}
+import uk.gov.hmrc.senioraccountingofficer.controllers.actions.{
+  EnsureCorrelationIdAction,
+  EnsureSaoSubscriptionIdAction,
+  IdentifierAction
+}
 import uk.gov.hmrc.senioraccountingofficer.repositories.submission.SubmissionStateRepository
 import uk.gov.hmrc.senioraccountingofficer.services.ObjectStoreService
 import uk.gov.hmrc.senioraccountingofficer.services.SubmissionDocumentType.{Certificate, Notification}
@@ -31,6 +35,7 @@ class PDFController @Inject() (
     cc: ControllerComponents,
     objectStore: ObjectStoreService,
     identify: IdentifierAction,
+    ensureCorrelationId: EnsureCorrelationIdAction,
     repository: SubmissionStateRepository
 )(using
     ExecutionContext
@@ -38,52 +43,56 @@ class PDFController @Inject() (
     with Logging {
 
   def pdfStatusCertificate(saoSubscriptionId: String, certificateReference: String): Action[AnyContent] =
-    (identify andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async { implicit req =>
-      val result = objectStore.isCertificatePdfAvailable(saoSubscriptionId, certificateReference)
-      result.map {
-        case true  => Ok
-        case false => NotFound
-      }
+    (identify andThen ensureCorrelationId andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async {
+      implicit req =>
+        val result = objectStore.isCertificatePdfAvailable(saoSubscriptionId, certificateReference)
+        result.map {
+          case true  => Ok
+          case false => NotFound
+        }
     }
   def getPDFCertificate(saoSubscriptionId: String, certificateReference: String): Action[AnyContent] =
-    (identify andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async { implicit req =>
-      objectStore
-        .downloadSubmissionPdf(saoSubscriptionId, certificateReference, Certificate)
-        .map {
-          case Some(pdf) =>
-            Ok.chunked(pdf.content)
-              .as("application/pdf")
+    (identify andThen ensureCorrelationId andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async {
+      implicit req =>
+        objectStore
+          .downloadSubmissionPdf(saoSubscriptionId, certificateReference, Certificate)
+          .map {
+            case Some(pdf) =>
+              Ok.chunked(pdf.content)
+                .as("application/pdf")
 
-          case None =>
-            NotFound
-        }
+            case None =>
+              NotFound
+          }
     }
 
   def pdfStatusNotification(saoSubscriptionId: String, notificationReference: String): Action[AnyContent] =
-    (identify andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async { implicit req =>
-      val result = objectStore.isNotificationPdfAvailable(saoSubscriptionId, notificationReference)
-      result.map {
-        case true  => Ok
-        case false => NotFound
-      }
-    }
-
-  def getPDFNotification(saoSubscriptionId: String, notificationReference: String): Action[AnyContent] =
-    (identify andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async { implicit req =>
-      objectStore
-        .downloadSubmissionPdf(saoSubscriptionId, notificationReference, Notification)
-        .map {
-          case Some(pdf) =>
-            Ok.chunked(pdf.content)
-              .as("application/pdf")
-
-          case None =>
-            NotFound
+    (identify andThen ensureCorrelationId andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async {
+      implicit req =>
+        val result = objectStore.isNotificationPdfAvailable(saoSubscriptionId, notificationReference)
+        result.map {
+          case true  => Ok
+          case false => NotFound
         }
     }
 
+  def getPDFNotification(saoSubscriptionId: String, notificationReference: String): Action[AnyContent] =
+    (identify andThen ensureCorrelationId andThen new EnsureSaoSubscriptionIdAction(saoSubscriptionId)).async {
+      implicit req =>
+        objectStore
+          .downloadSubmissionPdf(saoSubscriptionId, notificationReference, Notification)
+          .map {
+            case Some(pdf) =>
+              Ok.chunked(pdf.content)
+                .as("application/pdf")
+
+            case None =>
+              NotFound
+          }
+    }
+
   def getDocumentumPackage(submissionId: String, fileName: String): Action[AnyContent] =
-    identify.async { implicit req =>
+    (identify andThen ensureCorrelationId).async { implicit req =>
       repository.getSubscriptionIdFromSubmissionId(submissionId, req.saoSubscriptionId).flatMap {
         case false => Future.successful(NotFound)
         case true  =>
