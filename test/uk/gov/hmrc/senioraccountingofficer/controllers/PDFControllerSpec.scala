@@ -43,6 +43,7 @@ import uk.gov.hmrc.senioraccountingofficer.services.{ObjectStoreService, Submiss
 import scala.concurrent.Future
 
 import java.time.Instant
+import java.util.UUID
 
 class PDFControllerSpec
     extends AnyWordSpec
@@ -100,6 +101,9 @@ class PDFControllerSpec
             .pdfStatusCertificate(saoSubscriptionId, certificateReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result: Future[Result] = route(app, request).get
 
@@ -120,6 +124,9 @@ class PDFControllerSpec
             .pdfStatusCertificate(saoSubscriptionId, certificateReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
@@ -141,6 +148,9 @@ class PDFControllerSpec
             .pdfStatusNotification(saoSubscriptionId, notificationReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
@@ -161,6 +171,9 @@ class PDFControllerSpec
             .pdfStatusNotification(saoSubscriptionId, notificationReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
@@ -187,6 +200,9 @@ class PDFControllerSpec
             .getPDFNotification(saoSubscriptionId, notificationReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
@@ -210,6 +226,9 @@ class PDFControllerSpec
             .getPDFNotification(saoSubscriptionId, notificationReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
@@ -236,6 +255,9 @@ class PDFControllerSpec
             .getPDFCertificate(saoSubscriptionId, certificateReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
@@ -259,6 +281,9 @@ class PDFControllerSpec
             .getPDFCertificate(saoSubscriptionId, certificateReference)
             .url
         )
+          .withHeaders(
+            "correlationId" -> UUID.randomUUID().toString
+          )
 
         val result = route(app, request).get
 
