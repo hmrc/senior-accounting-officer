@@ -43,6 +43,14 @@ http:
         "remarks": "Testremarks"
       }
 
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.status === 201) {
+          bru.setVar('certificateReference', res.body.certificateRef);
+        }
+
 settings:
   encodeUrl: true
   timeout: 0

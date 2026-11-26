@@ -1,0 +1,21 @@
+info:
+  name: PDF creation (400) invalid-subscription-id
+  type: http
+  seq: 2
+
+http:
+  method: HEAD
+  url: "{{baseUrl}}/notificationPdf/InvalidSubscriptionId/{{notificationReference}}"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

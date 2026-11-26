@@ -1,0 +1,19 @@
+info:
+  name: PDF creation (404) invalid-url
+  type: http
+  seq: 4
+
+http:
+  method: HEAD
+  url: "{{baseUrl}}/{{subscriptionId}}/{{certificateReference}}"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,21 @@
+info:
+  name: PDF creation (200) successful-request
+  type: http
+  seq: 1
+
+http:
+  method: HEAD
+  url: "{{baseUrl}}/notificationPdf/{{subscriptionId}}/{{notificationReference}}"
+  headers:
+    - name: Authorization
+      value: "{{authorization}}"
+    - name: correlationId
+      value: "{{$randomUUID}}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
